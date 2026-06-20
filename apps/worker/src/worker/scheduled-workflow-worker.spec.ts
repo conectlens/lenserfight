@@ -5,9 +5,13 @@ jest.mock('@lenserfight/infra/execution', () => ({
   WorkflowExecutionService: jest.fn(),
   getExecutionProvider: jest.fn(() => ({})),
   SupabaseDelegationHandler: jest.fn(),
+  createOAuthConnectionResolver: jest.fn(() => ({ resolve: jest.fn() })),
+  createServerConnectorResolver: jest.fn(() => ({ resolve: jest.fn() })),
+  createCompositeConnectorResolver: jest.fn(() => ({ resolve: jest.fn() })),
+  nullOAuthConnectionResolver: { resolve: jest.fn() },
 }))
 jest.mock('@lenserfight/utils/logger', () => ({
-  nodeLogger: { info: jest.fn(), error: jest.fn() },
+  nodeLogger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }))
 
 import { createServiceSupabaseClient } from '../lib/supabase'
@@ -80,7 +84,7 @@ describe('processNextScheduledWorkflow', () => {
     const { mockUpdateStatus } = buildClient(CLAIMED_RUN)
     const result = await processNextScheduledWorkflow()
     expect(result).toBe(true)
-    expect(mockUpdateStatus).toHaveBeenCalledWith('fn_update_workflow_run_status', {
+    expect(mockUpdateStatus).toHaveBeenCalledWith('fn_worker_set_workflow_run_status', {
       p_run_id: 'run-uuid',
       p_status: 'completed',
     })
@@ -91,7 +95,7 @@ describe('processNextScheduledWorkflow', () => {
     const { mockUpdateStatus } = buildClient(CLAIMED_RUN, [], [], failingExecute)
     const result = await processNextScheduledWorkflow()
     expect(result).toBe(true)
-    expect(mockUpdateStatus).toHaveBeenCalledWith('fn_update_workflow_run_status', {
+    expect(mockUpdateStatus).toHaveBeenCalledWith('fn_worker_set_workflow_run_status', {
       p_run_id: 'run-uuid',
       p_status: 'failed',
     })
@@ -111,7 +115,7 @@ describe('processNextScheduledWorkflow', () => {
     const emptyWorkflow = jest.fn().mockResolvedValue({ status: 'completed' })
     const { mockUpdateStatus } = buildClient(CLAIMED_RUN, [], [], emptyWorkflow)
     await processNextScheduledWorkflow()
-    expect(mockUpdateStatus).toHaveBeenCalledWith('fn_update_workflow_run_status', {
+    expect(mockUpdateStatus).toHaveBeenCalledWith('fn_worker_set_workflow_run_status', {
       p_run_id: 'run-uuid',
       p_status: 'completed',
     })

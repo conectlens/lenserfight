@@ -4,6 +4,7 @@ import { byokKeyResolver } from '@lenserfight/providers'
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { chainabitExecutionRepository } from '@lenserfight/data/repositories'
 import { createServiceSupabaseClient } from '../lib/supabase'
+import { PROVIDER_TIMEOUT_MS, withTimeout, timeoutSignal } from '../lib/timeout'
 
 const CHAINABIT_EXECUTION_ENABLED = process.env['CHAINABIT_EXECUTION_ENABLED'] === 'true'
 
@@ -72,6 +73,30 @@ function backoffMs(retryCount: number): number {
   return Math.min(30_000, 500 * Math.pow(2, retryCount))
 }
 
+/**
+ * H4: resolve an ai_agent contender's system prompt. The personality note is a
+ * lens template; render it with the task prompt available so any {{tokens}}
+ * resolve, and fall back to the raw note when rendering errors or produces an
+ * empty body (so the agent is never left without its persona).
+ */
+async function resolvePersonalityPrompt(
+  serviceClient: ReturnType<typeof createServiceSupabaseClient>,
+  job: ClaimedBattleJob,
+  prompt: string,
+): Promise<string | undefined> {
+  if (job.personality_version_id) {
+    const { data: rendered, error: renderErr } = await serviceClient
+      .rpc('fn_worker_render_template', {
+        p_template_body: job.personality_note ?? '',
+        p_inputs: { prompt },
+      })
+    const body = !renderErr && rendered ? (rendered as string).trim() : ''
+    if (body) return body
+    return job.personality_note?.trim() || undefined
+  }
+  return job.personality_note?.trim() || undefined
+}
+
 export async function processNextBattleJob(): Promise<boolean> {
   const serviceClient = createServiceSupabaseClient()
 
@@ -111,20 +136,11 @@ export async function processNextBattleJob(): Promise<boolean> {
       // ── Text execution path ────────────────────────────────────────────────
 
       // Build system prompt from agent personality (ai_agent contenders only).
-      // Personality lens template takes precedence over the plain personality_note.
-      let systemPrompt: string | undefined
-      if (job.personality_version_id) {
-        const { data: rendered, error: renderErr } = await serviceClient
-          .rpc('fn_worker_render_template', {
-            p_template_body: job.personality_note ?? '',
-            p_inputs: {},
-          })
-        if (!renderErr && rendered) {
-          systemPrompt = rendered as string
-        }
-      } else if (job.personality_note) {
-        systemPrompt = job.personality_note
-      }
+      // H4: render with the task prompt as input so any {{tokens}} resolve, and
+      // fall back to the raw personality note if rendering errors or yields an
+      // empty body (previously rendered with {} → tokens vanished, sometimes
+      // leaving the agent with no system prompt at all).
+      const systemPrompt = await resolvePersonalityPrompt(serviceClient, job, prompt)
 
       const messages: ProviderMessage[] = [
         ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
@@ -137,6 +153,8 @@ export async function processNextBattleJob(): Promise<boolean> {
         apiKey,
         job.model_key,
         messages,
+        undefined,
+        timeoutSignal(),
       )
 
       await serviceClient
@@ -157,12 +175,16 @@ export async function processNextBattleJob(): Promise<boolean> {
       const modality = kindToGenerativeModality(execKind)
       const outputModality = kindToOutputModality(execKind)
 
-      const mediaResponse = await callGenerativeMedia(
-        job.provider_key as GenerativeMediaProvider | null,
-        modality,
-        apiKey,
-        job.model_key,
-        prompt,
+      const mediaResponse = await withTimeout(
+        callGenerativeMedia(
+          job.provider_key as GenerativeMediaProvider | null,
+          modality,
+          apiKey,
+          job.model_key,
+          prompt,
+        ),
+        PROVIDER_TIMEOUT_MS,
+        `media:${job.model_key}`,
       )
 
       if (mediaResponse.status === 'failed') {
@@ -272,17 +294,7 @@ async function processNextBattleJobViaChainabit(
       prompt = rendered as string
     }
 
-    let systemPrompt: string | undefined
-    if (job.personality_version_id) {
-      const { data: rendered, error: renderErr } = await serviceClient
-        .rpc('fn_worker_render_template', {
-          p_template_body: job.personality_note ?? '',
-          p_inputs: {},
-        })
-      if (!renderErr && rendered) systemPrompt = rendered as string
-    } else if (job.personality_note) {
-      systemPrompt = job.personality_note
-    }
+    const systemPrompt = await resolvePersonalityPrompt(serviceClient, job, prompt)
 
     const externalJobId = await chainabitExecutionRepository.submitBattleJob({
       jobId: job.job_id,

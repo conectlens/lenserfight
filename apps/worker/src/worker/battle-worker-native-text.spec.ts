@@ -125,6 +125,8 @@ describe('processNextBattleJob — native text path', () => {
         'resolved-env-key',
         'claude-sonnet-4-6',
         [{ role: 'user', content: 'Explain recursion in one paragraph.' }],
+        undefined,
+        expect.any(AbortSignal),
       )
 
       const upsert = captureUpsertArgs()
@@ -249,6 +251,8 @@ describe('processNextBattleJob — native text path', () => {
         'decrypted-byok-key',
         'claude-sonnet-4-6',
         expect.any(Array),
+        undefined,
+        expect.any(AbortSignal),
       )
     })
 
