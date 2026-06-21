@@ -642,6 +642,8 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       <PageMeta
         title={wfMeta.title}
         description={wfMeta.description}
+        canonicalUrl={wfMeta.url}
+        ogImage={wfMeta.ogImage}
         robots={wfMeta.index === false ? 'noindex,nofollow' : 'index,follow'}
       />
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}

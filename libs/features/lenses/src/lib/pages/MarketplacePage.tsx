@@ -3,13 +3,11 @@ import { SEOHead } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
 import { Store } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import { LensCard } from '../components/LensCard'
 import { LensesSearchBar } from '../components/LensesSearchBar'
 
 export function MarketplacePage() {
-  const navigate = useNavigate()
   const [search, setSearch] = useState('')
 
   const { data: lensesEnvelope, isLoading } = useQuery({
@@ -74,7 +72,6 @@ export function MarketplacePage() {
               <LensCard
                 key={lens.id}
                 lens={lens}
-                onClick={(id) => navigate(`/lenses/${id}`)}
               />
             ))}
           </div>

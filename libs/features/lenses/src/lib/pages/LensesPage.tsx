@@ -29,7 +29,7 @@ const OUTPUT_KIND_TABS: { value: OutputKindFilter; label: string; Icon: React.El
 export const LensesPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { hasLenser } = useAuthenticatedLenser()
+  const { lenser, hasLenser } = useAuthenticatedLenser()
   const { user, isAuthenticated } = useAuth()
 
   // URL-synced filters
@@ -97,11 +97,13 @@ export const LensesPage: React.FC = () => {
   }
 
   // React Query Hook
+  // "My Lenses" search scopes by lenser_id, so pass the active LENSER id —
+  // not user.id (auth id), which never matches lenser_id and returned nothing.
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useLensesFeed(
     searchQuery,
     selectedTag,
     sortOrder,
-    user?.id
+    lenser?.id
   )
 
   const lenses = useMemo(() => {
@@ -247,7 +249,6 @@ export const LensesPage: React.FC = () => {
       <LensesGrid
         lenses={lenses}
         isLoading={isLoading}
-        onOpen={(id) => navigate(`/lenses/${id}`)}
       />
 
       {/* Intersection Anchor & Loader */}

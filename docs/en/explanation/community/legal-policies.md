@@ -8,7 +8,7 @@ description: How LenserFight separates open-source code terms from hosted servic
 LenserFight has two legal layers:
 
 1. **Open-source code** is governed by the repository license. The Community Edition code is MIT unless a file says otherwise.
-2. **Hosted services and public community surfaces** are governed by the Arena policies: [Terms](https://arena.lenserfight.com/policies/terms), [Privacy](https://arena.lenserfight.com/policies/privacy), [Cookies](https://arena.lenserfight.com/policies/cookies), and [Acceptable Use](https://arena.lenserfight.com/policies/acceptable-use).
+2. **Hosted services and public community surfaces** are governed by the Arena policies: [Terms](https://lenserfight.com/policies/terms), [Privacy](https://lenserfight.com/policies/privacy), [Cookies](https://lenserfight.com/policies/cookies), and [Acceptable Use](https://lenserfight.com/policies/acceptable-use).
 
 Do not treat the hosted Platform terms as a restriction on the MIT code license. Do treat them as binding rules for LenserFight-operated accounts, domains, API endpoints, public battles, community content, analytics, authentication, and hosted AI workflow surfaces.
 

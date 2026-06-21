@@ -133,14 +133,4 @@
     <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/lenserboard?lang=tr" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/lenserboard" />
   </url>
-
-  <!-- Welcome / public landing -->
-  <url>
-    <loc>https://moon.lenserfight.com/welcome</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/welcome" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/welcome?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/welcome" />
-  </url>
 </urlset>

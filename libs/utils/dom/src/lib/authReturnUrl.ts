@@ -3,7 +3,6 @@ import { ARENA_BASE_URL, AUTH_BASE_URL, WEB_BASE_URL } from '@lenserfight/utils/
 const PROD_ORIGINS = [
   WEB_BASE_URL,
   ARENA_BASE_URL,
-  'https://arena.lenserfight.com',
   'https://admin.lenserfight.com',
 ]
 

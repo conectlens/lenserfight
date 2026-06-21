@@ -2,6 +2,7 @@ import { Lock, Copy, Pencil, Trash2, ImageIcon, Video, Music, Mic, Play } from '
 import React, { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { LocaleLink } from '@lenserfight/shared/i18n-routing'
 import { Avatar } from '@lenserfight/ui/components'
 import { LensViewModel } from '@lenserfight/types'
 import { formatCount } from '@lenserfight/utils/number'
@@ -35,34 +36,36 @@ function OutputKindBadge({ kind }: { kind: OutputKind }) {
 
 interface LensCardProps {
   lens: LensViewModel
-  onClick: (id: string) => void
   isOwner?: boolean
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
 }
 
 export const LensCard: React.FC<LensCardProps> = memo(
-  ({ lens, onClick, isOwner, onEdit, onDelete }) => {
+  ({ lens, isOwner, onEdit, onDelete }) => {
     const navigate = useNavigate()
 
     const handleUserClick = (e: React.MouseEvent) => {
+      e.preventDefault()
       e.stopPropagation()
       navigate(`/lenser/${lens.author.handle}`)
     }
 
     const handleEdit = (e: React.MouseEvent) => {
+      e.preventDefault()
       e.stopPropagation()
       if (onEdit) onEdit(lens.id)
     }
 
     const handleDelete = (e: React.MouseEvent) => {
+      e.preventDefault()
       e.stopPropagation()
       if (onDelete) onDelete(lens.id)
     }
 
     return (
-      <div
-        onClick={() => onClick(lens.id)}
+      <LocaleLink
+        to={`/lenses/${lens.id}`}
         className="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/40 cursor-pointer overflow-hidden h-full"
       >
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-100 dark:bg-gray-700 group-hover:bg-primary transition-colors duration-300" />
@@ -110,6 +113,7 @@ export const LensCard: React.FC<LensCardProps> = memo(
             <span
               key={tag.id}
               onClick={(e) => {
+                e.preventDefault()
                 e.stopPropagation()
                 navigate(`/ray/${tag.slug}`)
               }}
@@ -159,7 +163,7 @@ export const LensCard: React.FC<LensCardProps> = memo(
             </div>
           </div>
         </div>
-      </div>
+      </LocaleLink>
     )
   }
 )

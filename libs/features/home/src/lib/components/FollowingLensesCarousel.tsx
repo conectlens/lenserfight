@@ -2,7 +2,6 @@ import { LensCard } from '@lenserfight/features/lenses'
 import { EmptyState } from '@lenserfight/ui/components'
 import { Sparkles } from 'lucide-react'
 import React, { useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import { useFollowingPrompts } from '../useThreads'
 
@@ -11,7 +10,6 @@ interface FollowingLensesCarouselProps {
 }
 
 export const FollowingLensesCarousel: React.FC<FollowingLensesCarouselProps> = ({ lenserId }) => {
-  const navigate = useNavigate()
   const {
     data,
     isLoading,
@@ -79,7 +77,7 @@ export const FollowingLensesCarousel: React.FC<FollowingLensesCarouselProps> = (
           className="flex-shrink-0 w-64"
           style={{ scrollSnapAlign: 'start' }}
         >
-          <LensCard lens={lens} onClick={(id) => navigate(`/lenses/${id}`)} />
+          <LensCard lens={lens} />
         </div>
       ))}
 

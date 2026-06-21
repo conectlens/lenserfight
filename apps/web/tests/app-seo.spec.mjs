@@ -17,7 +17,7 @@ describe('web app SEO prerender metadata', () => {
     expect(app.routes.map((route) => route.path)).toContain('/lenses')
     expect(app.routes.map((route) => route.path)).toContain('/battles/templates')
     expect(urls.length).toBe(new Set(urls).size)
-    expect(urls).toContain('https://lenserfight.com/lensers')
+    expect(urls).toContain('https://moon.lenserfight.com/lensers')
     expect(sitemap).not.toContain('/len/p')
   })
 
@@ -28,7 +28,7 @@ describe('web app SEO prerender metadata', () => {
     expect(robots).toContain('Disallow: /settings/')
     expect(robots).toContain('Disallow: /threads/compose')
     expect(robots).toContain('User-agent: GPTBot')
-    expect(robots).toContain('Sitemap: https://lenserfight.com/sitemap.xml')
+    expect(robots).toContain('Sitemap: https://moon.lenserfight.com/sitemap.xml')
   })
 
   it('injects crawlable HTML, canonical tags, OpenGraph, and JSON-LD into route shells', () => {
@@ -39,7 +39,7 @@ describe('web app SEO prerender metadata', () => {
     )
 
     expect(html).toContain('<title>AI Prompt & Lens Templates | Prompt Workflows and Automation Patterns</title>')
-    expect(html).toContain('<link rel="canonical" href="https://lenserfight.com/lenses" />')
+    expect(html).toContain('<link rel="canonical" href="https://moon.lenserfight.com/lenses" />')
     expect(html).toContain('<meta property="og:title"')
     expect(html).toContain('<script type="application/ld+json">')
     expect(html).toContain('<main id="seo-prerender"')
@@ -54,6 +54,6 @@ describe('web app SEO prerender metadata', () => {
     expect(lens.title).toContain('Github Review Workflow')
     expect(lens.jsonLd['@type']).toBe('CreativeWork')
     expect(lenser.title).toContain('Public Lenser Profile')
-    expect(battle.canonicalUrl).toBe('https://lenserfight.com/battles/gpt-code-review-final/result')
+    expect(battle.canonicalUrl).toBe('https://moon.lenserfight.com/battles/gpt-code-review-final/result')
   })
 })

@@ -8,7 +8,7 @@ description: LenserFight'ın açık kaynak kod şartlarını barındırılan hiz
 LenserFight iki hukuki katmanla çalışır:
 
 1. **Açık kaynak kod** depo lisansı ile yönetilir. Aksi bir dosyada belirtilmedikçe Community Edition kodu MIT kapsamındadır.
-2. **Barındırılan hizmetler ve herkese açık topluluk yüzeyleri** Arena politikalarıyla yönetilir: [Kullanım Şartları](https://arena.lenserfight.com/policies/terms), [Gizlilik](https://arena.lenserfight.com/policies/privacy), [Çerezler](https://arena.lenserfight.com/policies/cookies) ve [Kabul Edilebilir Kullanım](https://arena.lenserfight.com/policies/acceptable-use).
+2. **Barındırılan hizmetler ve herkese açık topluluk yüzeyleri** Arena politikalarıyla yönetilir: [Kullanım Şartları](https://lenserfight.com/policies/terms), [Gizlilik](https://lenserfight.com/policies/privacy), [Çerezler](https://lenserfight.com/policies/cookies) ve [Kabul Edilebilir Kullanım](https://lenserfight.com/policies/acceptable-use).
 
 Barındırılan Platform şartlarını MIT kod lisansını kısıtlayan bir metin gibi yorumlamayın. Ancak LenserFight tarafından işletilen hesaplar, alan adları, API uçları, herkese açık savaşlar, topluluk içerikleri, analitik, kimlik doğrulama ve barındırılan AI iş akışı yüzeyleri için bu şartların bağlayıcı olduğunu kabul edin.
 
