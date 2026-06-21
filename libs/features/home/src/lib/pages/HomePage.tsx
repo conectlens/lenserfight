@@ -18,6 +18,7 @@ import {
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { useLenser } from '@lenserfight/features/profile/useLenser'
 import { CreateThreadModal } from '@lenserfight/features/threads'
+import { LocaleLink } from '@lenserfight/shared/i18n-routing'
 import { Avatar, Button, Card, EmptyState, HelpButton, TagBadge } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
@@ -419,10 +420,10 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
                 </div>
               ) : (
                 sidebarPrompts.map((prompt) => (
-                  <div
+                  <LocaleLink
                     key={prompt.id}
-                    onClick={() => navigate(`/lenses/${prompt.id}`)}
-                    className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors"
+                    to={`/lenses/${prompt.id}`}
+                    className="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors"
                   >
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
                       {prompt.title}
@@ -432,7 +433,7 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
                         {(prompt as { usageCount: number }).usageCount} uses
                       </p>
                     )}
-                  </div>
+                  </LocaleLink>
                 ))
               )}
             </div>
@@ -458,9 +459,9 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
                   const isFollowed = followedLenserIds.has(user.lenserId)
                   return (
                     <div key={user.lenserId} className="flex items-center gap-2">
-                      <div
+                      <LocaleLink
+                        to={`/lenser/${user.handle}`}
                         className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer p-1 -mx-1 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
-                        onClick={() => navigate(`/lenser/${user.handle}`)}
                       >
                         <Avatar
                           src={user.avatarUrl}
@@ -476,7 +477,7 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
                             @{user.handle}
                           </p>
                         </div>
-                      </div>
+                      </LocaleLink>
                       <button
                         onClick={() => {
                           if (isFollowed) {
@@ -511,10 +512,10 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
             ) : (
               <div className="space-y-4">
                 {latestLensers?.map((user) => (
-                  <div
+                  <LocaleLink
                     key={user.handle}
+                    to={`/lenser/${user.handle}`}
                     className="flex items-center gap-3 group cursor-pointer p-2 -mx-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
-                    onClick={() => navigate(`/lenser/${user.handle}`)}
                   >
                     <div className="flex-shrink-0">
                       <Avatar
@@ -538,7 +539,7 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
                       size={16}
                       className="text-gray-300 dark:text-gray-600 group-hover:text-primary transition-colors"
                     />
-                  </div>
+                  </LocaleLink>
                 ))}
               </div>
             )}
@@ -562,10 +563,12 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
                   const isFollowed = followedTagSlugs.has(tag.slug)
                   return (
                     <div key={tag.slug} className="flex items-center gap-0.5 group">
-                      <TagBadge
-                        label={tag.name}
-                        onClick={() => navigate(`/ray/${tag.slug.toLowerCase()}`)}
-                      />
+                      <LocaleLink to={`/ray/${tag.slug.toLowerCase()}`}>
+                        <TagBadge
+                          label={tag.name}
+                          className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white transition-colors"
+                        />
+                      </LocaleLink>
                       {showForYou && (
                         <button
                           onClick={(e) => {

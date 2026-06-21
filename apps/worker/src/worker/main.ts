@@ -4,9 +4,11 @@ import { byokKeyResolver } from '@lenserfight/providers'
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { PLATFORM_API_WORKER_INTERVAL_MS, PLATFORM_API_WORKER_ONCE } from '@lenserfight/utils/env'
 import { createServiceSupabaseClient } from '../lib/supabase'
+import { timeoutSignal } from '../lib/timeout'
 import { processNextBattleJob } from './battle-worker'
 import { processNextScheduledWorkflow } from './scheduled-workflow-worker'
 import { processNextTeamRun } from './team-run-worker'
+import { recoverNextStaleWorkflow } from './workflow-recovery-worker'
 import { startVoteAnomalyWorker } from './vote-anomaly-worker'
 import { startBattleAutoPromoteWorker } from './battle-auto-promote-worker'
 import { startBattleFinalizeWorker } from './battle-finalize-worker'
@@ -28,6 +30,12 @@ const _healthServer = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ready: _workerReady }))
   }
   if (req.url === '/health') {
+    // M5: /health touches the DB — require the health token even when other
+    // routes are open, so an unauthenticated caller cannot probe internals.
+    if (!HEALTH_TOKEN) {
+      res.writeHead(403, { 'Content-Type': 'application/json' })
+      return res.end(JSON.stringify({ error: 'health endpoint requires WORKER_HEALTH_TOKEN' }))
+    }
     try {
       const { data } = await createServiceSupabaseClient().rpc('fn_admin_health')
       res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -127,6 +135,8 @@ export async function processNextQueuedRun(): Promise<boolean> {
       apiKey,
       claimedRun.model_key,
       [{ role: 'user', content: renderedPrompt as string }],
+      undefined,
+      timeoutSignal(),
     )
 
     const latencyMs = Date.now() - startedAt
@@ -186,117 +196,143 @@ export async function processNextQueuedRun(): Promise<boolean> {
   }
 }
 
+/**
+ * C2: each job type runs its own independent poll loop so a slow job type
+ * (a long workflow run, a stuck provider call) cannot block the others. Each
+ * loop processes one item, then immediately re-polls when it found work, or
+ * backs off by `intervalMs` (+ jitter) when the queue was empty. Stops when the
+ * shutdown signal aborts.
+ */
+function startPollLoop(
+  name: string,
+  processFn: (signal: AbortSignal) => Promise<boolean>,
+  intervalMs: number,
+  signal: AbortSignal,
+): Promise<void> {
+  return new Promise<void>((resolve) => {
+    let stopped = false
+    const stop = () => { if (!stopped) { stopped = true; resolve() } }
+    signal.addEventListener('abort', stop, { once: true })
+
+    const tick = async () => {
+      if (stopped || signal.aborted) return stop()
+      let processed = false
+      try {
+        processed = await processFn(signal)
+      } catch (err) {
+        nodeLogger.error(`${name}: tick error`, { message: err instanceof Error ? err.message : String(err) })
+      }
+      if (stopped || signal.aborted) return stop()
+      const delay = processed ? 0 : intervalMs + Math.floor(Math.random() * 500)
+      setTimeout(() => { void tick() }, delay)
+    }
+    void tick()
+  })
+}
+
 async function runLoop(): Promise<void> {
   const intervalMs = PLATFORM_API_WORKER_INTERVAL_MS()
   const once = PLATFORM_API_WORKER_ONCE()
   const battleWorkerEnabled = process.env['PLATFORM_API_BATTLE_WORKER_ENABLED'] === 'true'
   const scheduledWorkflowWorkerEnabled = process.env['PLATFORM_API_SCHEDULED_WORKFLOW_WORKER_ENABLED'] === 'true'
   const teamRunWorkerEnabled = process.env['PLATFORM_API_TEAM_RUN_WORKER_ENABLED'] === 'true'
+  const workflowRecoveryEnabled = process.env['PLATFORM_API_WORKFLOW_RECOVERY_ENABLED'] !== 'false'
 
-  // CA: Start vote anomaly realtime subscriber
-  const voteAnomalyWorkerEnabled = process.env['PLATFORM_API_VOTE_ANOMALY_WORKER_ENABLED'] !== 'false'
-  let stopVoteAnomalyWorker: (() => void) | undefined
-  if (voteAnomalyWorkerEnabled && !once) {
-    stopVoteAnomalyWorker = startVoteAnomalyWorker()
-  }
-
-  // CB: Start battle auto-promote poller
-  const autoPromoteWorkerEnabled = process.env['PLATFORM_API_AUTO_PROMOTE_WORKER_ENABLED'] !== 'false'
-  let stopAutoPromoteWorker: (() => void) | undefined
-  if (autoPromoteWorkerEnabled && !once) {
-    stopAutoPromoteWorker = startBattleAutoPromoteWorker()
-  }
-
-  // CB: Start battle finalize poller (scoring -> closed, winner selection)
-  const finalizeWorkerEnabled = process.env['PLATFORM_API_BATTLE_FINALIZE_WORKER_ENABLED'] !== 'false'
-  let stopFinalizeWorker: (() => void) | undefined
-  if (finalizeWorkerEnabled && !once) {
-    stopFinalizeWorker = startBattleFinalizeWorker()
-  }
-
-  // CB: Start webhook drain worker
-  const webhookDrainEnabled = process.env['PLATFORM_API_WEBHOOK_DRAIN_ENABLED'] !== 'false'
-  let stopWebhookDrain: (() => void) | undefined
-  if (webhookDrainEnabled && !once) {
-    stopWebhookDrain = startWebhookDrainWorker()
-  }
-
-  // CD: Start workflow event dispatcher
-  const workflowDispatchEnabled = process.env['PLATFORM_API_WORKFLOW_DISPATCH_ENABLED'] !== 'false'
-  let stopWorkflowDispatch: (() => void) | undefined
-  if (workflowDispatchEnabled && !once) {
-    stopWorkflowDispatch = startWorkflowEventDispatcher()
-  }
-
-  // CE: Start async media poll worker
-  const asyncMediaPollEnabled = process.env['PLATFORM_API_ASYNC_MEDIA_POLL_ENABLED'] !== 'false'
-  let stopAsyncMediaPollWorker: (() => void) | undefined
-  if (asyncMediaPollEnabled && !once) {
-    const ASYNC_MEDIA_POLL_INTERVAL_MS = parseInt(process.env['ASYNC_MEDIA_POLL_INTERVAL_MS'] ?? '15000', 10)
-    async function asyncMediaPollTick() {
-      try {
-        await pollAsyncMediaBatch()
-      } catch (err) {
-        nodeLogger.error('async-media-poll-worker: cycle error', {
-          message: err instanceof Error ? err.message : String(err),
-        })
-      }
-    }
-    asyncMediaPollTick().catch(() => undefined)
-    const asyncMediaPollTimer = setInterval(() => { asyncMediaPollTick().catch(() => undefined) }, ASYNC_MEDIA_POLL_INTERVAL_MS)
-    nodeLogger.info('async-media-poll-worker: started', { intervalMs: ASYNC_MEDIA_POLL_INTERVAL_MS })
-    stopAsyncMediaPollWorker = () => { clearInterval(asyncMediaPollTimer) }
-  }
-
-  // Start heartbeat timer (independent of main loop)
-  let heartbeatTimer: ReturnType<typeof setInterval> | undefined
-  if (!once) {
-    heartbeatTimer = setInterval(emitHeartbeat, HEARTBEAT_INTERVAL_MS)
-    await emitHeartbeat()
-  }
-
-  _workerReady = true
-
-  do {
+  // ── once mode: run each enabled processor a single time and return ──────────
+  if (once) {
     const results = await Promise.allSettled([
       processNextQueuedRun(),
       battleWorkerEnabled ? processNextBattleJob() : Promise.resolve(false),
       scheduledWorkflowWorkerEnabled ? processNextScheduledWorkflow() : Promise.resolve(false),
       teamRunWorkerEnabled ? processNextTeamRun() : Promise.resolve(false),
     ])
-
-    const processed = results.some((r) => r.status === 'fulfilled' && r.value === true)
-
     for (const r of results) {
-      if (r.status === 'rejected') {
-        nodeLogger.error('worker tick error', { message: String(r.reason) })
+      if (r.status === 'rejected') nodeLogger.error('worker once tick error', { message: String(r.reason) })
+    }
+    _healthServer.close()
+    return
+  }
+
+  // ── long-running mode: independent loops + background pollers ───────────────
+  const shutdown = new AbortController()
+
+  const stoppers: Array<() => void> = []
+  const register = (enabled: boolean, start: () => (() => void) | void) => {
+    if (!enabled) return
+    const stop = start()
+    if (stop) stoppers.push(stop)
+  }
+
+  register(process.env['PLATFORM_API_VOTE_ANOMALY_WORKER_ENABLED'] !== 'false', startVoteAnomalyWorker)
+  register(process.env['PLATFORM_API_AUTO_PROMOTE_WORKER_ENABLED'] !== 'false', startBattleAutoPromoteWorker)
+  register(process.env['PLATFORM_API_BATTLE_FINALIZE_WORKER_ENABLED'] !== 'false', startBattleFinalizeWorker)
+  register(process.env['PLATFORM_API_WEBHOOK_DRAIN_ENABLED'] !== 'false', startWebhookDrainWorker)
+  register(process.env['PLATFORM_API_WORKFLOW_DISPATCH_ENABLED'] !== 'false', startWorkflowEventDispatcher)
+
+  // Async media poller (interval based)
+  if (process.env['PLATFORM_API_ASYNC_MEDIA_POLL_ENABLED'] !== 'false') {
+    const ASYNC_MEDIA_POLL_INTERVAL_MS = parseInt(process.env['ASYNC_MEDIA_POLL_INTERVAL_MS'] ?? '15000', 10)
+    const asyncMediaPollTick = async () => {
+      try { await pollAsyncMediaBatch() } catch (err) {
+        nodeLogger.error('async-media-poll-worker: cycle error', { message: err instanceof Error ? err.message : String(err) })
       }
     }
+    void asyncMediaPollTick()
+    const timer = setInterval(() => { void asyncMediaPollTick() }, ASYNC_MEDIA_POLL_INTERVAL_MS)
+    nodeLogger.info('async-media-poll-worker: started', { intervalMs: ASYNC_MEDIA_POLL_INTERVAL_MS })
+    stoppers.push(() => clearInterval(timer))
+  }
 
-    if (!processed && once) break
-    if (once) break
-    // Z10: add ±0–500 ms jitter so multiple worker pods don't pound the DB
-    // in lock-step when the queue is empty.
-    if (!processed) {
-      const jitter = Math.floor(Math.random() * 500)
-      await new Promise((resolve) => setTimeout(resolve, intervalMs + jitter))
-    }
-  } while (true)
+  // Worker-level heartbeat (independent of the job loops)
+  const heartbeatTimer = setInterval(emitHeartbeat, HEARTBEAT_INTERVAL_MS)
+  await emitHeartbeat()
+  stoppers.push(() => clearInterval(heartbeatTimer))
 
+  _workerReady = true
+
+  // Independent per-job-type loops. recoverNextStaleWorkflow runs at a relaxed
+  // cadence (it only acts on genuinely stale runs).
+  const loops: Array<Promise<void>> = [
+    startPollLoop('queued-run', () => processNextQueuedRun(), intervalMs, shutdown.signal),
+  ]
+  if (battleWorkerEnabled) loops.push(startPollLoop('battle', () => processNextBattleJob(), intervalMs, shutdown.signal))
+  if (scheduledWorkflowWorkerEnabled) loops.push(startPollLoop('scheduled-workflow', (s) => processNextScheduledWorkflow(s), intervalMs, shutdown.signal))
+  if (teamRunWorkerEnabled) loops.push(startPollLoop('team-run', (s) => processNextTeamRun(s), intervalMs, shutdown.signal))
+  if (workflowRecoveryEnabled) loops.push(startPollLoop('workflow-recovery', (s) => recoverNextStaleWorkflow(s), Math.max(intervalMs, 30_000), shutdown.signal))
+
+  // C4: graceful drain. On SIGTERM/SIGINT, stop accepting work, let in-flight
+  // ticks settle, then exit cleanly.
+  const onSignal = (sig: string) => {
+    nodeLogger.info('worker received shutdown signal', { signal: sig })
+    _workerReady = false
+    shutdown.abort()
+  }
+  process.once('SIGTERM', () => onSignal('SIGTERM'))
+  process.once('SIGINT', () => onSignal('SIGINT'))
+
+  await Promise.all(loops)
+
+  // Cleanup
   _workerReady = false
+  for (const stop of stoppers) {
+    try { stop() } catch { /* ignore */ }
+  }
   _healthServer.close()
-  if (heartbeatTimer) clearInterval(heartbeatTimer)
-  if (stopVoteAnomalyWorker) stopVoteAnomalyWorker()
-  if (stopAutoPromoteWorker) stopAutoPromoteWorker()
-  if (stopFinalizeWorker) stopFinalizeWorker()
-  if (stopWebhookDrain) stopWebhookDrain()
-  if (stopWorkflowDispatch) stopWorkflowDispatch()
-  if (stopAsyncMediaPollWorker) stopAsyncMediaPollWorker()
+  nodeLogger.info('worker drained — exiting')
 }
 
-runLoop().catch((error) => {
-  nodeLogger.error('worker loop crashed', {
-    message: error instanceof Error ? error.message : String(error),
+runLoop()
+  .then(() => {
+    // Normal completion (once mode or graceful drain).
+    process.exit(0)
   })
-  process.exitCode = 1
-})
+  .catch((error) => {
+    // C4: a crashed main loop must NOT leave a zombie process that still
+    // heartbeats and reports ready. Reset readiness and exit non-zero so the
+    // orchestrator restarts the pod.
+    _workerReady = false
+    nodeLogger.error('worker loop crashed', {
+      message: error instanceof Error ? error.message : String(error),
+    })
+    process.exit(1)
+  })

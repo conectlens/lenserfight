@@ -8,10 +8,9 @@ import { LensCard } from './LensCard'
 interface LensesGridProps {
   lenses: LensViewModel[]
   isLoading: boolean
-  onOpen: (id: string) => void
 }
 
-export const LensesGrid: React.FC<LensesGridProps> = ({ lenses, isLoading, onOpen }) => {
+export const LensesGrid: React.FC<LensesGridProps> = ({ lenses, isLoading }) => {
   if (isLoading) {
     return (
       <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6">
@@ -61,7 +60,7 @@ export const LensesGrid: React.FC<LensesGridProps> = ({ lenses, isLoading, onOpe
     <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6">
       {lenses.map((lens) => (
         <div key={lens.id} className="break-inside-avoid mb-6">
-          <LensCard lens={lens} onClick={onOpen} />
+          <LensCard lens={lens} />
         </div>
       ))}
     </div>

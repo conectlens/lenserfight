@@ -1,43 +1,19 @@
+// team-run-worker (C3).
+//
+// Claims queued agent team runs (agents.fn_start_team_run with policy='auto',
+// or rows flipped to 'queued' after an approval) and ACTUALLY EXECUTES the
+// agent's workflow. Previously this was a Phase-AL stub that marked every run
+// 'completed' without running anything — agents reported success while doing
+// no work. Execution now flows through the shared workflow executor:
+//
+//   claim team_run → create linked workflow_run (fn_worker_create_team_run_workflow_run)
+//   → executeWorkflowRun (heartbeated, timed-out) → write back terminal status.
+
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { createServiceSupabaseClient } from '../lib/supabase'
-
-// Phase AL — team-run-worker.
-//
-// Polls agents.fn_claim_team_run for queued team runs spawned via
-// `delegate_to_agent` workflow nodes (i.e. agents.fn_start_team_run with
-// p_policy='auto' or after an approval flips the row to status='queued'),
-// runs the underlying workflow, and writes the terminal status back to
-// agents.team_runs.
-//
-// The actual workflow execution is delegated to the existing
-// `processNextScheduledWorkflow` machinery once a `lenses.workflow_runs`
-// row has been created via lenses.fn_dispatch_runtime_team_run (a follow-up
-// migration) — for AL we keep the worker thin: claim → mark complete with
-// the dispatched workflow id captured in metadata. This is enough to make
-// the AL gate pass (forbidden raises before INSERT, approval_required
-// creates pending row, auto creates a runnable row) while AM expands the
-// actual execution path.
+import { executeWorkflowRun, withRetry } from './run-workflow-graph'
 
 const WORKER_ID = process.env['TEAM_RUN_WORKER_ID'] ?? `team-run-worker-${process.pid}`
-
-// Z10: retry for transient Supabase RPC/network errors on non-claim operations.
-async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
-  let lastErr: unknown
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await fn()
-    } catch (err) {
-      const msg = (err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err)).toLowerCase()
-      const transient =
-        msg.includes('network') || msg.includes('timeout') || msg.includes('connection') ||
-        msg.includes('econnreset') || msg.includes('fetch failed') || msg.includes('socket hang up')
-      if (!transient || attempt === maxAttempts) throw err
-      lastErr = err
-      await new Promise<void>((r) => setTimeout(r, Math.min(30_000, 500 * Math.pow(2, attempt))))
-    }
-  }
-  throw lastErr
-}
 
 interface ClaimedTeamRun {
   id: string
@@ -47,11 +23,40 @@ interface ClaimedTeamRun {
   metadata: Record<string, unknown>
 }
 
-export async function processNextTeamRun(): Promise<boolean> {
+interface TeamRunDispatch {
+  run_id: string
+  workflow_id: string
+  context_inputs: Record<string, unknown>
+  global_model_id: string | null
+  ai_lenser_id: string | null
+}
+
+async function updateTeamRunStatus(
+  serviceClient: ReturnType<typeof createServiceSupabaseClient>,
+  teamRunId: string,
+  status: 'completed' | 'failed',
+  errorMessage: string | null,
+): Promise<void> {
+  await withRetry(async () => {
+    const { error } = await serviceClient.rpc('fn_worker_finalize_team_run', {
+      p_team_run_id: teamRunId,
+      p_status: status,
+      p_error_message: errorMessage,
+    })
+    if (error) throw error
+  }).catch((statusErr) => {
+    nodeLogger.error('could not write team run status', {
+      teamRunId,
+      status,
+      message: statusErr instanceof Error ? statusErr.message : String(statusErr),
+    })
+  })
+}
+
+export async function processNextTeamRun(signal?: AbortSignal): Promise<boolean> {
   const serviceClient = createServiceSupabaseClient()
 
   const { data, error } = await serviceClient.rpc('fn_worker_claim_team_run')
-
   if (error) {
     nodeLogger.error('team-run-worker claim failed', { workerId: WORKER_ID, message: error.message })
     throw error
@@ -68,46 +73,74 @@ export async function processNextTeamRun(): Promise<boolean> {
     workflowId: claimed.workflow_id,
   })
 
-  try {
-    // Phase AL: when a workflow_run has not yet been created (i.e. no FK on
-    // workflow_run_id) we mark this team_run as 'completed' with a metadata
-    // marker so the realtime UI can confirm dispatch succeeded. The full
-    // child workflow execution path lands alongside AP's modality-aware
-    // engine — for AL we exercise the dispatch contract end-to-end without
-    // duplicating the engine.
-    await withRetry(async () => {
-      const { error: updateError } = await serviceClient.rpc('fn_worker_update_team_run_status', {
-        p_team_run_id: claimed.id,
-        p_status: 'completed',
-        p_error_message: null,
-      })
-      if (updateError) throw updateError
-    })
-
-    return true
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    nodeLogger.error('team-run-worker run failed', {
-      workerId: WORKER_ID,
-      teamRunId: claimed.id,
-      message,
-    })
-
-    await withRetry(async () => {
-      await serviceClient.rpc('fn_worker_update_team_run_status', {
-        p_team_run_id: claimed.id,
-        p_status: 'failed',
-        p_error_message: message,
-      })
-    }).catch((statusErr) => {
-      nodeLogger.error('could not write failed status for team run', {
-        teamRunId: claimed.id,
-        message: statusErr instanceof Error ? statusErr.message : String(statusErr),
-      })
-    })
-
+  // A team run with no workflow has nothing to execute — treat as a successful
+  // no-op so the row reaches a terminal state instead of looping.
+  if (!claimed.workflow_id) {
+    nodeLogger.warn('team run has no workflow_id — marking completed (no-op)', { teamRunId: claimed.id })
+    await updateTeamRunStatus(serviceClient, claimed.id, 'completed', null)
     return true
   }
+
+  // Create (or reuse) the linked workflow_run. The RPC inserts a workflow_runs
+  // row, links team_runs.workflow_run_id, stamps run_worker_id + heartbeat_at,
+  // and returns the execution context.
+  let dispatch: TeamRunDispatch | undefined
+  try {
+    const { data: dispatchData, error: dispatchError } = await serviceClient.rpc(
+      'fn_worker_create_team_run_workflow_run',
+      { p_team_run_id: claimed.id, p_worker_id: WORKER_ID },
+    )
+    if (dispatchError) throw dispatchError
+    dispatch = (Array.isArray(dispatchData) ? dispatchData[0] : dispatchData) as TeamRunDispatch | undefined
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    nodeLogger.error('team-run-worker dispatch creation failed', { teamRunId: claimed.id, message })
+    await updateTeamRunStatus(serviceClient, claimed.id, 'failed', message)
+    return true
+  }
+
+  if (!dispatch?.run_id) {
+    const message = 'fn_worker_create_team_run_workflow_run returned no run'
+    nodeLogger.error(message, { teamRunId: claimed.id })
+    await updateTeamRunStatus(serviceClient, claimed.id, 'failed', message)
+    return true
+  }
+
+  let finalStatus: 'completed' | 'failed' = 'failed'
+  let runError: string | null = null
+  try {
+    finalStatus = await executeWorkflowRun(
+      serviceClient,
+      {
+        runId: dispatch.run_id,
+        workflowId: dispatch.workflow_id,
+        contextInputs: dispatch.context_inputs ?? {},
+        globalModelId: dispatch.global_model_id,
+        aiLenserId: dispatch.ai_lenser_id ?? claimed.ai_lenser_id,
+      },
+      { workerId: WORKER_ID, signal },
+    )
+  } catch (err) {
+    runError = err instanceof Error ? err.message : String(err)
+    nodeLogger.error('team-run-worker execution failed', { teamRunId: claimed.id, runId: dispatch.run_id, message: runError })
+    finalStatus = 'failed'
+  }
+
+  // Write the child workflow_run terminal status, then the team_run status.
+  await withRetry(async () => {
+    await serviceClient.rpc('fn_worker_set_workflow_run_status', { p_run_id: dispatch!.run_id, p_status: finalStatus })
+  }).catch(() => undefined)
+
+  await updateTeamRunStatus(serviceClient, claimed.id, finalStatus, finalStatus === 'failed' ? runError : null)
+
+  nodeLogger.info('team-run-worker finished', {
+    workerId: WORKER_ID,
+    teamRunId: claimed.id,
+    runId: dispatch.run_id,
+    status: finalStatus,
+    durationMs: Date.now() - startedAt,
+  })
+  return true
 }
 
 export const TeamRunWorker = {

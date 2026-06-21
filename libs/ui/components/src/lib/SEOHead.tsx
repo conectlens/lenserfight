@@ -65,9 +65,30 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle, tit
   const rawCanonicalUrl =
     meta.url ??
     (typeof window !== 'undefined' ? window.location.origin + window.location.pathname : FORUM_HOST)
-  const canonicalUrl = rawCanonicalUrl.replace(/[?#].*$/, '').replace(/\/+$/, '') || rawCanonicalUrl
+  // Clean URL: strip query/hash + trailing slash. This is the en / x-default target.
+  const cleanUrl = rawCanonicalUrl.replace(/[?#].*$/, '').replace(/\/+$/, '') || rawCanonicalUrl
+  const trUrl = `${cleanUrl}?lang=tr`
+
+  // Active locale comes from the live ?lang param (web keeps a query-based scheme).
+  const activeLang =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('lang') : null
+  // Self-referential canonical: the TR page canonicals to itself (preserve ?lang=tr)
+  // instead of collapsing onto the English clean URL; every other param is stripped.
+  const canonicalUrl = activeLang === 'tr' ? trUrl : cleanUrl
+
   const path = typeof window !== 'undefined' ? window.location.pathname : ''
-  const shouldIndex = meta.index ?? !PRIVATE_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
+  const search = typeof window !== 'undefined' ? window.location.search : ''
+  // Search / query-results routes get noindex,follow to avoid indexing thin pages.
+  const isSearchPage = /\/search(\/|$)/.test(path) || /[?&]q=/.test(search)
+  const shouldIndex =
+    meta.index ??
+    (!isSearchPage &&
+      !PRIVATE_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`)))
+  const robotsContent = shouldIndex
+    ? 'index,follow,max-image-preview:large'
+    : isSearchPage
+      ? 'noindex,follow'
+      : 'noindex,nofollow'
 
   const ogImage = meta.ogImage ?? DEFAULT_OG_IMAGE
   const ogType =
@@ -77,10 +98,15 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle, tit
     <Helmet>
       <title>{meta.title}</title>
       <meta name="description" content={meta.description} />
-      <meta name="robots" content={shouldIndex ? 'index,follow,max-image-preview:large' : 'noindex,nofollow'} />
+      <meta name="robots" content={robotsContent} />
 
       {/* Canonical — critical for deduplication across search engines */}
       <link rel="canonical" href={canonicalUrl} />
+
+      {/* hreflang alternates — only on indexable pages. en/x-default = clean URL, tr = ?lang=tr */}
+      {shouldIndex && <link rel="alternate" hrefLang="en" href={cleanUrl} />}
+      {shouldIndex && <link rel="alternate" hrefLang="tr" href={trUrl} />}
+      {shouldIndex && <link rel="alternate" hrefLang="x-default" href={cleanUrl} />}
 
       {/* Open Graph / Social */}
       <meta property="og:title" content={meta.title} />
@@ -101,9 +127,12 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle, tit
       <meta name="twitter:image:alt" content={meta.title} />
       <meta name="twitter:site" content="@lenserfight" />
 
-      {/* JSON-LD structured data — helps Google, Bing, Yandex understand content type */}
+      {/* JSON-LD structured data — helps Google, Bing, Yandex understand content type.
+          Escape </script> via unicode so user-supplied fields (titles, prompts) can't break out. */}
       {meta.jsonLd && (
-        <script type="application/ld+json">{JSON.stringify(meta.jsonLd)}</script>
+        <script type="application/ld+json">
+          {JSON.stringify(meta.jsonLd).replace(/</g, '\\u003c')}
+        </script>
       )}
     </Helmet>
   )

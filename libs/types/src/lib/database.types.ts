@@ -5890,10 +5890,11 @@ export type Database = {
         Args: { p_worker_id: string }
         Returns: {
           ai_lenser_id: string
-          inputs: Json
-          model_id: string
+          context_inputs: Json
+          global_model_id: string
           run_id: string
           schedule_id: string
+          triggered_by: string
           workflow_id: string
         }[]
       }

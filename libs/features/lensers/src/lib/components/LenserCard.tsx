@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { LocaleLink } from '@lenserfight/shared/i18n-routing'
 import { Avatar } from '@lenserfight/ui/components'
 import type { LenserListItem } from '@lenserfight/types'
 
@@ -8,14 +8,9 @@ interface LenserCardProps {
 }
 
 export const LenserCard: React.FC<LenserCardProps> = ({ lenser }) => {
-  const navigate = useNavigate()
-
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => navigate(`/lenser/${lenser.handle}`)}
-      onKeyDown={(e) => e.key === 'Enter' && navigate(`/lenser/${lenser.handle}`)}
+    <LocaleLink
+      to={`/lenser/${lenser.handle}`}
       className="flex flex-col gap-3 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all cursor-pointer"
     >
       <div className="flex items-start gap-3">
@@ -48,6 +43,6 @@ export const LenserCard: React.FC<LenserCardProps> = ({ lenser }) => {
           {(lenser.engagement['followers'] as number).toLocaleString()} followers
         </div>
       )}
-    </div>
+    </LocaleLink>
   )
 }

@@ -264,6 +264,10 @@ export class FileLensesRepository implements LensesRepositoryPort {
     return this.getAll(offset, limit)
   }
 
+  async getMySavedLenses(offset = 0, limit = 12): Promise<ApiResponseEnvelope<LensRecord[]>> {
+    return this.getAll(offset, limit)
+  }
+
   async getLatestVersion(lensId: string): Promise<LensVersion | null> {
     const versions = await this.getVersions(lensId)
     const sorted = versions.sort((a, b) => b.versionNumber - a.versionNumber)

@@ -131,7 +131,11 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   // Search — min 3 chars, fires after debounce (keep as regular query, no infinite scroll)
   const { data: searchData, isLoading: loadingSearch } = useQuery({
     queryKey: ['workflow-palette-search', debouncedSearch, user?.id],
-    queryFn: () => lensesService.search(debouncedSearch, 0, 20, user?.id ?? null),
+    // Search across every lens the viewer may use: their own (any visibility,
+    // via owner-bypass in fn_search_lenses) plus accessible public/community/
+    // followers lenses. Passing user.id (auth id) scoped to lenser_id and matched
+    // nothing. null = no owner scope; the RPC enforces per-viewer visibility.
+    queryFn: () => lensesService.search(debouncedSearch, 0, 20, null),
     enabled: debouncedSearch.length >= 3,
     staleTime: 5000,
   })

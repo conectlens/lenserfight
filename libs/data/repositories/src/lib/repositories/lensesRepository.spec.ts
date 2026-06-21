@@ -138,27 +138,35 @@ describe('SupabaseLensesRepository', () => {
   // search
   // ---------------------------------------------------------------------------
   describe('search', () => {
-    it('queries vw_lenses_public with ilike on title', async () => {
-      chainMethods.range.mockResolvedValue({ data: [], error: null })
-      await repo.search('test')
-      expect(mockFrom).toHaveBeenCalledWith('vw_lenses_public')
-      expect(chainMethods.ilike).toHaveBeenCalledWith('title', '%test%')
-    })
-
-    it('also queries fn_list_my_private_lenses when ownerId provided', async () => {
-      chainMethods.range.mockResolvedValue({ data: [], error: null })
+    it('queries fn_search_lenses with the query, offset, and limit', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null })
-      await repo.search('test', 0, 10, LENSER_ID)
-      expect(mockRpc).toHaveBeenCalledWith('fn_list_my_private_lenses', {
+      await repo.search('test')
+      expect(mockRpc).toHaveBeenCalledWith('fn_search_lenses', {
+        p_query: 'test',
+        p_owner_id: null,
+        p_offset: 0,
         p_limit: 10,
-        p_cursor: null,
       })
     })
 
-    it('does not call fn_list_my_private_lenses when ownerId absent', async () => {
-      chainMethods.range.mockResolvedValue({ data: [], error: null })
+    it('scopes search to the owner when ownerId provided', async () => {
+      mockRpc.mockResolvedValue({ data: [], error: null })
+      await repo.search('test', 0, 10, LENSER_ID)
+      expect(mockRpc).toHaveBeenCalledWith('fn_search_lenses', {
+        p_query: 'test',
+        p_owner_id: LENSER_ID,
+        p_offset: 0,
+        p_limit: 10,
+      })
+    })
+
+    it('passes a null owner scope when ownerId absent', async () => {
+      mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.search('test')
-      expect(mockRpc).not.toHaveBeenCalled()
+      expect(mockRpc).toHaveBeenCalledWith(
+        'fn_search_lenses',
+        expect.objectContaining({ p_owner_id: null })
+      )
     })
 
     it('returns paginatedResponse envelope', async () => {

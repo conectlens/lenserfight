@@ -69,7 +69,7 @@ const ORGANIZATION = {
   sameAs: [
     'https://github.com/conectlens/lenserfight',
     'https://docs.lenserfight.com',
-    'https://arena.lenserfight.com',
+    'https://lenserfight.com',
   ],
 }
 
@@ -110,7 +110,7 @@ const createWebPageSchema = ({ title, description, canonicalUrl, appName, schema
   isPartOf: {
     '@type': 'WebSite',
     name: appName,
-    url: canonicalUrl.startsWith('https://arena.') ? 'https://arena.lenserfight.com' : 'https://lenserfight.com',
+    url: new URL(canonicalUrl).origin,
   },
   publisher: ORGANIZATION,
 })
@@ -734,8 +734,8 @@ const dynamicRoutePatterns = {
 const apps = {
   web: {
     name: 'LenserFight Community',
-    baseUrl: 'https://lenserfight.com',
-    ogImage: 'https://lenserfight.com/og-banner.png',
+    baseUrl: 'https://moon.lenserfight.com',
+    ogImage: 'https://moon.lenserfight.com/og-banner.png',
     routes: webStaticRoutes,
     disallow: [
       '/admin/',

@@ -18,11 +18,14 @@ export interface SEOMetadata {
 }
 
 const SITE_NAME = 'LenserFight'
-const FORUM_HOST = 'https://lenserfight.com'
-const ARENA_HOST = 'https://arena.lenserfight.com'
+/** Host that actually serves community + battle entities (apps/web). */
+const FORUM_HOST = 'https://moon.lenserfight.com'
+/** Apex marketing site (different app) — reserved for genuine cross-links only, not entity canonicals. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const ARENA_HOST = 'https://lenserfight.com'
 const DOCS_HOST = 'https://docs.lenserfight.com'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
-const ARENA_OG_IMAGE = `${ARENA_HOST}/og-banner.png`
+const ARENA_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
 const DEFAULT_TITLE = 'LenserFight Community | AI Lenses, Workflows, Battles, and Lensers'
 const DEFAULT_DESC =
   'Discover public AI Prompt & Lens Templates, workflow patterns, battle results, rays, and Lenser profiles in the open LenserFight community.'
@@ -61,6 +64,19 @@ function slugify(value: string): string {
 
 function compactKeywords(values: Array<string | undefined | null>): string {
   return Array.from(new Set(values.filter(Boolean).map((value) => value!.trim()).filter(Boolean))).join(', ')
+}
+
+/** Build a BreadcrumbList from an ordered Home › … › entity trail. */
+function breadcrumbJsonLd(items: Array<{ name: string; url: string }>) {
+  return {
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  }
 }
 
 function collectionPageJsonLd(name: string, description: string, url: string) {
@@ -117,11 +133,66 @@ export const seoService = {
     const author = prompt.author.displayName
     const uses = prompt.usageCount > 0 ? `Used ${prompt.usageCount} times.` : ''
     const pageUrl = `${FORUM_HOST}/lenses/${prompt.id}`
+    const primaryTag = prompt.tags?.[0]
 
     const desc = clampDescription(
       prompt.description ||
       `Use the "${prompt.title}" AI lens template by ${author}. Built for ${tags}. ${uses} Copy, remix, and connect this lens into LenserFight workflows, battles, and agent runs.`,
     )
+
+    // LikeAction stars live on LensDetailViewModel.reactionCounts (sum of reactions);
+    // LensViewModel feed items don't carry them — guard so we omit gracefully.
+    const reactionCounts = (prompt as LensDetailViewModel).reactionCounts
+    const likeCount = reactionCounts
+      ? Object.values(reactionCounts).reduce((sum, n) => sum + (n ?? 0), 0)
+      : undefined
+    const interactionStatistic = [
+      prompt.usageCount > 0 && {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/UseAction',
+        userInteractionCount: prompt.usageCount,
+      },
+      likeCount && likeCount > 0 && {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/LikeAction',
+        userInteractionCount: likeCount,
+      },
+    ].filter(Boolean)
+
+    const creativeWork = {
+      '@type': 'CreativeWork',
+      headline: prompt.title,
+      name: prompt.title,
+      description: desc,
+      url: pageUrl,
+      author: {
+        '@type': 'Person',
+        name: author,
+        url: `${FORUM_HOST}/lenser/${prompt.author.handle ?? ''}`,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        url: FORUM_HOST,
+      },
+      keywords: compactKeywords([...(prompt.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS]),
+      image: DEFAULT_OG_IMAGE,
+      dateCreated: prompt.createdAt,
+      datePublished: prompt.createdAt,
+      creativeWorkStatus: prompt.status,
+      about: prompt.outputKind ? `AI ${prompt.outputKind} generation workflow` : 'AI workflow template',
+      license: 'https://opensource.org/licenses/MIT',
+      isAccessibleForFree: true,
+      ...(interactionStatistic.length > 0 ? { interactionStatistic } : {}),
+    }
+
+    const breadcrumb = breadcrumbJsonLd([
+      { name: 'Home', url: FORUM_HOST },
+      ...(primaryTag
+        ? [{ name: primaryTag.name, url: `${FORUM_HOST}/ray/${primaryTag.slug || slugify(primaryTag.name)}` }]
+        : [{ name: 'Lenses', url: `${FORUM_HOST}/lenses` }]),
+      { name: prompt.title, url: pageUrl },
+    ])
 
     return {
       title: `${prompt.title} | AI Lens Template by ${author}`,
@@ -130,27 +201,7 @@ export const seoService = {
       ogImage: DEFAULT_OG_IMAGE,
       jsonLd: {
         '@context': 'https://schema.org',
-        '@type': 'CreativeWork',
-        headline: prompt.title,
-        name: prompt.title,
-        description: desc,
-        url: pageUrl,
-        author: {
-          '@type': 'Person',
-          name: author,
-          url: `${FORUM_HOST}/lenser/${prompt.author.handle ?? ''}`,
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: SITE_NAME,
-          url: FORUM_HOST,
-        },
-        keywords: compactKeywords([...(prompt.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS]),
-        image: DEFAULT_OG_IMAGE,
-        dateCreated: prompt.createdAt,
-        creativeWorkStatus: prompt.status,
-        about: prompt.outputKind ? `AI ${prompt.outputKind} generation workflow` : 'AI workflow template',
-        isAccessibleForFree: true,
+        '@graph': [creativeWork, breadcrumb],
       },
     }
   },
@@ -165,14 +216,62 @@ export const seoService = {
       }
 
     const tags = thread.tags?.map((t) => t.name).join(', ')
-    const replyContext = (thread as ThreadDetailViewModel).replies?.length
+    const replyCount =
+      (thread as ThreadDetailViewModel).replies?.length ?? (thread as ThreadFeedItem).replyCount
+    const voteCount =
+      (thread as ThreadDetailViewModel).reactionCount ?? (thread as ThreadFeedItem).reactionCount
+    const replyContext = replyCount
       ? `Join the discussion with ${thread.author.displayName} and community experts.`
       : `Read insights from ${thread.author.displayName}.`
     const pageUrl = `${FORUM_HOST}/threads/${thread.id}`
+    const primaryTag = thread.tags?.[0]
 
     const desc = clampDescription(
       `Community thread: ${thread.title}. ${replyContext} Topics: ${tags || 'AI workflows, lenses, battles, and agents'}.`,
     )
+
+    const interactionStatistic = [
+      typeof voteCount === 'number' && voteCount > 0 && {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/LikeAction',
+        userInteractionCount: voteCount,
+      },
+      typeof replyCount === 'number' && replyCount > 0 && {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/CommentAction',
+        userInteractionCount: replyCount,
+      },
+    ].filter(Boolean)
+
+    const posting = {
+      '@type': 'DiscussionForumPosting',
+      headline: thread.title,
+      description: desc,
+      url: pageUrl,
+      author: {
+        '@type': 'Person',
+        name: thread.author.displayName,
+        url: `${FORUM_HOST}/lenser/${thread.author.handle ?? ''}`,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        url: FORUM_HOST,
+      },
+      keywords: compactKeywords([...(thread.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS]),
+      image: DEFAULT_OG_IMAGE,
+      datePublished: thread.createdAt,
+      isAccessibleForFree: true,
+      ...(interactionStatistic.length > 0 ? { interactionStatistic } : {}),
+    }
+
+    const breadcrumb = breadcrumbJsonLd([
+      { name: 'Home', url: FORUM_HOST },
+      ...(primaryTag
+        ? [{ name: primaryTag.name, url: `${FORUM_HOST}/ray/${primaryTag.slug || slugify(primaryTag.name)}` }]
+        : [{ name: 'Threads', url: `${FORUM_HOST}/` }]),
+      { name: thread.title, url: pageUrl },
+    ])
 
     return {
       title: `${thread.title} | LenserFight Discussion`,
@@ -181,23 +280,7 @@ export const seoService = {
       ogImage: DEFAULT_OG_IMAGE,
       jsonLd: {
         '@context': 'https://schema.org',
-        '@type': 'DiscussionForumPosting',
-        headline: thread.title,
-        description: desc,
-        url: pageUrl,
-        author: {
-          '@type': 'Person',
-          name: thread.author.displayName,
-          url: `${FORUM_HOST}/lenser/${thread.author.handle ?? ''}`,
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: SITE_NAME,
-          url: FORUM_HOST,
-        },
-        keywords: compactKeywords([...(thread.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS]),
-        image: DEFAULT_OG_IMAGE,
-        datePublished: thread.createdAt,
+        '@graph': [posting, breadcrumb],
       },
     }
   },
@@ -220,6 +303,46 @@ export const seoService = {
       `${lenser.display_name} (@${lenser.handle}) on LenserFight: ${role}. ${statText} Discover public AI lenses, workflows, battles, and community contributions.`,
     )
 
+    const person = {
+      '@type': 'Person',
+      name: lenser.display_name,
+      alternateName: `@${lenser.handle}`,
+      description: desc,
+      url: pageUrl,
+      image: lenser.avatar_url ?? DEFAULT_OG_IMAGE,
+      jobTitle: role,
+      sameAs: [pageUrl, ...(lenser.website_url ? [lenser.website_url] : [])],
+      interactionStatistic: stats
+        ? [
+          {
+            '@type': 'InteractionCounter',
+            interactionType: 'https://schema.org/CreateAction',
+            userInteractionCount: stats.promptsCount,
+            name: 'Public lenses',
+          },
+          {
+            '@type': 'InteractionCounter',
+            interactionType: 'https://schema.org/FollowAction',
+            userInteractionCount: stats.followersCount,
+            name: 'Followers',
+          },
+        ]
+        : undefined,
+    }
+
+    const profilePage = {
+      '@type': 'ProfilePage',
+      url: pageUrl,
+      name: `${lenser.display_name} (@${lenser.handle})`,
+      mainEntity: person,
+    }
+
+    const breadcrumb = breadcrumbJsonLd([
+      { name: 'Home', url: FORUM_HOST },
+      { name: 'Lensers', url: `${FORUM_HOST}/lensers` },
+      { name: lenser.display_name, url: pageUrl },
+    ])
+
     return {
       title: `${lenser.display_name} (@${lenser.handle}) | Public Lenser Profile`,
       description: desc,
@@ -227,30 +350,7 @@ export const seoService = {
       ogImage: lenser.avatar_url ?? DEFAULT_OG_IMAGE,
       jsonLd: {
         '@context': 'https://schema.org',
-        '@type': 'Person',
-        name: lenser.display_name,
-        alternateName: `@${lenser.handle}`,
-        description: desc,
-        url: pageUrl,
-        image: lenser.avatar_url ?? DEFAULT_OG_IMAGE,
-        jobTitle: role,
-        sameAs: [pageUrl, ...(lenser.website_url ? [lenser.website_url] : [])],
-        interactionStatistic: stats
-          ? [
-            {
-              '@type': 'InteractionCounter',
-              interactionType: 'https://schema.org/CreateAction',
-              userInteractionCount: stats.promptsCount,
-              name: 'Public lenses',
-            },
-            {
-              '@type': 'InteractionCounter',
-              interactionType: 'https://schema.org/FollowAction',
-              userInteractionCount: stats.followersCount,
-              name: 'Followers',
-            },
-          ]
-          : undefined,
+        '@graph': [profilePage, breadcrumb],
       },
     }
   },
@@ -292,12 +392,12 @@ export const seoService = {
     ),
   }),
 
-  getBattleMeta: (battle?: { id: string; slug: string; title: string; task_prompt: string; published_at: string | null; og_image_url?: string | null } | null): SEOMetadata => {
+  getBattleMeta: (battle?: { id: string; slug: string; title: string; task_prompt: string; published_at: string | null; og_image_url?: string | null; total_vote_count?: number } | null): SEOMetadata => {
     if (!battle) {
       return {
         title: 'Battle Not Found | LenserFight Arena',
         description: 'This battle could not be found on LenserFight Arena.',
-        url: `${ARENA_HOST}/battles`,
+        url: `${FORUM_HOST}/battles`,
         ogImage: ARENA_OG_IMAGE,
       }
     }
@@ -305,7 +405,37 @@ export const seoService = {
     const desc = clampDescription(
       `${battle.task_prompt || battle.title}. Compare contenders, judging context, community votes, and public AI battle results on LenserFight Arena.`,
     )
-    const pageUrl = `${ARENA_HOST}/battles/${battle.slug}`
+    const pageUrl = `${FORUM_HOST}/battles/${battle.slug}`
+
+    const interactionStatistic = [
+      typeof battle.total_vote_count === 'number' && battle.total_vote_count > 0 && {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/LikeAction',
+        userInteractionCount: battle.total_vote_count,
+      },
+    ].filter(Boolean)
+
+    const posting = {
+      '@type': 'DiscussionForumPosting',
+      name: battle.title,
+      headline: battle.title,
+      text: battle.task_prompt || battle.title,
+      description: desc,
+      url: pageUrl,
+      datePublished: battle.published_at ?? undefined,
+      image: battle.og_image_url ?? ARENA_OG_IMAGE,
+      author: ORGANIZATION_JSON_LD,
+      publisher: ORGANIZATION_JSON_LD,
+      about: ['AI battle', 'model comparison', 'prompt evaluation', 'community judging'],
+      isAccessibleForFree: true,
+      ...(interactionStatistic.length > 0 ? { interactionStatistic } : {}),
+    }
+
+    const breadcrumb = breadcrumbJsonLd([
+      { name: 'Home', url: FORUM_HOST },
+      { name: 'Battles', url: `${FORUM_HOST}/battles` },
+      { name: battle.title, url: pageUrl },
+    ])
 
     return {
       title: `${battle.title} — LenserFight Arena`,
@@ -314,16 +444,7 @@ export const seoService = {
       ogImage: battle.og_image_url ?? ARENA_OG_IMAGE,
       jsonLd: {
         '@context': 'https://schema.org',
-        '@type': 'CreativeWork',
-        name: battle.title,
-        headline: battle.title,
-        description: desc,
-        url: pageUrl,
-        datePublished: battle.published_at ?? undefined,
-        creator: ORGANIZATION_JSON_LD,
-        publisher: ORGANIZATION_JSON_LD,
-        about: ['AI battle', 'model comparison', 'prompt evaluation', 'community judging'],
-        isAccessibleForFree: true,
+        '@graph': [posting, breadcrumb],
       },
     }
   },
@@ -331,12 +452,12 @@ export const seoService = {
   getBattlesListMeta: (): SEOMetadata => ({
     title: `Live AI Battles & Competitions | LenserFight Arena`,
     description: `Watch AI models and human experts compete head-to-head in real-time battles. Vote on the best responses, track scores, and discover the top AI performers on LenserFight Arena.`,
-    url: `${ARENA_HOST}/battles`,
+    url: `${FORUM_HOST}/battles`,
     ogImage: ARENA_OG_IMAGE,
     jsonLd: collectionPageJsonLd(
       'LenserFight Arena Battles',
       'Live and recent AI battles, prompt tournaments, model comparisons, and public result pages.',
-      `${ARENA_HOST}/battles`,
+      `${FORUM_HOST}/battles`,
     ),
   }),
 
@@ -472,6 +593,13 @@ export const seoService = {
       completed: 'Completed',
       cancelled: 'Cancelled',
     }
+    const EVENT_STATUS_MAP: Record<string, string> = {
+      pending: 'https://schema.org/EventScheduled',
+      registration: 'https://schema.org/EventScheduled',
+      active: 'https://schema.org/EventScheduled',
+      completed: 'https://schema.org/EventCompleted',
+      cancelled: 'https://schema.org/EventCancelled',
+    }
     const statusLabel = STATUS_MAP[tournament.status] ?? tournament.status
     const formatLabel = tournament.format.replace(/_/g, ' ')
     const pageUrl = `${FORUM_HOST}/tournaments/${slug || tournament.id}`
@@ -490,12 +618,7 @@ export const seoService = {
         name: tournament.title,
         description: desc,
         url: pageUrl,
-        eventStatus:
-          tournament.status === 'active'
-            ? 'https://schema.org/EventScheduled'
-            : tournament.status === 'completed'
-              ? 'https://schema.org/EventScheduled'
-              : 'https://schema.org/EventScheduled',
+        eventStatus: EVENT_STATUS_MAP[tournament.status] ?? 'https://schema.org/EventScheduled',
         organizer: ORGANIZATION_JSON_LD,
         isAccessibleForFree: true,
       },

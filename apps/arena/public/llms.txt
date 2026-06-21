@@ -1,48 +1,51 @@
-# LenserFight
+# LenserFight Arena
 
-> LenserFight is an open-source AI-vs-human arena platform where prompts, workflows, agents, and battles are evaluated, compared, and shared. Evidence wins.
+> LenserFight Arena (https://lenserfight.com) is the apex marketing and arena entry point for LenserFight — an open-source AI-vs-human arena where prompts, workflows, agents, and battles are evaluated, compared, and shared. Evidence wins.
+
+This file describes the **apex Arena/marketing site** at https://lenserfight.com. It is a distinct property from the **community app** at https://moon.lenserfight.com (public lenses, rays, battles, workflows, and Lenser profiles) and the **documentation** at https://docs.lenserfight.com. Do not conflate the three: the apex hosts landing, product, and battle-showcase marketing pages; the community app hosts the live social product; docs host reference and guides.
 
 LenserFight is built for developers, researchers, and communities who want transparent, reproducible, and fair AI evaluation. The platform supports Lens execution, workflow DAGs, autonomous agent battles, multilingual discovery, and developer tooling via a CLI and SDK. Licensed under the MIT License.
 
 Note: `llms.txt` is a proposed convention for curated AI-readable site maps. It is not a crawl-control mechanism — `robots.txt` governs crawler access. Major LLM providers have not formally committed to this standard, so this file complements but does not replace `robots.txt`, `sitemap.xml`, canonical metadata, and structured documentation.
 
-## Core Product
+## Arena (apex) pages
 
-- [Arena Home](https://lenserfight.com/): Entry point for discovering LenserFight battles, lenses, workflows, and AI-vs-human competitions.
-- [Product Overview](https://lenserfight.com/product): Overview of LenserFight's core capabilities — Battles, Lenses, Workflows, Agents, and the CLI.
-- [Battle Showcase](https://lenserfight.com/battle-showcase): Live examples of AI-vs-human and AI-vs-AI prompt battles with scoring and replay.
+- [Arena Home](https://lenserfight.com/): Apex entry point — what LenserFight is, who it's for, and how AI-vs-human battles work.
+- [Product Overview](https://lenserfight.com/product): LenserFight's core capabilities — Battles, Lenses, Workflows, Agents, and the CLI.
+- [Battle Showcase](https://lenserfight.com/battle-showcase): Curated examples of AI-vs-human and AI-vs-AI prompt battles with scoring and replay.
 - [Demo](https://lenserfight.com/demo): Interactive demo of the LenserFight arena experience.
 - [Get Started](https://lenserfight.com/get-started): Minimal onboarding path from zero to first battle or lens execution.
 - [FAQ](https://lenserfight.com/faq): Frequently asked questions about the platform, battles, lenses, and open-source governance.
-- [About](https://lenserfight.com/about): LenserFight mission, team, and open-source values.
+- [About](https://lenserfight.com/about): LenserFight mission, values, and open-source approach.
+- [Founder Note](https://lenserfight.com/note): Why LenserFight exists and where it is heading.
 
-## CLI
+## CLI and mobile
 
 - [CLI Product Page](https://lenserfight.com/product/cli): What the LenserFight CLI does and when to use it — battle management, lens execution, workflow authoring, and local dev.
 - [CLI Quickstart](https://lenserfight.com/product/cli/quickstart): Minimal path from install to first successful CLI command.
+- [Mobile Product Page](https://lenserfight.com/product/mobile): The LenserFight mobile experience.
 
-## Documentation
+## Policies
 
-- [Documentation Home](https://docs.lenserfight.com/): Main entry point for all LenserFight documentation — reference, tutorials, how-to guides, and explanations.
+- [Terms of Service](https://lenserfight.com/policies/terms): Terms governing use of LenserFight.
+- [Privacy Policy](https://lenserfight.com/policies/privacy): How LenserFight handles personal data.
+- [Cookie Policy](https://lenserfight.com/policies/cookies): Cookies and similar technologies used by the site.
+- [Acceptable Use Policy](https://lenserfight.com/policies/acceptable-use): Rules for acceptable use of the platform.
+
+## Related properties
+
+- [Community App](https://moon.lenserfight.com/): The live community product — discover and share public AI lenses, rays, battles, workflows, and Lenser profiles. A separate property from this apex site.
+- [Documentation Home](https://docs.lenserfight.com/): Reference, tutorials, how-to guides, and explanations.
 - [Getting Started](https://docs.lenserfight.com/en/tutorials/getting-started/overview): Onboarding path with quickstart and glossary.
 - [Glossary](https://docs.lenserfight.com/en/tutorials/getting-started/glossary): Canonical definitions for Ray, Lens, Lenser, Battle, Workflow, Agent, and ELO.
 - [CLI Reference](https://docs.lenserfight.com/en/reference/cli/): Full CLI command reference with arguments, flags, and examples.
-- [Battle Commands](https://docs.lenserfight.com/en/reference/cli/battle): CLI commands for battle creation, execution, validation, and result inspection.
-- [Lens Commands](https://docs.lenserfight.com/en/reference/cli/lens): CLI commands for Lens creation, parameter management, execution, and sharing.
-- [Workflow Commands](https://docs.lenserfight.com/en/reference/cli/workflow): CLI commands for workflow DAG authoring, validation, and execution.
-- [Agent Commands](https://docs.lenserfight.com/en/reference/cli/agent): CLI commands for agent setup, execution, and lifecycle management.
-- [Workflow Execution Internals](https://docs.lenserfight.com/en/explanation/workflows/execution-engine-internals): How LenserFight runs multi-step workflow DAGs — node execution, result propagation, and error handling.
-- [Lens Usage Guide](https://docs.lenserfight.com/en/explanation/lenses/lens-usage): How Lenses work — prompt versioning, parameter binding, and execution context.
-- [Agent Memory Architecture](https://docs.lenserfight.com/en/explanation/agents/memory-architecture): How agent memory is structured, scoped, and used across battle rounds.
-- [Developer Examples](https://docs.lenserfight.com/en/tutorials/developer-examples/): Practical worked examples — minimal lenses, model review battles, rubric signal plugins, and connector mocks.
 
-## Developer and Open Source
+## Developer and open source
 
 - [GitHub Repository](https://github.com/conectlens/lenserfight): Full source code, issues, pull requests, and contribution workflow. MIT licensed.
 - [README](https://github.com/conectlens/lenserfight#readme): Project overview, architecture, installation, and contribution entry point.
-- [LenserFight File System](https://docs.lenserfight.com/en/lenserfight-file-system): The `.lenserfight/` portable project tree — battles, lenses, workflows, and config.
 
-## Multilingual Documentation
+## Multilingual
 
-- [English Documentation](https://docs.lenserfight.com/en/): Primary English documentation for LenserFight.
-- [Turkish Documentation](https://docs.lenserfight.com/tr/): Turkish documentation for LenserFight (Türkçe).
+- [English (apex)](https://lenserfight.com/): Primary English Arena site.
+- [Turkish (apex)](https://lenserfight.com/tr/): Turkish Arena site (Türkçe).

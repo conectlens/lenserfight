@@ -15,14 +15,14 @@ describe('arena app SEO prerender metadata', () => {
     const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])
 
     // Every static route emits one URL per enabled locale.
-    expect(urls).toContain('https://arena.lenserfight.com/en')
-    expect(urls).toContain('https://arena.lenserfight.com/tr')
-    expect(urls).toContain('https://arena.lenserfight.com/en/battle-showcase')
-    expect(urls).toContain('https://arena.lenserfight.com/tr/battle-showcase')
-    expect(urls).toContain('https://arena.lenserfight.com/en/note')
-    expect(urls).toContain('https://arena.lenserfight.com/tr/note')
-    expect(urls).toContain('https://arena.lenserfight.com/en/product/cli')
-    expect(urls).toContain('https://arena.lenserfight.com/tr/product/cli')
+    expect(urls).toContain('https://lenserfight.com/en')
+    expect(urls).toContain('https://lenserfight.com/tr')
+    expect(urls).toContain('https://lenserfight.com/en/battle-showcase')
+    expect(urls).toContain('https://lenserfight.com/tr/battle-showcase')
+    expect(urls).toContain('https://lenserfight.com/en/note')
+    expect(urls).toContain('https://lenserfight.com/tr/note')
+    expect(urls).toContain('https://lenserfight.com/en/product/cli')
+    expect(urls).toContain('https://lenserfight.com/tr/product/cli')
 
     // No duplicate canonical URLs.
     expect(urls.length).toBe(new Set(urls).size)
@@ -37,10 +37,10 @@ describe('arena app SEO prerender metadata', () => {
     const sitemap = renderSitemap('arena')
     expect(sitemap).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"')
     expect(sitemap).toContain(
-      '<xhtml:link rel="alternate" hreflang="en" href="https://arena.lenserfight.com/en"',
+      '<xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/en"',
     )
     expect(sitemap).toContain(
-      '<xhtml:link rel="alternate" hreflang="tr" href="https://arena.lenserfight.com/tr"',
+      '<xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr"',
     )
     expect(sitemap).toContain('hreflang="x-default"')
   })
@@ -51,7 +51,7 @@ describe('arena app SEO prerender metadata', () => {
     expect(robots).toContain('Disallow: /auth/')
     expect(robots).toContain('Disallow: /contact')
     expect(robots).toContain('User-agent: ClaudeBot')
-    expect(robots).toContain('Sitemap: https://arena.lenserfight.com/sitemap.xml')
+    expect(robots).toContain('Sitemap: https://lenserfight.com/sitemap.xml')
   })
 
   it('renders localized prerender content and full hreflang set for English pages', () => {
@@ -71,24 +71,24 @@ describe('arena app SEO prerender metadata', () => {
     expect(html).toContain('hreflang="tr"')
     expect(html).toContain('hreflang="x-default"')
     expect(html).toContain('property="og:locale" content="en"')
-    expect(html).toContain('rel="canonical" href="https://arena.lenserfight.com/en/battle-showcase"')
+    expect(html).toContain('rel="canonical" href="https://lenserfight.com/en/battle-showcase"')
   })
 
   it('renders Turkish titles and descriptions for /tr/* prerenders', () => {
     const route = getAppSeo('arena').routes.find((item) => item.path === '/tr/about')
     expect(route).toBeDefined()
     expect(route.title).toContain('LenserFight Hakkında')
-    expect(route.canonicalUrl).toBe('https://arena.lenserfight.com/tr/about')
+    expect(route.canonicalUrl).toBe('https://lenserfight.com/tr/about')
     expect(route.locale).toBe('tr')
   })
 
   it('renders bare-path Tier-1 redirect shims pointing at the default locale', () => {
     const shim = renderRedirectShim({
       targetUrl: '/en/about',
-      canonicalUrl: 'https://arena.lenserfight.com/en/about',
+      canonicalUrl: 'https://lenserfight.com/en/about',
     })
     expect(shim).toContain('<meta http-equiv="refresh" content="0;url=/en/about">')
-    expect(shim).toContain('rel="canonical" href="https://arena.lenserfight.com/en/about"')
+    expect(shim).toContain('rel="canonical" href="https://lenserfight.com/en/about"')
     expect(shim).toContain('noindex,follow')
   })
 
@@ -97,6 +97,6 @@ describe('arena app SEO prerender metadata', () => {
 
     expect(route.title).toContain('Claude Vs Gpt')
     expect(route.schemaType).toBe('CreativeWork')
-    expect(route.canonicalUrl).toBe('https://arena.lenserfight.com/battles/claude-vs-gpt/results')
+    expect(route.canonicalUrl).toBe('https://lenserfight.com/battles/claude-vs-gpt/results')
   })
 })

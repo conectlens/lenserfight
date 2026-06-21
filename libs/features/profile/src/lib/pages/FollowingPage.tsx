@@ -1,11 +1,12 @@
 import { lenserService } from '@lenserfight/data/repositories'
 import { useToast } from '@lenserfight/shared/error'
 import { FollowsNetworkUser } from '@lenserfight/types'
+import { LocaleLink } from '@lenserfight/shared/i18n-routing'
 import { Avatar } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
 import { ArrowLeft, Copy, UserX } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { useLenser } from '../context/LenserContext'
 
@@ -120,7 +121,7 @@ export const FollowingPage: React.FC = () => {
             key={user.lenserId}
             className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
           >
-            <Link
+            <LocaleLink
               to={`/lenser/${user.handle}`}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity min-w-0"
             >
@@ -131,7 +132,7 @@ export const FollowingPage: React.FC = () => {
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.handle}</p>
               </div>
-            </Link>
+            </LocaleLink>
             {user.lenserId !== currentLenser?.id && (
               <Button
                 size="sm"

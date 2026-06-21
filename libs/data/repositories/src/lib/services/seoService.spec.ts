@@ -30,10 +30,13 @@ describe('seoService', () => {
     })
 
     expect(meta.title).toBe('GitHub Review Workflow | AI Lens Template by Open Source Builder')
-    expect(meta.url).toBe('https://lenserfight.com/lenses/github-review-workflow')
+    expect(meta.url).toBe('https://moon.lenserfight.com/lenses/github-review-workflow')
     expect(meta.description).toContain('Review pull requests')
-    expect(meta.jsonLd?.['@type']).toBe('CreativeWork')
-    expect(meta.jsonLd?.keywords).toContain('GitHub Review')
+    const lensGraph = meta.jsonLd?.['@graph'] as Array<Record<string, any>>
+    const creativeWork = lensGraph.find((n) => n['@type'] === 'CreativeWork')
+    expect(creativeWork?.keywords).toContain('GitHub Review')
+    expect(creativeWork?.license).toBe('https://opensource.org/licenses/MIT')
+    expect(lensGraph.some((n) => n['@type'] === 'BreadcrumbList')).toBe(true)
   })
 
   it('canonicalizes ray pages by slug and uses collection schema', () => {
@@ -47,7 +50,7 @@ describe('seoService', () => {
       trendingScore: 10,
     })
 
-    expect(meta.url).toBe('https://lenserfight.com/ray/startup-planning')
+    expect(meta.url).toBe('https://moon.lenserfight.com/ray/startup-planning')
     expect(meta.title).toContain('Startup Planning AI Workflows')
     expect(meta.jsonLd?.['@type']).toBe('CollectionPage')
   })
@@ -73,8 +76,11 @@ describe('seoService', () => {
 
     expect(meta.title).toBe('AI Founder (@ai-founder) | Public Lenser Profile')
     expect(meta.ogImage).toBe('https://cdn.example.test/avatar.png')
-    expect(meta.jsonLd?.['@type']).toBe('Person')
-    expect(meta.jsonLd?.interactionStatistic).toHaveLength(2)
+    const profileGraph = meta.jsonLd?.['@graph'] as Array<Record<string, any>>
+    const profilePage = profileGraph.find((n) => n['@type'] === 'ProfilePage')
+    expect(profilePage?.mainEntity?.['@type']).toBe('Person')
+    expect(profilePage?.mainEntity?.interactionStatistic).toHaveLength(2)
+    expect(profileGraph.some((n) => n['@type'] === 'BreadcrumbList')).toBe(true)
   })
 
   it('generates battle metadata as a shareable creative work', () => {
@@ -87,9 +93,13 @@ describe('seoService', () => {
       og_image_url: null,
     })
 
-    expect(meta.url).toBe('https://arena.lenserfight.com/battles/claude-vs-gpt-code-review')
+    expect(meta.url).toBe('https://moon.lenserfight.com/battles/claude-vs-gpt-code-review')
     expect(meta.description).toContain('Compare two model-generated')
-    expect(meta.jsonLd?.['@type']).toBe('CreativeWork')
-    expect(meta.jsonLd?.about).toContain('model comparison')
+    const battleGraph = meta.jsonLd?.['@graph'] as Array<Record<string, any>>
+    const posting = battleGraph.find((n) => n['@type'] === 'DiscussionForumPosting')
+    expect(posting).toBeDefined()
+    expect(posting?.about).toContain('model comparison')
+    expect(posting?.text).toContain('Compare two model-generated')
+    expect(battleGraph.some((n) => n['@type'] === 'BreadcrumbList')).toBe(true)
   })
 })

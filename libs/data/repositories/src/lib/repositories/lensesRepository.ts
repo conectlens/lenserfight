@@ -74,6 +74,7 @@ export interface LensesRepositoryPort {
   getForkTree(lensId: string, limit?: number): Promise<ForkNode[]>
   getTools(category?: string): Promise<ToolRecord[]>
   getMyLenses(offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensRecord[]>>
+  getMySavedLenses(offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensRecord[]>>
   getLatestVersion(lensId: string): Promise<LensVersion | null>
   updateVersionParams(
     versionId: string,
@@ -244,6 +245,11 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     )
   }
 
+  // Visibility-aware search via fn_search_lenses (SECURITY DEFINER) which
+  // re-encodes the base-table RLS contract: the author always sees their own
+  // lenses (any visibility/status), everyone else only published lenses gated
+  // by visibility. Matches title, description, content, tag name/slug, and
+  // parameter labels. p_owner_id (a lenser id, or null) scopes to one profile.
   async search(
     query: string,
     offset = 0,
@@ -251,39 +257,34 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     ownerId?: string | null
   ): Promise<ApiResponseEnvelope<LensRecord[]>> {
     const start = Date.now()
-    let publicQuery = supabase
-      .from('vw_lenses_public')
-      .select(this.listLensSelect)
-      .ilike('title', `%${query}%`)
-    if (ownerId) publicQuery = publicQuery.eq('lenser_id', ownerId)
-    const { data, error } = await publicQuery.range(offset, offset + limit - 1)
+    const { data, error } = await supabase.rpc('fn_search_lenses', {
+      p_query: query ?? null,
+      p_owner_id: ownerId ?? null,
+      p_offset: offset,
+      p_limit: limit,
+    })
 
     if (error) this.handleError(error)
-    const publicResults = (data ?? []) as unknown as LensRecord[]
-
-    let privateResults: LensRecord[] = []
-    if (ownerId) {
-      const { data: privData } = await supabase.rpc('fn_list_my_private_lenses', {
-        p_limit: limit,
-        p_cursor: null,
-      })
-
-      if (privData) {
-        const privateRows = (privData as unknown as Array<{ id: string; title?: string }>).filter(
-          (r) =>
-            (r as unknown as { title?: string }).title?.toLowerCase().includes(query.toLowerCase())
-        )
-        const publicIds = new Set(publicResults.map((r) => r.id))
-        privateResults = (privateRows as unknown as LensRecord[]).filter(
-          (r) => !publicIds.has(r.id)
-        )
-      }
-    }
-
-    const combined = [...privateResults, ...publicResults]
+    const rows = (data ?? []) as unknown as LensRecord[]
     return paginatedResponse(
-      combined,
-      { limit, offset, hasNextPage: combined.length >= limit },
+      rows,
+      { limit, offset, hasNextPage: rows.length >= limit },
+      { durationMs: Date.now() - start }
+    )
+  }
+
+  // Lenses the authenticated viewer has bookmarked ('saved' reaction), gated by
+  // current visibility so a lens that turned private after saving drops off.
+  async getMySavedLenses(offset = 0, limit = 12): Promise<ApiResponseEnvelope<LensRecord[]>> {
+    const start = Date.now()
+    const { data, error } = await supabase.rpc('fn_get_my_saved_lenses', {
+      p_offset: offset,
+      p_limit: limit,
+    })
+    if (error) this.handleError(error)
+    return paginatedResponse(
+      (data ?? []) as unknown as LensRecord[],
+      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
       { durationMs: Date.now() - start }
     )
   }

@@ -10,10 +10,11 @@
     />
     <link rel="canonical" href="https://lenserfight.com/" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
-    <!-- hreflang: self-referential + localized alternates -->
-    <link rel="alternate" hreflang="en" href="https://lenserfight.com/" />
-    <link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr" />
-    <link rel="alternate" hreflang="x-default" href="https://lenserfight.com/" />
+    <!--
+      hreflang is emitted per-route at runtime by RouteSEO (en, tr, x-default).
+      No static localized alternates here — they would compete with the
+      runtime signal on the home route. RouteSEO is authoritative.
+    -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="LenserFight Arena" />
     <meta
@@ -48,14 +49,16 @@
       content="LenserFight Arena — AI Battles, Prompt Tournaments, and Model Comparisons"
     />
 
-    <!-- Structured data: WebSite for Arena -->
+    <!-- Structured data: WebSite for the apex Arena/marketing entity -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "LenserFight Arena",
+        "alternateName": "LenserFight",
         "url": "https://lenserfight.com",
-        "description": "LenserFight Arena is the public home for AI battles, prompt tournaments, model comparisons, community judging, and battle-ready workflows.",
+        "inLanguage": "en",
+        "description": "LenserFight Arena is the apex home for AI battles, prompt tournaments, model comparisons, community judging, and battle-ready workflows.",
         "publisher": {
           "@type": "Organization",
           "name": "LenserFight",
@@ -63,7 +66,8 @@
           "logo": "https://cdn.lenserfight.com/brand/lenserfight-logo.png",
           "sameAs": [
             "https://github.com/conectlens/lenserfight",
-            "https://docs.lenserfight.com"
+            "https://docs.lenserfight.com",
+            "https://moon.lenserfight.com"
           ]
         }
       }

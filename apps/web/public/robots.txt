@@ -53,4 +53,61 @@ Allow: /
 User-agent: cohere-ai
 Allow: /
 
+# AI / answer-engine crawlers — LenserFight wants to be discoverable and cited.
+# Public surfaces are open; private surfaces stay disallowed for everyone.
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /account/
+Disallow: /billing
+Disallow: /chat
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /settings/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /account/
+Disallow: /billing
+Disallow: /chat
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /settings/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /account/
+Disallow: /billing
+Disallow: /chat
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /settings/
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /account/
+Disallow: /billing
+Disallow: /chat
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /settings/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /account/
+Disallow: /billing
+Disallow: /chat
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /settings/
+
 Sitemap: https://moon.lenserfight.com/sitemap.xml

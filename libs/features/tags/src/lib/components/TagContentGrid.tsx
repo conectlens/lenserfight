@@ -1,7 +1,7 @@
 import { ArrowUp, MessageSquare } from 'lucide-react'
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
 
+import { LocaleLink } from '@lenserfight/shared/i18n-routing'
 import { Avatar } from '@lenserfight/ui/components'
 import { Card } from '@lenserfight/ui/components'
 import { MentionRenderer } from '@lenserfight/ui/components'
@@ -18,8 +18,6 @@ interface TagContentGridProps {
 }
 
 export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }) => {
-  const navigate = useNavigate()
-
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -48,7 +46,7 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
           const lensVM = item.data as LensViewModel
           return (
             <div key={`${item.type}-${item.id}`} className="h-full">
-              <LensCard lens={lensVM} onClick={(id) => navigate(`/lenses/${id}`)} />
+              <LensCard lens={lensVM} />
             </div>
           )
         }
@@ -58,10 +56,10 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
           const safeTags = (thread.tags || []).filter((t) => !!t)
 
           return (
-            <div
+            <LocaleLink
               key={`${item.type}-${item.id}`}
-              onClick={() => navigate(`/threads/${item.id}`)}
-              className="cursor-pointer group h-full"
+              to={`/threads/${item.id}`}
+              className="block cursor-pointer group h-full"
             >
               <Card className="h-full flex flex-col hover:shadow-lg transition-all border-gray-200 dark:border-gray-700 hover:border-primary/40 p-6 bg-white dark:bg-gray-800">
                 <div className="flex items-center gap-3 mb-4">
@@ -99,7 +97,7 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
                   </div>
                 </div>
               </Card>
-            </div>
+            </LocaleLink>
           )
         }
 
