@@ -1,3 +1,7 @@
+## 0.24.3 (2026-06-21)
+
+This was a version bump only for cli to align it with other projects, there were no code changes.
+
 ## 0.24.2 (2026-06-18)
 
 ### 🩹 Fixes
