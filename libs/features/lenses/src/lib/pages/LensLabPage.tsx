@@ -15,6 +15,7 @@ import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
 import { useDrawerRouter } from '@lenserfight/ui/routing'
 import { copyTextToClipboard, renderLensContentForCopy } from '@lenserfight/utils/text'
+import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { History, Lock, Loader2, Pencil, Trash2, Flag, ListVideo, Upload } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -173,16 +174,35 @@ export const LensLabPage: React.FC = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   type ParamSnapshot = { values: Record<string, unknown>; params: LensVersionParam[]; at: number }
+  // Copied parameter sets are persisted per-lens in the browser (localStorage,
+  // with an in-memory fallback) so they survive reloads and navigation.
+  const snapshotsKey = id ? `lens-param-snapshots:${id}` : null
   const [paramSnapshots, setParamSnapshots] = useState<ParamSnapshot[]>([])
   const [appliedSnapshotValues, setAppliedSnapshotValues] = useState<Record<string, unknown> | null>(null)
+
+  // Hydrate this lens's copied parameter sets from browser storage on load /
+  // when switching lenses. Corrupt or missing entries reset to an empty list.
+  useEffect(() => {
+    if (!snapshotsKey) return
+    try {
+      const raw = storage.getItem(snapshotsKey)
+      setParamSnapshots(raw ? (JSON.parse(raw) as ParamSnapshot[]) : [])
+    } catch {
+      setParamSnapshots([])
+    }
+  }, [snapshotsKey])
 
   const handleCopyWithParams = useCallback(
     (values: Record<string, unknown>, params: LensVersionParam[]) => {
       const hasValues = Object.values(values).some((v) => v !== '' && v != null)
       if (!hasValues) return
-      setParamSnapshots((prev) => [{ values, params, at: Date.now() }, ...prev].slice(0, 10))
+      setParamSnapshots((prev) => {
+        const next = [{ values, params, at: Date.now() }, ...prev].slice(0, 10)
+        if (snapshotsKey) storage.setItem(snapshotsKey, JSON.stringify(next))
+        return next
+      })
     },
-    []
+    [snapshotsKey]
   )
 
   const {
@@ -657,9 +677,13 @@ export const LensLabPage: React.FC = () => {
         <div className="lg:col-start-8 lg:col-span-5 border-t pt-6 border-gray-100 dark:border-gray-800 lg:border-t-0 lg:pt-0 flex flex-col gap-6">
           {paramSnapshots.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1">
                 Copied parameter sets
               </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Saved in this browser only — clearing site data, switching devices, or private
+                browsing can lose them.
+              </p>
               <div className="space-y-3">
                 {paramSnapshots.map((snap) => (
                   <div
