@@ -18,7 +18,17 @@ import { Button, EmptyState, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, Bot, FolderOpen, LogIn, MessageSquare, Plus, Trophy } from 'lucide-react'
+import {
+  Activity,
+  Bookmark,
+  Bot,
+  FolderOpen,
+  LogIn,
+  MessageSquare,
+  Plus,
+  Search,
+  Trophy,
+} from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate, useParams } from 'react-router-dom'
 
@@ -52,7 +62,14 @@ import type {
   XPSummary,
 } from '@lenserfight/types'
 
-type StandardTab = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents' | 'badges'
+type StandardTab =
+  | 'actions'
+  | 'lenses'
+  | 'threads'
+  | 'challenges'
+  | 'agents'
+  | 'badges'
+  | 'saved'
 
 interface TabState {
   data: any[]
@@ -75,6 +92,7 @@ const TAB_MAP: Record<string, LenserTabId> = {
   c: 'challenges',
   ag: 'agents',
   bd: 'badges',
+  sv: 'saved',
 }
 
 const REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
@@ -84,6 +102,7 @@ const REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
   challenges: 'c',
   agents: 'ag',
   badges: 'bd',
+  saved: 'sv',
   overview: 'ov',
   workflows: 'wf',
   logs: 'lg',
@@ -93,7 +112,7 @@ const REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
 const PAGE_SIZE = 9
 
 function isStandardTab(tab: LenserTabId): tab is StandardTab {
-  return ['actions', 'lenses', 'threads', 'challenges', 'agents', 'badges'].includes(tab)
+  return ['actions', 'lenses', 'threads', 'challenges', 'agents', 'badges', 'saved'].includes(tab)
 }
 
 function buildProfileTabs(
@@ -114,6 +133,8 @@ function buildProfileTabs(
   tabs.push({ id: 'badges', label: 'Badges' })
 
   if (isOwner) {
+    // Bookmarked lenses are personal — only the owner sees their Saved tab.
+    tabs.push({ id: 'saved', label: 'Saved' })
     tabs.push({ id: 'agents', label: 'Agents' })
   }
 
@@ -186,6 +207,7 @@ export const LenserProfilePage: React.FC = () => {
     challenges: { ...INITIAL_TAB_STATE },
     agents: { ...INITIAL_TAB_STATE },
     badges: { ...INITIAL_TAB_STATE },
+    saved: { ...INITIAL_TAB_STATE },
   })
   const [loadingTab, setLoadingTab] = useState(false)
   const observer = useRef<IntersectionObserver | null>(null)
@@ -213,6 +235,13 @@ export const LenserProfilePage: React.FC = () => {
   } | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Lenses-tab search: debounced input drives a server-side, visibility-aware
+  // search scoped to this profile (fn_search_lenses). A ref mirrors the active
+  // query so infinite-scroll pagination keeps filtering by it.
+  const [lensSearchInput, setLensSearchInput] = useState('')
+  const [lensSearchQuery, setLensSearchQuery] = useState('')
+  const lensSearchRef = useRef('')
+
   const contentVisibility = viewedProfile?.content_visibility ?? 'public'
   const canViewContent =
     isOwner || contentVisibility === 'public' || (contentVisibility === 'community' && !!authUser)
@@ -220,6 +249,9 @@ export const LenserProfilePage: React.FC = () => {
   useEffect(() => {
     if (!handle) return
     isFetchingPageRef.current = false
+    setLensSearchInput('')
+    setLensSearchQuery('')
+    lensSearchRef.current = ''
     setTabCache({
       threads: { ...INITIAL_TAB_STATE },
       lenses: { ...INITIAL_TAB_STATE },
@@ -227,6 +259,7 @@ export const LenserProfilePage: React.FC = () => {
       challenges: { ...INITIAL_TAB_STATE },
       agents: { ...INITIAL_TAB_STATE },
       badges: { ...INITIAL_TAB_STATE },
+      saved: { ...INITIAL_TAB_STATE },
     })
   }, [handle])
 
@@ -263,14 +296,28 @@ export const LenserProfilePage: React.FC = () => {
       const viewerId = isOwner ? viewedProfile.id : activeWorkspace?.id
 
       switch (targetTab) {
-        case 'lenses':
-          newItems = await lensesService.getLenserLenses(
-            viewedProfile.handle,
+        case 'lenses': {
+          // Unified, visibility-aware path: the owner sees all their lenses,
+          // visitors see only what each lens's visibility permits. An empty
+          // query lists; a non-empty query filters by title/content/tags/params.
+          const resp = await lensesService.search(
+            lensSearchRef.current,
             offset,
             PAGE_SIZE,
-            viewerId
+            viewedProfile.id
           )
+          newItems = resp.data ?? []
           break
+        }
+        case 'saved': {
+          if (!isOwner) {
+            newItems = []
+            break
+          }
+          const resp = await lensesService.getMySavedLenses(offset, PAGE_SIZE)
+          newItems = resp.data ?? []
+          break
+        }
         case 'threads':
           newItems = await threadsService.getThreadsByLenser(
             viewedProfile.handle,
@@ -327,6 +374,20 @@ export const LenserProfilePage: React.FC = () => {
       fetchTabData(activeStandardTab, 0)
     }
   }, [activeStandardTab, viewedProfile?.handle, viewedProfile?.type, activeWorkspace?.id])
+
+  // Debounce the Lenses-tab search input.
+  useEffect(() => {
+    const timer = setTimeout(() => setLensSearchQuery(lensSearchInput.trim()), 350)
+    return () => clearTimeout(timer)
+  }, [lensSearchInput])
+
+  // Re-run the scoped lens search (page 0) whenever the debounced query changes.
+  useEffect(() => {
+    lensSearchRef.current = lensSearchQuery
+    if (!viewedProfile || viewedProfile.type === 'ai') return
+    if (activeStandardTab !== 'lenses') return
+    fetchTabData('lenses', 0, true)
+  }, [lensSearchQuery])
 
   const lastElementRef = useCallback(
     (node: HTMLDivElement) => {
@@ -427,7 +488,7 @@ export const LenserProfilePage: React.FC = () => {
   }
 
   const SkeletonLoader = () => {
-    if (activeStandardTab === 'lenses') {
+    if (activeStandardTab === 'lenses' || activeStandardTab === 'saved') {
       return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((item) => (
@@ -611,6 +672,22 @@ export const LenserProfilePage: React.FC = () => {
             )}
 
             {authUser && activeStandardTab === 'lenses' && canViewContent && (
+              <div className="relative mb-6">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Search className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                </div>
+                <input
+                  type="text"
+                  value={lensSearchInput}
+                  onChange={(e) => setLensSearchInput(e.target.value)}
+                  placeholder="Search lenses by title, content, tags, or parameters…"
+                  aria-label="Search lenses"
+                  className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 placeholder-gray-500 shadow-sm transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                />
+              </div>
+            )}
+
+            {authUser && activeStandardTab === 'lenses' && canViewContent && (
               <>
                 {items.length > 0 ? (
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
@@ -627,7 +704,13 @@ export const LenserProfilePage: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  !loadingTab && (
+                  !loadingTab &&
+                  (lensSearchQuery ? (
+                    <EmptyState
+                      icon={Search}
+                      title={`No lenses match “${lensSearchQuery}”.`}
+                    />
+                  ) : (
                     <EmptyState
                       icon={FolderOpen}
                       title="No prompts created yet."
@@ -642,6 +725,28 @@ export const LenserProfilePage: React.FC = () => {
                         )
                       }
                     />
+                  ))
+                )}
+              </>
+            )}
+
+            {authUser && activeStandardTab === 'saved' && (
+              <>
+                {items.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+                    {items.map((prompt) => (
+                      <div key={prompt.id} className="h-full">
+                        <LensCard
+                          lens={prompt as LensViewModel}
+                          onClick={(id) => navigate(`/lenses/${id}`)}
+                          isOwner={false}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  !loadingTab && (
+                    <EmptyState icon={Bookmark} title="No saved lenses yet." />
                   )
                 )}
               </>

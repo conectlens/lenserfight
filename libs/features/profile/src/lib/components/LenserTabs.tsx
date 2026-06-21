@@ -8,6 +8,7 @@ export type LenserTabId =
   | 'challenges'
   | 'agents'
   | 'badges'
+  | 'saved'
   | 'overview'
   | 'workflows'
   | 'logs'

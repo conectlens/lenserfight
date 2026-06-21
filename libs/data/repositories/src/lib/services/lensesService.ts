@@ -139,6 +139,20 @@ export const lensesService = {
   getMyLenses: (offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensRecord[]>> =>
     lensesRepo.getMyLenses(offset, limit),
 
+  getMySavedLenses: async (
+    offset = 0,
+    limit = 12
+  ): Promise<ApiResponseEnvelope<LensViewModel[]>> => {
+    const result = await lensesRepo.getMySavedLenses(offset, limit)
+    const items = await mapToViewModels(result.data ?? [])
+    return paginatedResponse(items, {
+      limit: result.meta?.limit ?? limit,
+      offset: result.meta?.offset ?? offset,
+      total: result.meta?.total,
+      hasNextPage: result.meta?.hasNextPage ?? false,
+    }, { durationMs: result.meta?.durationMs })
+  },
+
   getLenserLenses: async (
     lenserHandle: string,
     offset = 0,
