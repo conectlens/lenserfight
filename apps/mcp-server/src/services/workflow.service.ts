@@ -10,6 +10,7 @@ export interface ListWorkflowsArgs {
   lenser_id?: string | null;
 }
 export interface PagedResult { items: unknown[]; total: number }
+export interface WorkflowGraph { workflow: unknown; nodes: unknown[]; edges: unknown[] }
 
 export interface CreateWorkflowArgs {
   lenser_id: string;
@@ -54,6 +55,18 @@ export const workflowService = {
     })) as unknown as RpcResult<unknown>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
     return data ?? null;
+  },
+
+  async getGraph(sb: SupabaseClient, workflow_id: string): Promise<WorkflowGraph | null> {
+    // fn_get_workflow_bootstrap RETURNS TABLE(workflow, nodes, edges) → PostgREST
+    // returns an array of rows (here at most one, visibility-gated in the RPC).
+    const { data, error } = (await sb.rpc('fn_get_workflow_bootstrap' as never, {
+      p_workflow_id: workflow_id,
+    })) as unknown as RpcResult<WorkflowGraph[]>;
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row || !row.workflow) return null;
+    return { workflow: row.workflow, nodes: row.nodes ?? [], edges: row.edges ?? [] };
   },
 
   async create(sb: SupabaseClient, args: CreateWorkflowArgs): Promise<unknown> {
