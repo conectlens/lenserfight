@@ -27,6 +27,36 @@ export interface StartRunArgs {
   metadata: Record<string, unknown>;
 }
 
+/** Node config keys whose values must never be surfaced to an MCP client. */
+const SENSITIVE_CONFIG_KEYS = new Set([
+  'key_ref_id',
+  'local_key_id',
+  'webhook_secret',
+  'secret',
+  'api_key',
+  'token',
+]);
+
+/**
+ * Redact secret-bearing fields from each node's config before returning a graph.
+ * Parameter values (`param_overrides`) are the workflow's logic and are preserved;
+ * only credential references are masked.
+ */
+function redactNodeConfigs(nodes: unknown[]): unknown[] {
+  if (!Array.isArray(nodes)) return [];
+  return nodes.map((n) => {
+    if (!n || typeof n !== 'object') return n;
+    const node = n as Record<string, unknown>;
+    const config = node.config;
+    if (!config || typeof config !== 'object') return node;
+    const redacted: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(config as Record<string, unknown>)) {
+      redacted[k] = SENSITIVE_CONFIG_KEYS.has(k) && v != null ? '[redacted]' : v;
+    }
+    return { ...node, config: redacted };
+  });
+}
+
 function mapError(message: string | undefined): McpError | null {
   if (!message) return null;
   if (message.includes('access_denied')) return new McpError('FORBIDDEN', 'You do not have access to this workflow');
@@ -66,7 +96,7 @@ export const workflowService = {
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
     const row = Array.isArray(data) ? data[0] : null;
     if (!row || !row.workflow) return null;
-    return { workflow: row.workflow, nodes: row.nodes ?? [], edges: row.edges ?? [] };
+    return { workflow: row.workflow, nodes: redactNodeConfigs(row.nodes ?? []), edges: row.edges ?? [] };
   },
 
   async create(sb: SupabaseClient, args: CreateWorkflowArgs): Promise<unknown> {

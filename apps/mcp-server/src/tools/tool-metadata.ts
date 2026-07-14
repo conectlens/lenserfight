@@ -201,6 +201,13 @@ const TOOL_CATALOG = {
       'Fetch a workflow’s full node/edge graph so you can understand or explain how it is wired. Returns { workflow, nodes, edges }: each node carries its type, bound lens, model, parameter overrides and canvas position; each edge carries source output key → target parameter label, merge strategy, and any condition. Use before run_workflow to reason about structure and required inputs, or to export/serialize the workflow. Visibility-gated: only public or owned workflows are returned.',
     annotations: readOnly,
   },
+  describe_workflow: {
+    name: 'describe_workflow',
+    title: 'Describe Workflow',
+    description:
+      "Return a compact, structured explanation of how a workflow is wired: a prose summary, its trigger nodes, each node (type, bound lens, model, parameter overrides), and the connections (source output key → target parameter label, merge strategy, whether conditional). Built for quickly understanding or explaining a workflow without parsing the raw graph. Visibility-gated to public or owned workflows.",
+    annotations: readOnly,
+  },
   create_workflow: {
     name: 'create_workflow',
     title: 'Create Workflow',
