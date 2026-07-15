@@ -1499,6 +1499,7 @@ export default defineConfig({
                   text: 'Açık Kaynak İş Akışları',
                   link: '/tr/explanation/workflows/open-source-workflows',
                 },
+                { text: 'İş Akışı Güvenliği', link: '/tr/explanation/workflows/workflow-safety' },
               ],
             },
           ],
@@ -2443,6 +2444,7 @@ export default defineConfig({
           items: [
             { text: 'Build a Lens Chain', link: '/en/how-to/workflows/build-a-lens-chain' },
             { text: 'Create a Lens Kind', link: '/en/how-to/workflows/create-a-lens-kind' },
+            { text: 'Export a Workflow', link: '/en/how-to/workflows/export-a-workflow' },
           ],
         },
       ],
@@ -3172,6 +3174,7 @@ export default defineConfig({
               text: 'Code Walk: WorkflowExecutionService',
               link: '/en/explanation/workflows/code-walk-workflow-execution-service',
             },
+            { text: 'Workflow Safety', link: '/en/explanation/workflows/workflow-safety' },
           ],
         },
       ],
