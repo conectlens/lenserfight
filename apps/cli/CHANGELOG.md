@@ -1,3 +1,39 @@
+## 0.24.3 (2026-06-21)
+
+This was a version bump only for cli to align it with other projects, there were no code changes.
+
+## 0.24.2 (2026-06-18)
+
+### 🩹 Fixes
+
+- **gateway:** fix binary path resolution and add startup error hints ([846c66ad4](https://github.com/conectlens/lenserfight/commit/846c66ad4))
+
+### ❤️ Thank You
+
+- Claude Sonnet 4.6
+- ÖMER FARUK COŞKUN
+
+## 0.24.1 (2026-06-07)
+
+### 🩹 Fixes
+
+- prevent content editor hydration while focused and improve adapter type safety in CLI command ([c105252e2](https://github.com/conectlens/lenserfight/commit/c105252e2))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
+## 0.24.0 (2026-06-06)
+
+### 🚀 Features
+
+- improve lf agents create with interactive prompts, --json flag, and richer output ([7ca56d1be](https://github.com/conectlens/lenserfight/commit/7ca56d1be))
+
+### ❤️ Thank You
+
+- Claude Haiku 4.5
+- ÖMER FARUK COŞKUN
+
 ## 0.23.0 (2026-06-05)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.

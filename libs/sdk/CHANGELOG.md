@@ -1,3 +1,27 @@
+## 2.2.0 (2026-06-12)
+
+### 🚀 Features
+
+- implement `getLatestVersion` and expand SDK parameter/tool data mapping with full schema support ([d99f00f24](https://github.com/conectlens/lenserfight/commit/d99f00f24))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
+## 2.1.0 (2026-06-12)
+
+### 🚀 Features
+
+- export ProtocolClient and associated protocol types from the SDK ([61d6fc738](https://github.com/conectlens/lenserfight/commit/61d6fc738))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
+# 2.0.0 (2026-06-06)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
 ## 0.3.0-alpha.17 (2026-06-06)
 
 This was a version bump only for sdk to align it with other projects, there were no code changes.
