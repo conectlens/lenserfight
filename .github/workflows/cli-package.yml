@@ -54,7 +54,13 @@ jobs:
 
       - name: Audit production dependencies
         if: matrix.os == 'ubuntu-latest'
-        run: pnpm audit --prod --audit-level high
+        # pnpm audit still calls npm's retired legacy audit endpoint (410 Gone).
+        # npm audit already targets the new bulk advisory endpoint, so convert
+        # the pnpm lockfile and audit through npm until pnpm ships a fix:
+        # https://github.com/pnpm/pnpm/issues/11265
+        run: |
+          pnpm import
+          npm audit --omit=dev --audit-level=high
 
       - name: Test CLI release-critical paths
         shell: bash
