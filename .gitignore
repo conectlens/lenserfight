@@ -135,3 +135,5 @@ supabase/seed-data.sql
 **/keys-index.json
 
 /tmp/*
+# Local-only brainstorming specs & plans — never push
+docs/superpowers/
