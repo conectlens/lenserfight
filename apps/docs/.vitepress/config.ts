@@ -1499,7 +1499,6 @@ export default defineConfig({
                   text: 'Açık Kaynak İş Akışları',
                   link: '/tr/explanation/workflows/open-source-workflows',
                 },
-                { text: 'İş Akışı Güvenliği', link: '/tr/explanation/workflows/workflow-safety' },
               ],
             },
           ],
