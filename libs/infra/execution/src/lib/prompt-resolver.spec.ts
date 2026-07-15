@@ -308,6 +308,37 @@ describe('renderPrompt', () => {
   })
 })
 
+// ── renderPrompt — residual stored-form [[:uuid]] refs (regression) ───────────
+
+describe('renderPrompt — residual stored-form [[:uuid]] refs', () => {
+  const UUID = '8f3c1a2b-4d5e-6f70-8192-a3b4c5d6e7f8'
+
+  it('strips a residual [[:uuid]] ref instead of leaking the id into the prompt', () => {
+    const result = renderPrompt(`Hello [[:${UUID}]] world`, {})
+    expect(result).not.toContain(UUID)
+    expect(result).not.toContain('[[:')
+    expect(result).toBe('Hello  world')
+  })
+
+  it('does not treat a stored-form ref as an unbound placeholder (no throw)', () => {
+    expect(() => renderPrompt(`X [[:${UUID}]] Y`, {})).not.toThrow()
+  })
+
+  it('substitutes label tokens and strips uuid refs in the same template', () => {
+    const result = renderPrompt(`[[topic]] then [[:${UUID}]]`, { topic: 'AI' })
+    expect(result).toBe('AI then ')
+  })
+
+  it('strips multiple stored-form refs', () => {
+    const result = renderPrompt(`[[:${UUID}]] and [[:${UUID}]]`, {})
+    expect(result).toBe(' and ')
+  })
+
+  it('still throws for a genuinely unbound label alongside a stripped ref', () => {
+    expect(() => renderPrompt(`[[missing]] [[:${UUID}]]`, {})).toThrow(PlaceholderUnboundError)
+  })
+})
+
 // ── replaceTokenVariants ─────────────────────────────────────────────────────
 
 describe('replaceTokenVariants', () => {

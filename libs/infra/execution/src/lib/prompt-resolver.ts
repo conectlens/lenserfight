@@ -188,6 +188,20 @@ function applyMerge(
  */
 const UNRESOLVED_PLACEHOLDER_RE = /(?:\[\[\s*([a-z0-9_ \-]+?)\s*\]\])|(?:\{\{\s*([a-z0-9_ \-]+?)\s*\}\})|(?:\[\s+([a-z0-9_ \-]+?)\s+\])/i
 
+/**
+ * Stored-form parameter refs — `[[:<uuid>]]` — are the persisted representation
+ * of a lens version parameter (id, not label). The workflow render path binds by
+ * label, so a residual stored-form ref means the body reached execution without
+ * being rendered to `[[label]]` form (the worker fetches the raw body via
+ * fn_worker_get_lens_template_body). `UNRESOLVED_PLACEHOLDER_RE` deliberately
+ * excludes ':' and therefore cannot flag them, so without an explicit strip they
+ * would pass verbatim into the provider prompt — leaking an internal id. Remove
+ * them, mirroring `resolveUuidRefs()` in the lens-parameters domain so both
+ * render paths behave identically until they are consolidated.
+ */
+const STORED_UUID_REF_RE =
+  /\[\[:\s*[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\s*\]\]/g
+
 export function replaceTokenVariants(prompt: string, rawKey: string, value: unknown): string {
   const valueStr = typeof value === 'string' ? value : safeStringify(value)
   const normalized = rawKey.trim().replace(/\s+/g, '_').toLowerCase()
@@ -217,6 +231,10 @@ export function renderPrompt(
   for (const [key, value] of Object.entries(rendered)) {
     prompt = replaceTokenVariants(prompt, key, value)
   }
+
+  // Strip any residual stored-form [[:uuid]] refs so an internal parameter id
+  // never survives into a provider prompt (see STORED_UUID_REF_RE).
+  prompt = prompt.replace(STORED_UUID_REF_RE, '')
 
   const leftover = UNRESOLVED_PLACEHOLDER_RE.exec(prompt)
   if (leftover) {
