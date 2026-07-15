@@ -54,6 +54,7 @@
       "@lenserfight/features/automation": ["libs/features/automation/src/index.ts"],
       "@lenserfight/features/profile": ["libs/features/profile/src/index.ts"],
       "@lenserfight/features/profile/native": ["libs/features/profile/src/native.ts"],
+      "@lenserfight/seo": ["libs/seo/src/index.ts"],
       "@lenserfight/data/cache": ["libs/data/cache/src/index.ts"],
       "@lenserfight/data/repositories": ["libs/data/repositories/src/index.ts"],
       "@lenserfight/data/repositories/apiFetch": ["libs/data/repositories/src/lib/apiFetch.ts"],
