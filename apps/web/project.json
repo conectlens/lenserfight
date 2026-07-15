@@ -16,7 +16,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/web",
-        "command": "vite build && node ../../tools/seo/generate-app-seo.mjs web"
+        "command": "vite build && node ../../tools/seo/generate-app-seo.mjs web && node ../../tools/seo/build-worker.mjs web"
       },
       "cache": true,
       "dependsOn": [

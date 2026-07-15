@@ -1,0 +1,13 @@
+{
+  "name": "seo",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/seo/src",
+  "projectType": "library",
+  "tags": [
+    "layer:shared",
+    "scope:shared",
+    "license:shared"
+  ],
+  "// targets": "to see all targets run: nx show project seo --web",
+  "targets": {}
+}

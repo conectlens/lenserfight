@@ -80,6 +80,7 @@
       "@lenserfight/api/contracts": ["libs/api/contracts/src/index.ts"],
       "@lenserfight/api/dto": ["libs/api/dto/src/index.ts"],
       "@lenserfight/api/exports": ["libs/api/exports/src/index.ts"],
+      "@lenserfight/seo": ["libs/seo/src/index.ts"],
       "@lenserfight/types": ["libs/types/src/index.ts"],
       "@lenserfight/ui/components": ["libs/ui/components/src/index.ts"],
       "@lenserfight/ui/components/native": ["libs/ui/components/src/native.ts"],
