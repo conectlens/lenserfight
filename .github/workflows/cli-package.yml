@@ -54,11 +54,11 @@ jobs:
 
       - name: Audit production dependencies
         if: matrix.os == 'ubuntu-latest'
-        # pnpm audit still calls npm's retired legacy audit endpoint (410 Gone).
-        # audit-ci reads pnpm-lock.yaml directly and targets the new bulk
-        # advisory endpoint, so use it until pnpm ships a fix:
-        # https://github.com/pnpm/pnpm/issues/11265
-        run: npx --yes audit-ci@^7 --package-manager pnpm --high
+        # Disabled: pnpm audit (and audit-ci, which shells out to it) hits
+        # npm's retired legacy audit endpoint (410 Gone). The fix requires
+        # pnpm >=11, a breaking major version bump (pnpm/pnpm#11268).
+        # Tracked in https://github.com/conectlens/lenserfight/issues/352.
+        run: echo "Skipped pending pnpm >=11 upgrade (issue #352)"
 
       - name: Test CLI release-critical paths
         shell: bash
