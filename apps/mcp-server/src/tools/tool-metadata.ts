@@ -184,14 +184,28 @@ const TOOL_CATALOG = {
     name: 'list_workflows',
     title: 'List Workflows',
     description:
-      'List workflows with pagination. Optionally filter by visibility or owning lenser. Returns ids and summary metadata; call get_workflow for the head version graph and scheduling details.',
+      'List workflows with pagination. Optionally filter by visibility or owning lenser. Returns ids and summary metadata; call get_workflow_graph for a workflow’s node/edge structure.',
     annotations: readOnly,
   },
   get_workflow: {
     name: 'get_workflow',
     title: 'Get Workflow',
     description:
-      'Fetch one workflow with its head version definition and scheduling configuration. Use before run_workflow when you need node structure or default inputs.',
+      'Fetch one workflow’s header metadata (title, description, visibility, counts, head_version_id). This does NOT include the node graph — call get_workflow_graph for node/edge structure and default inputs.',
+    annotations: readOnly,
+  },
+  get_workflow_graph: {
+    name: 'get_workflow_graph',
+    title: 'Get Workflow Graph',
+    description:
+      'Fetch a workflow’s full node/edge graph so you can understand or explain how it is wired. Returns { workflow, nodes, edges }: each node carries its type, bound lens, model, parameter overrides and canvas position; each edge carries source output key → target parameter label, merge strategy, and any condition. Use before run_workflow to reason about structure and required inputs, or to export/serialize the workflow. Visibility-gated: only public or owned workflows are returned.',
+    annotations: readOnly,
+  },
+  describe_workflow: {
+    name: 'describe_workflow',
+    title: 'Describe Workflow',
+    description:
+      "Return a compact, structured explanation of how a workflow is wired: a prose summary, its trigger nodes, each node (type, bound lens, model, parameter overrides), and the connections (source output key → target parameter label, merge strategy, whether conditional). Built for quickly understanding or explaining a workflow without parsing the raw graph. Visibility-gated to public or owned workflows.",
     annotations: readOnly,
   },
   create_workflow: {

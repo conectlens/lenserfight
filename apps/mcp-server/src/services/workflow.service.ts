@@ -10,6 +10,7 @@ export interface ListWorkflowsArgs {
   lenser_id?: string | null;
 }
 export interface PagedResult { items: unknown[]; total: number }
+export interface WorkflowGraph { workflow: unknown; nodes: unknown[]; edges: unknown[] }
 
 export interface CreateWorkflowArgs {
   lenser_id: string;
@@ -24,6 +25,36 @@ export interface StartRunArgs {
   global_model_id: string | null;
   idempotency_key: string | null;
   metadata: Record<string, unknown>;
+}
+
+/** Node config keys whose values must never be surfaced to an MCP client. */
+const SENSITIVE_CONFIG_KEYS = new Set([
+  'key_ref_id',
+  'local_key_id',
+  'webhook_secret',
+  'secret',
+  'api_key',
+  'token',
+]);
+
+/**
+ * Redact secret-bearing fields from each node's config before returning a graph.
+ * Parameter values (`param_overrides`) are the workflow's logic and are preserved;
+ * only credential references are masked.
+ */
+function redactNodeConfigs(nodes: unknown[]): unknown[] {
+  if (!Array.isArray(nodes)) return [];
+  return nodes.map((n) => {
+    if (!n || typeof n !== 'object') return n;
+    const node = n as Record<string, unknown>;
+    const config = node.config;
+    if (!config || typeof config !== 'object') return node;
+    const redacted: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(config as Record<string, unknown>)) {
+      redacted[k] = SENSITIVE_CONFIG_KEYS.has(k) && v != null ? '[redacted]' : v;
+    }
+    return { ...node, config: redacted };
+  });
 }
 
 function mapError(message: string | undefined): McpError | null {
@@ -54,6 +85,18 @@ export const workflowService = {
     })) as unknown as RpcResult<unknown>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
     return data ?? null;
+  },
+
+  async getGraph(sb: SupabaseClient, workflow_id: string): Promise<WorkflowGraph | null> {
+    // fn_get_workflow_bootstrap RETURNS TABLE(workflow, nodes, edges) → PostgREST
+    // returns an array of rows (here at most one, visibility-gated in the RPC).
+    const { data, error } = (await sb.rpc('fn_get_workflow_bootstrap' as never, {
+      p_workflow_id: workflow_id,
+    })) as unknown as RpcResult<WorkflowGraph[]>;
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row || !row.workflow) return null;
+    return { workflow: row.workflow, nodes: redactNodeConfigs(row.nodes ?? []), edges: row.edges ?? [] };
   },
 
   async create(sb: SupabaseClient, args: CreateWorkflowArgs): Promise<unknown> {
