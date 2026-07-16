@@ -157,6 +157,7 @@ export const queryKeys = {
     all: ['agents'] as const,
     detail: (id: string) => [...queryKeys.agents.all, 'detail', id] as const,
     detailByProfile: (profileId: string) => [...queryKeys.agents.all, 'detailByProfile', profileId] as const,
+    byOwner: (ownerLenserId: string) => [...queryKeys.agents.all, 'byOwner', ownerLenserId] as const,
     policy: (id: string) => [...queryKeys.agents.all, 'policy', id] as const,
     quota: (id: string, date?: string) => [...queryKeys.agents.all, 'quota', id, date] as const,
     actions: (id: string) => [...queryKeys.agents.all, 'actions', id] as const,
