@@ -5,6 +5,8 @@
     "module": "commonjs",
     "moduleResolution": "node10",
     "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "types": ["jest", "node"]
   },
   "include": [
@@ -12,6 +14,7 @@
     "jest.config.cts",
     "src/**/*.test.ts",
     "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
     "src/**/*.d.ts"
   ]
 }

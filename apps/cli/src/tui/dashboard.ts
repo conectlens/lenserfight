@@ -1,6 +1,4 @@
 import { runChild } from './run-child'
-import { getActiveProfileName } from '../utils/profiles'
-import { probeBackendHealth } from '../lib/health-probe'
 import { getHumanActivityFeed } from '../lib/data-services'
 import { getAgentWorkspaceContext } from '../lib/agent-workspace-context'
 import { formatAgentWorkspaceBanner } from '../commands/agents'
@@ -28,7 +26,7 @@ export function formatHealthStatus(ok: boolean): string {
     : `${A.bgRed}${A.white}${A.bold} ${sym.fail}  DOWN   ${A.reset}`
 }
 
-interface ActionLogRow {
+export interface ActionLogRow {
   id?: string
   ai_lenser_id?: string
   team_run_id?: string | null
@@ -433,21 +431,9 @@ export function validateSubcommand(argv: string[]): string | null {
   return `Missing required argument: ${missing.join(', ')}`
 }
 
-// ─── Health probe ────────────────────────────────────────────────────────────
+// ─── Recent action-log feed ──────────────────────────────────────────────────
 
-async function probeHealth(): Promise<boolean> {
-  return probeBackendHealth()
-}
-
-// ─── Cached render state (for synchronous repaints) ──────────────────────────
-
-// Holds the last-fetched async values so we can repaint synchronously
-// while the user types without waiting for network calls.
-let _cachedProfile = 'default'
-let _cachedHealthy = false
-let _cachedLogs: ActionLogRow[] = []
-
-async function fetchRecentLogs(): Promise<ActionLogRow[]> {
+export async function fetchRecentLogs(): Promise<ActionLogRow[]> {
   try {
     const feed = await getHumanActivityFeed(10)
     return feed.map((item) => ({
@@ -469,13 +455,6 @@ interface CmdBarState {
   input: string
   error: string | null
   selectedSuggestion: number
-}
-
-let cmdState: CmdBarState = {
-  active: false,
-  input: '',
-  error: null,
-  selectedSuggestion: -1,
 }
 
 // ─── Command bar renderer (shared, synchronous) ───────────────────────────────
@@ -513,69 +492,6 @@ function paintCommandBar(
       }
     })
   }
-}
-
-// ─── Main dashboard screen ────────────────────────────────────────────────────
-
-function paintMainScreen(): void {
-  const buf: string[] = []
-
-  const brand = `${A.brightMagenta}${A.bold}${sym.fight}  LenserFight${A.reset}`
-  const profilePart = `${A.gray}profile${A.reset}  ${A.brightCyan}${_cachedProfile}${A.reset}`
-  const health = formatHealthStatus(_cachedHealthy)
-
-  buf.push('')
-  buf.push(`  ${brand}   ${A.gray}│${A.reset}   ${profilePart}   ${A.gray}│${A.reset}   ${health}`)
-  const agentBanner = formatAgentWorkspaceBanner()
-  if (agentBanner) {
-    buf.push(`  ${agentBanner}`)
-  }
-  buf.push(`  ${A.gray}${'─'.repeat(60)}${A.reset}`)
-  buf.push(`  ${A.gray}${new Date().toLocaleString()}  ${sym.dot}  refresh 2s${A.reset}`)
-  buf.push('')
-  buf.push(`  ${A.bold}${A.brightWhite}Recent agent logs${A.reset}  ${A.gray}${sym.dot}${sym.dot}${sym.dot}${A.reset}`)
-  buf.push('')
-
-  if (_cachedLogs.length === 0) {
-    buf.push(`  ${A.gray}${sym.dot}  No action logs yet  ${sym.arrow}  waiting for events…${A.reset}`)
-  } else {
-    for (const row of _cachedLogs) {
-      buf.push('  ' + formatActionLogRow(row))
-    }
-  }
-
-  buf.push('')
-  const bindings = [
-    keyBind('g', 'agents'),
-    keyBind('w', 'workflows'),
-    keyBind('e', 'execute'),
-    keyBind('k', 'configure'),
-    keyBind('a', 'approvals'),
-    keyBind('b', 'battles'),
-    keyBind('s', 'schedules'),
-    keyBind('m', 'memory'),
-    keyBind('l', 'lensers'),
-    keyBind('f', 'feed'),
-    keyBind(':', 'command'),
-    keyBind('q', 'quit'),
-  ].join(`  ${A.gray}${sym.dot}${A.reset}  `)
-  buf.push(`  ${bindings}`)
-
-  paintCommandBar(buf, cmdState, 'lf')
-
-  writeFrame(buf.join('\n'))
-}
-
-async function renderFrame(): Promise<void> {
-  const [profile, healthy, logs] = await Promise.all([
-    getActiveProfileName(),
-    probeHealth(),
-    fetchRecentLogs(),
-  ])
-  _cachedProfile = profile
-  _cachedHealthy = healthy
-  _cachedLogs = logs
-  paintMainScreen()
 }
 
 // ─── Sub-dashboard types ──────────────────────────────────────────────────────
@@ -966,7 +882,7 @@ function waitForReturnKey(): Promise<void> {
   })
 }
 
-function tokenise(raw: string): string[] {
+export function tokenise(raw: string): string[] {
   const tokens: string[] = []
   let current = ''
   let quote: '"' | "'" | null = null
@@ -992,152 +908,53 @@ function tokenise(raw: string): string[] {
 let restoreCleanup = () => { /* installed in runDashboard */ }
 
 export async function runDashboard(): Promise<void> {
+  // The top-level screen is an ink (React-for-CLI) app. Sub-dashboards and the
+  // command-bar dispatch are still driven by the legacy spawn-via-child model
+  // below; those migrate in follow-up PRs.
+  const { runInkDashboard, renderInkStatic } = await import('./ink/app')
+
+  // Non-TTY / piped output: paint a single static ink frame and return.
   if (!process.stdin.isTTY) {
-    await renderFrame()
+    await renderInkStatic()
     return
   }
 
   const out = process.stdout
   out.write(A.altScreenOn + A.hideCursor)
 
-  let timer: NodeJS.Timeout | null = null
-  let inChild = false
-
   const cleanup = () => {
-    if (timer) clearInterval(timer)
-    timer = null
     try { process.stdin.setRawMode(false) } catch { /* ignore */ }
-    process.stdin.pause()
     out.write(A.showCursor + A.altScreenOff)
   }
   restoreCleanup = cleanup
 
-  const exit = (code = 0) => { cleanup(); process.exit(code) }
+  process.on('SIGINT', () => { cleanup(); process.exit(130) })
+  process.on('SIGTERM', () => { cleanup(); process.exit(143) })
 
-  process.on('SIGINT', () => exit(130))
-  process.on('SIGTERM', () => exit(143))
+  const subKeys = Object.keys(SUB_DASHBOARDS)
 
-  process.stdin.setRawMode(true)
-  process.stdin.resume()
-  process.stdin.setEncoding('utf-8')
+  // Main-screen loop: mount ink, wait for the user's choice, dispatch to the
+  // retained legacy sub-screens / child-spawn, then re-mount the ink dashboard.
+  for (;;) {
+    const action = await runInkDashboard(subKeys)
 
-  async function submitCommand(): Promise<void> {
-    const suggestions = getSuggestions(cmdState.input)
-    let raw = cmdState.input.trim()
-    if (cmdState.selectedSuggestion >= 0 && suggestions[cmdState.selectedSuggestion]) {
-      raw = suggestions[cmdState.selectedSuggestion].cmd
+    if (action.type === 'quit') {
+      cleanup()
+      process.exit(action.code ?? 0)
     }
 
-    if (!raw) {
-      cmdState = { active: false, input: '', error: null, selectedSuggestion: -1 }
-      paintMainScreen()
-      return
-    }
+    // ink has unmounted and released raw mode; re-arm stdin for the legacy
+    // screens, which manage raw mode and their own data listeners.
+    try { process.stdin.resume() } catch { /* ignore */ }
+    try { process.stdin.setEncoding('utf-8') } catch { /* ignore */ }
 
-    const argv = tokenise(raw)
-    const validationError = validateSubcommand(argv)
-    if (validationError) {
-      cmdState = { ...cmdState, error: validationError }
-      paintMainScreen()
-      return
+    if (action.type === 'sub') {
+      const def = SUB_DASHBOARDS[action.key]
+      if (def) await runSubDashboard(def)
+    } else if (action.type === 'command') {
+      await runChild(action.argv)
     }
-
-    cmdState = { active: false, input: '', error: null, selectedSuggestion: -1 }
-    inChild = true
-    if (timer) clearInterval(timer)
-    try { process.stdin.setRawMode(false) } catch { /* ignore */ }
-    await runChild(argv)
-    try { process.stdin.setRawMode(true) } catch { /* ignore */ }
-    inChild = false
-    timer = setInterval(() => { void renderFrame() }, 2000)
-    void renderFrame()
   }
-
-  let processing = false
-  process.stdin.on('data', async (data) => {
-    const key = data.toString()
-
-    if (key === '\x03') { exit(130); return }
-    if (inChild || processing) return
-
-    // Ignore bare escape prefix that's part of a multi-byte arrow/function key
-    // sequence (e.g. \x1b arrives alone before [A). Only treat \x1b as Esc when
-    // it arrives as a standalone single byte with no follow-up characters.
-    if (key === '\x1b') {
-      if (cmdState.active) {
-        cmdState = { active: false, input: '', error: null, selectedSuggestion: -1 }
-        paintMainScreen()
-      } else {
-        exit(0)
-      }
-      return
-    }
-    // Arrow / shift-tab suggestion navigation in command mode (honors the
-    // advertised "Tab/↑↓ to pick" hint). Must be handled before the generic
-    // escape-sequence swallow below.
-    if (cmdState.active && (key === '\x1b[A' || key === '\x1b[B' || key === '\x1b[Z')) {
-      const count = getSuggestions(cmdState.input).length
-      const dir: 1 | -1 = key === '\x1b[B' ? 1 : -1
-      cmdState = { ...cmdState, selectedSuggestion: cycleSuggestion(cmdState.selectedSuggestion, count, dir) }
-      paintMainScreen()
-      return
-    }
-    // Swallow unrecognised multi-byte escape sequences (arrow keys, F-keys, etc.)
-    if (key.startsWith('\x1b')) return
-
-    // ── Command input mode ───────────────────────────────────────────────────
-    if (cmdState.active) {
-      if (key === '\r' || key === '\n') {
-        processing = true
-        await submitCommand()
-        processing = false
-        return
-      }
-      if (key === '\t') {
-        const suggestions = getSuggestions(cmdState.input)
-        if (suggestions.length > 0) {
-          cmdState = { ...cmdState, selectedSuggestion: cycleSuggestion(cmdState.selectedSuggestion, suggestions.length, 1) }
-          paintMainScreen()
-        }
-        return
-      }
-      if (key === '\x7f' || key === '\x08') {
-        cmdState = { ...cmdState, input: cmdState.input.slice(0, -1), error: null, selectedSuggestion: -1 }
-        paintMainScreen()
-        return
-      }
-      if (key.length === 1 && key >= ' ') {
-        cmdState = { ...cmdState, input: cmdState.input + key, error: null, selectedSuggestion: -1 }
-        paintMainScreen()
-      }
-      return
-    }
-
-    // ── Normal dashboard mode ────────────────────────────────────────────────
-    if (key === ':') {
-      cmdState = { active: true, input: '', error: null, selectedSuggestion: -1 }
-      paintMainScreen()
-      return
-    }
-    if (key === 'q' || key === 'Q') { exit(0); return }
-
-    const subDef = SUB_DASHBOARDS[key.toLowerCase()]
-    if (subDef) {
-      processing = true
-      inChild = true
-      if (timer) clearInterval(timer)
-      try { process.stdin.setRawMode(false) } catch { /* ignore */ }
-      await runSubDashboard(subDef)
-      try { process.stdin.setRawMode(true) } catch { /* ignore */ }
-      inChild = false
-      processing = false
-      timer = setInterval(() => { void renderFrame() }, 2000)
-      void renderFrame()
-    }
-  })
-
-  await renderFrame()
-  timer = setInterval(() => { void renderFrame() }, 2000)
 }
 
 export function _internal_getRestoreCleanup(): () => void {
