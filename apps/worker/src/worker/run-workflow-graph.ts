@@ -102,6 +102,19 @@ function mapEdge(e: DbWorkflowEdge): WorkflowEdge {
 
 export function resolveProviderKey(modelId: string): string {
   const m = modelId.toLowerCase()
+  // Some model ids are provider-prefixed, e.g. `openai:gpt-4.1-mini`; others are
+  // bare, e.g. `claude-sonnet-4-6`. Honour an explicit prefix before falling back
+  // to bare-name heuristics so `openai:…`/`google:…` do not slip through to the
+  // anthropic default. Assumes bare ids never use a `name:version` colon form —
+  // true for every current registry key (all bare, none contains a colon).
+  const colonIdx = m.indexOf(':')
+  if (colonIdx !== -1) {
+    const token = m.slice(0, colonIdx).trim()
+    if (token === 'fal') return 'fal-ai'
+    // Exact registry key, or an unknown/typo'd token returned verbatim so
+    // getExecutionProvider throws — fail closed, never default to anthropic.
+    return token
+  }
   if (m.includes('fal-ai/') || m.startsWith('fal')) return 'fal-ai'
   if (m.startsWith('claude')) return 'anthropic'
   if (m.startsWith('gpt') || m.startsWith('o1') || m.startsWith('o3')) return 'openai'
