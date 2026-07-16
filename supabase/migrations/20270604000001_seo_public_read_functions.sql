@@ -43,6 +43,7 @@
 -- =============================================================================
 
 -- ── 1. Lenses  /lenses/:id  (FORCE-RLS → row_security off) ────────────────────
+DROP FUNCTION IF EXISTS public.fn_list_public_lenses(uuid, integer);
 CREATE OR REPLACE FUNCTION public.fn_list_public_lenses(
   p_after uuid DEFAULT NULL,
   p_limit integer DEFAULT 50000
@@ -69,6 +70,7 @@ AS $$
 $$;
 
 -- ── 2. Battles  /battles/:slug  (via vw_battles_public — slug + updated_at) ───
+DROP FUNCTION IF EXISTS public.fn_list_public_battles(uuid, integer);
 CREATE OR REPLACE FUNCTION public.fn_list_public_battles(
   p_after uuid DEFAULT NULL,
   p_limit integer DEFAULT 50000
@@ -87,6 +89,7 @@ AS $$
 $$;
 
 -- ── 3. Lenser profiles  /lenser/:handle  (public visibility only) ─────────────
+DROP FUNCTION IF EXISTS public.fn_list_public_lensers(uuid, integer);
 CREATE OR REPLACE FUNCTION public.fn_list_public_lensers(
   p_after uuid DEFAULT NULL,
   p_limit integer DEFAULT 50000
@@ -108,6 +111,7 @@ AS $$
 $$;
 
 -- ── 4. Workflows  /workflows/:id  (visibility is text: public|private|unlisted)
+DROP FUNCTION IF EXISTS public.fn_list_public_workflows(uuid, integer);
 CREATE OR REPLACE FUNCTION public.fn_list_public_workflows(
   p_after uuid DEFAULT NULL,
   p_limit integer DEFAULT 50000
@@ -132,6 +136,7 @@ AS $$
 $$;
 
 -- ── 5. Threads  /threads/:threadId  (public + published + active author) ──────
+DROP FUNCTION IF EXISTS public.fn_list_public_threads(uuid, integer);
 CREATE OR REPLACE FUNCTION public.fn_list_public_threads(
   p_after uuid DEFAULT NULL,
   p_limit integer DEFAULT 50000
@@ -156,6 +161,7 @@ AS $$
 $$;
 
 -- ── 6. Rays (tags)  /ray/:slug  (content.tags — no updated_at, use created_at) ─
+DROP FUNCTION IF EXISTS public.fn_list_public_rays(uuid, integer);
 CREATE OR REPLACE FUNCTION public.fn_list_public_rays(
   p_after uuid DEFAULT NULL,
   p_limit integer DEFAULT 50000
@@ -180,6 +186,7 @@ $$;
 --   is crawlable within minutes without touching any archive shard. Ordered by
 --   lastmod DESC (NOT by id) and hard-capped at 5000. Touches lenses → needs
 --   row_security off, like fn_search_lenses / fn_list_public_lenses.
+DROP FUNCTION IF EXISTS public.fn_list_recent_public(timestamptz, integer);
 CREATE OR REPLACE FUNCTION public.fn_list_recent_public(
   p_since timestamptz,
   p_limit integer DEFAULT 5000
@@ -310,6 +317,7 @@ CREATE INDEX IF NOT EXISTS ix_tags_public_sitemap
 -- is owner-only). This public-safe reader builds on the already-vetted
 -- public.vw_content_threads_public view (visibility='public' AND status='published'),
 -- returning only SEO-safe fields. anon-executable.
+DROP FUNCTION IF EXISTS public.fn_get_thread_public(uuid);
 CREATE OR REPLACE FUNCTION public.fn_get_thread_public(p_thread_id uuid)
 RETURNS TABLE (
   id uuid,
