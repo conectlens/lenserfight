@@ -2,11 +2,10 @@
 
 **Version:** CN–CR expansion · 95 nodes · 11 categories
 
-The catalog is the single source of truth for every node available in the Workflow Studio. It powers the palette, edge validation, command search, config forms, n8n export, and execution routing.
+`libs/infra/execution/src/lib/catalog/workflow-node-catalog.ts` is the single source of truth for every node available in the Workflow Studio. It powers the palette, edge validation, command search, config forms, n8n export, and execution routing.
 
 **Source files:**
 - Authoritative catalog: `libs/infra/execution/src/lib/catalog/workflow-node-catalog.ts`
-- UI catalog: `libs/features/workflows/src/lib/catalog/workflow-node-catalog.ts`
 - Config descriptors: `libs/features/workflows/src/lib/config/descriptors/`
 - Runners: `libs/infra/execution/src/lib/runners/`
 
@@ -1005,7 +1004,6 @@ form_input_trigger → text_to_image → image_upscale → object_storage_upload
 4. Register the runner in `libs/infra/execution/src/lib/runners/default-node-runners.ts`
 5. Add a `RunnerConfigDescriptor` in `libs/features/workflows/src/lib/config/descriptors/`
 6. Register the descriptor in `libs/features/workflows/src/lib/config/runner-config.bootstrap.ts`
-7. Update `libs/features/workflows/src/lib/catalog/workflow-node-catalog.ts` if the UI catalog is used separately
-8. Add a test to `catalog-runner-coverage.spec.ts` (it will automatically pass once the runner is registered)
+7. Add a test to `catalog-runner-coverage.spec.ts` (it will automatically pass once the runner is registered)
 
 See the full contributor guide at `docs/en/how-to/contributors/workflow-node-contribution-guide.md`.

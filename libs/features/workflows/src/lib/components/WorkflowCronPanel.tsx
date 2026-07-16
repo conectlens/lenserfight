@@ -33,11 +33,24 @@ export const WorkflowCronPanel = forwardRef<WorkflowCronPanelRef, WorkflowCronPa
     const [showForm, setShowForm] = useState(false)
     const [cronExpr, setCronExpr] = useState('')
     const [active, setActive] = useState(true)
+    const [formError, setFormError] = useState<string | null>(null)
 
     const doSave = async () => {
-      if (!cronExpr.trim()) return
+      const trimmed = cronExpr.trim()
+      if (!trimmed) return
+      // The dispatcher matches at minute granularity, so only standard 5-field
+      // CRON expressions can be honored. Reject sub-minute (6-field) input here
+      // to surface a friendly message instead of a raw Postgres error from the
+      // upsert RPC, which rejects anything that is not exactly 5 fields.
+      if (trimmed.split(/\s+/).length !== 5) {
+        setFormError(
+          'CRON expression must have exactly 5 fields (minute hour day month weekday). Sub-minute schedules are not supported.',
+        )
+        return
+      }
+      setFormError(null)
       await upsertSchedule(
-        { workflow_id: workflowId, cron_expr: cronExpr.trim(), is_active: active },
+        { workflow_id: workflowId, cron_expr: trimmed, is_active: active },
       )
       setShowForm(false)
       setCronExpr('')
@@ -92,10 +105,15 @@ export const WorkflowCronPanel = forwardRef<WorkflowCronPanelRef, WorkflowCronPa
             </label>
             <input
               value={cronExpr}
-              onChange={(e) => setCronExpr(e.target.value)}
+              onChange={(e) => { setCronExpr(e.target.value); if (formError) setFormError(null) }}
               placeholder="0 * * * *"
               className="w-full rounded-lg border border-surface-border bg-surface-base px-2.5 py-1.5 text-sm font-mono text-greyscale-800 dark:text-greyscale-100 focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-greyscale-400"
             />
+            {formError && (
+              <p role="alert" className="text-[10px] text-status-red mt-0.5">
+                {formError}
+              </p>
+            )}
             {/* Presets */}
             <div className="flex flex-wrap gap-1">
               {CRON_PRESETS.map((p) => (
@@ -136,7 +154,7 @@ export const WorkflowCronPanel = forwardRef<WorkflowCronPanelRef, WorkflowCronPa
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowForm(false); setCronExpr('') }}
+                  onClick={() => { setShowForm(false); setCronExpr(''); setFormError(null) }}
                   className="px-3 py-1.5 rounded-lg border border-surface-border text-xs text-greyscale-500 hover:text-greyscale-700 transition-colors"
                 >
                   Cancel
