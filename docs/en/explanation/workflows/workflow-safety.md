@@ -18,9 +18,9 @@ The functions that do that privileged work are `SECURITY DEFINER` and run with e
 
 ## Injection-safe parametric prompts
 
+::: v-pre
 Parameters use double-square-bracket tokens — `[[label]]`, `[[label!]]` for optional, `[[label:type]]` for typed — rather than the `{{ … }}` syntax used by common template engines.
 
-::: v-pre
 The choice is deliberate: a user's prompt body frequently *contains* literal `{{ … }}` (Jinja, Handlebars, Mustache examples). Binding on `[[ … ]]` means user content can never collide with the parameter engine, and input sanitisation actively strips `{{ … }}` sequences from supplied values so they cannot smuggle template control into a downstream renderer.
 :::
 
