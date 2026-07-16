@@ -135,6 +135,5 @@ supabase/seed-data.sql
 **/keys-index.json
 
 /tmp/*
-
 # Local-only design specs & plans (never committed).
 docs/superpowers/

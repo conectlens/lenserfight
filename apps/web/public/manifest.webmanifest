@@ -1,0 +1,33 @@
+{
+  "name": "LenserFight Community",
+  "short_name": "LenserFight",
+  "description": "Discover public AI lenses, workflows, battles, rays, and Lenser profiles in the open LenserFight community.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "https://cdn.lenserfight.com/brand/favicons/original/android-icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn.lenserfight.com/brand/favicons/original/android-icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn.lenserfight.com/brand/favicons/original/android-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn.lenserfight.com/brand/lenserfight-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
