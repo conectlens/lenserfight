@@ -94,4 +94,27 @@ describe('createSeoWorker', () => {
     const res = await worker.fetch(req('/sitemap.xml', GOOGLEBOT, 'POST'), env)
     expect(await res.text()).toBe(ASSETS_SENTINEL)
   })
+
+  it('marks gzip shard responses no-transform so Cloudflare will not re-compress an already-gzip body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      async () =>
+        new Response(JSON.stringify([{ entity_key: 'a', lastmod: null, sort_id: '1' }]), {
+          status: 200,
+        }),
+    )
+    const env = makeEnv()
+    const worker = createSeoWorker(baseConfig)
+    const res = await worker.fetch(req('/sitemaps/lenses-1.xml.gz', GOOGLEBOT), env)
+    expect(res.headers.get('content-encoding')).toBe('gzip')
+    expect(res.headers.get('cache-control')).toContain('no-transform')
+  })
+
+  it('does not add no-transform to the non-gzip index route', async () => {
+    vi.stubGlobal('fetch', async () => new Response('[]', { status: 200 }))
+    const env = makeEnv()
+    const worker = createSeoWorker(baseConfig)
+    const res = await worker.fetch(req('/sitemap.xml', GOOGLEBOT), env)
+    expect(res.headers.get('cache-control')).not.toContain('no-transform')
+  })
 })

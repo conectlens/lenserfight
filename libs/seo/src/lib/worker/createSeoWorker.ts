@@ -61,7 +61,11 @@ const NOT_FOUND_HTML =
 function sitemapToResponse(r: SitemapResponse): Response {
   const headers: Record<string, string> = {
     'content-type': r.contentType,
-    'cache-control': r.cacheControl,
+    // no-transform stops Cloudflare's edge from re-compressing an already-gzip
+    // body (e.g. into brotli) — without it, a client that accepts br gets a
+    // brotli-encoded response whose payload, once brotli-decoded, is still raw
+    // gzip bytes: an "encoding error" at byte 1 for any XML/sitemap consumer.
+    'cache-control': r.gzip ? `${r.cacheControl}, no-transform` : r.cacheControl,
   }
   if (r.gzip) headers['content-encoding'] = 'gzip'
   return new Response(r.body as BodyInit, { status: r.status, headers })
