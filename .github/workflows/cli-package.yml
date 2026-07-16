@@ -58,7 +58,8 @@ jobs:
         # npm's retired legacy audit endpoint (410 Gone). The fix requires
         # pnpm >=11, a breaking major version bump (pnpm/pnpm#11268).
         # Tracked in https://github.com/conectlens/lenserfight/issues/352.
-        run: echo "Skipped pending pnpm >=11 upgrade (issue #352)"
+        run: |
+          echo "Skipped pending pnpm >=11 upgrade (issue #352)"
 
       - name: Test CLI release-critical paths
         shell: bash
