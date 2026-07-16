@@ -3,10 +3,15 @@
 // entity is missing/not public (→ Worker 404). Used as createSeoWorker's
 // `renderEntity` hook.
 //
-// VERIFY IN ENV: the RPC parameter names and row field names below are the
-// documented/expected shapes. If a name differs, the RPC call throws and the
-// Worker degrades to the SPA shell (no crash) — correct the mapping here. The
-// sitemap path is unaffected by any mismatch.
+// RPC names/shapes verified against supabase/migrations for lens, battle,
+// lenser, workflow, thread. `ray` still calls fn_content_tags_get_by_slug
+// (anon-granted, array-returning, so it won't 404) rather than the richer
+// vw_tags_public_stats view the live TagDetailPage actually reads — its
+// `count` field (total_usage) will stay empty until that's ported to a
+// view-backed fetch. workflow's node_count has no backing column either
+// (fn_get_workflow_detail has no node_count) — cosmetic gap, not a 404 risk.
+// If any other row field mismatches in practice, the fetch/build throws and
+// the Worker degrades to the SPA shell (no crash) — the sitemap is unaffected.
 
 import {
   buildBattleDocument,
@@ -47,7 +52,9 @@ function mapTags(v: unknown): Tagish[] {
 
 // Author can arrive nested ({author:{...}}) or flattened (author_handle, ...).
 function mapAuthor(row: Row): { displayName: string; handle: string; avatarUrl?: string | null } {
-  const a = (row.author ?? {}) as Row
+  // fn_get_lens_detail_bootstrap nests the author under `author_profile`;
+  // battle/thread reads flatten it to author_handle/author_display_name instead.
+  const a = (row.author ?? row.author_profile ?? {}) as Row
   return {
     displayName: str(a.displayName) ?? str(a.display_name) ?? str(row.author_display_name) ?? str(row.display_name) ?? 'Lenser',
     handle: str(a.handle) ?? str(row.author_handle) ?? str(row.handle) ?? '',
@@ -95,7 +102,11 @@ const DETAIL: Record<
     },
   },
   lenser: {
-    fn: 'fn_get_lenser_profile_full',
+    // fn_lensers_get_public_profile fails safe: null for private/restricted/
+    // deactivated/governance-denied handles, the flat profile object only for
+    // route_state === 'FULL_PROFILE'. (fn_lensers_get_profile — no "public" —
+    // returns viewer-dependent access state and must never be used here.)
+    fn: 'fn_lensers_get_public_profile',
     arg: (k) => ({ p_handle: k }),
     build: (row, k) => {
       const input: LenserSeoInput = {
@@ -108,7 +119,7 @@ const DETAIL: Record<
         avatar_url: str(row.avatar_url),
         website_url: str(row.website_url),
         stats: {
-          promptsCount: num(row.prompt_count) ?? num(row.promptsCount),
+          promptsCount: num(row.lens_count) ?? num(row.prompt_count) ?? num(row.promptsCount),
           threadsCount: num(row.thread_count) ?? num(row.threadsCount),
           followersCount: num(row.follower_count) ?? num(row.followersCount),
         },
@@ -176,6 +187,8 @@ export async function renderEntity(
   const spec = DETAIL[kind]
   if (!spec) return null
   const row = await fetchOne(ctx.anon, spec.fn, spec.arg(key))
-  if (!row) return null
+  // fn_get_lens_detail_bootstrap returns {"error":"not_found"} rather than an
+  // empty result for a missing/inaccessible lens — treat that as not-found too.
+  if (!row || typeof row.error === 'string') return null
   return spec.build(row, key)
 }
