@@ -111,9 +111,14 @@ function xml(body: string, cacheControl: string): SitemapResponse {
 }
 
 async function gzipped(body: string, cacheControl: string): Promise<SitemapResponse> {
+  // Per the sitemaps.org protocol, a .xml.gz sitemap is a gzip FILE the crawler
+  // downloads and decompresses itself — not an HTTP-transport gzip encoding.
+  // content-type reflects that (application/gzip); createSeoWorker must NOT
+  // also set Content-Encoding: gzip, or a standards-compliant client strips
+  // one gzip layer automatically and is left with the still-compressed file.
   return {
     status: 200,
-    contentType: 'application/xml; charset=utf-8',
+    contentType: 'application/gzip',
     gzip: true,
     body: await gzipXml(body),
     cacheControl,
