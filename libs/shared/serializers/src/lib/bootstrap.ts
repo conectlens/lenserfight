@@ -16,6 +16,11 @@ import {
   LensYamlSerializer,
 } from './adapters/lens'
 import {
+  SkillJsonSerializer,
+  SkillMarkdownSerializer,
+  SkillYamlSerializer,
+} from './adapters/skill'
+import {
   WorkflowJsonSerializer,
   WorkflowMarkdownSerializer,
   WorkflowYamlSerializer,
@@ -29,6 +34,7 @@ import { getDefaultRegistry, SerializerRegistry } from './SerializerRegistry'
  *   - lens:     json, markdown, yaml
  *   - workflow: json, markdown, yaml
  *   - agent:    json, markdown, yaml
+ *   - skill:    json, markdown, yaml
  *
  * Truly idempotent: state lives in the registry itself, not in a
  * separate module-scoped flag. This survives HMR reloads, dual module
@@ -47,6 +53,9 @@ const BUILTINS: Array<() => Serializer<unknown>> = [
   () => new AgentJsonSerializer() as unknown as Serializer<unknown>,
   () => new AgentMarkdownSerializer() as unknown as Serializer<unknown>,
   () => new AgentYamlSerializer() as unknown as Serializer<unknown>,
+  () => new SkillJsonSerializer() as unknown as Serializer<unknown>,
+  () => new SkillMarkdownSerializer() as unknown as Serializer<unknown>,
+  () => new SkillYamlSerializer() as unknown as Serializer<unknown>,
 ]
 
 export function bootstrapSerializers(
