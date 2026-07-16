@@ -95,6 +95,7 @@ export function ExportModal<T>({
       workflow: '/explanation/architecture/universal-export-system',
       lens: '/explanation/architecture/universal-export-system',
       agent: '/explanation/architecture/universal-export-system',
+      skill: '/explanation/architecture/universal-export-system',
       bundle: '/explanation/architecture/universal-export-system',
     }
     return map[kind]
