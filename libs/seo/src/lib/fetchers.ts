@@ -48,8 +48,13 @@ async function callRpc<T>(
   if (!res.ok) {
     throw new Error(`Supabase RPC ${fn} failed: ${res.status} ${res.statusText}`)
   }
-  const json = (await res.json()) as T[] | null
-  return Array.isArray(json) ? json : []
+  // PostgREST returns an array for RETURNS TABLE/SETOF functions, but a bare
+  // scalar (object, or the JSON literal null) for a function returning a single
+  // jsonb/composite value — several detail RPCs (e.g. fn_get_lens_detail_bootstrap,
+  // fn_lensers_get_public_profile) are the latter, so both shapes must be handled.
+  const json = (await res.json()) as T[] | T | null
+  if (Array.isArray(json)) return json
+  return json === null ? [] : [json]
 }
 
 /** Calls an RPC expected to return a single row (detail reads); null if empty. */
