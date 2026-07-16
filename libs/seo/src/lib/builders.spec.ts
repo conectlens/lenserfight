@@ -1,37 +1,63 @@
 import { describe, expect, it } from 'vitest'
-import { seoService } from '@lenserfight/data/repositories'
-import type { LensDetailViewModel } from '@lenserfight/types'
-import { buildHreflang, buildLensDocument } from './builders'
+import { buildLensDocument, buildLenserDocument, buildRayDocument } from './builders'
+import { renderBotHtml } from './renderDocument'
+import { seoService } from './meta/seoService'
 
-// Minimal fixture — cast to the view model; the builder only reads the fields
-// exercised here (title/description/author/tags/usageCount).
-const lens = {
-  id: 'abc',
-  title: 'Planning Lens',
-  description: 'Plan anything',
-  status: 'published',
-  createdAt: '2026-01-01',
-  usageCount: 12,
-  author: { displayName: 'Ada', handle: 'ada' },
-  tags: [{ name: 'planning', slug: 'planning' }],
-} as unknown as LensDetailViewModel
+describe('buildLensDocument', () => {
+  const lens = {
+    id: 'lens-1',
+    title: 'AI Agent Planner',
+    description: 'Plans multi-step agent tasks.',
+    author: { displayName: 'Ada', handle: 'ada' },
+    tags: [{ name: 'agents', slug: 'agents' }],
+    usageCount: 12,
+    createdAt: '2026-07-01T00:00:00Z',
+    status: 'published',
+  }
 
-describe('buildHreflang', () => {
-  it('emits en/tr/x-default and adds lang=tr correctly', () => {
-    const alts = buildHreflang('https://moon.lenserfight.com/lenses/abc')
-    expect(alts.map((a) => a.lang)).toEqual(['en', 'tr', 'x-default'])
-    expect(alts[1].href).toContain('?lang=tr')
-    expect(buildHreflang('https://x/y?q=1')[1].href).toContain('&lang=tr')
+  it('uses seoService for meta and sets an absolute canonical', () => {
+    const doc = buildLensDocument(lens)
+    expect(doc.meta.title).toBe(seoService.getPromptMeta(lens as never).title)
+    expect(doc.canonical).toBe('https://moon.lenserfight.com/lenses/lens-1')
+    expect(doc.ogType).toBe('article')
+    expect(doc.hreflang.map((h) => h.lang)).toEqual(['en', 'tr', 'x-default'])
+  })
+
+  it('renders a crawlable body with H1, author link and tag link', () => {
+    const html = renderBotHtml(buildLensDocument(lens))
+    expect(html).toContain('<h1>AI Agent Planner</h1>')
+    expect(html).toContain('href="https://moon.lenserfight.com/lenser/ada"')
+    expect(html).toContain('href="https://moon.lenserfight.com/ray/agents"')
   })
 })
 
-describe('buildLensDocument', () => {
-  it('uses seoService metadata and renders the entity body', () => {
-    const doc = buildLensDocument(lens)
-    expect(doc.meta.title).toBe(seoService.getPromptMeta(lens).title)
-    expect(doc.canonical).toBe('https://moon.lenserfight.com/lenses/abc')
-    expect(doc.bodyHtml).toContain('<h1>Planning Lens</h1>')
-    expect(doc.bodyHtml).toContain('/lenser/ada')
-    expect(doc.bodyHtml).toContain('/ray/planning')
+describe('renderBotHtml', () => {
+  it('emits title, canonical, robots, OG, Twitter and JSON-LD', () => {
+    const html = renderBotHtml(buildRayDocument({ name: 'Agents', slug: 'agents', count: 5 }))
+    expect(html).toContain('<title>')
+    expect(html).toContain('<link rel="canonical" href="https://moon.lenserfight.com/ray/agents" />')
+    expect(html).toContain('content="index,follow,max-image-preview:large"')
+    expect(html).toContain('property="og:type"')
+    expect(html).toContain('name="twitter:card" content="summary_large_image"')
+    expect(html).toContain('application/ld+json')
+  })
+
+  it('honors index:false as noindex (private workflow via seoService)', () => {
+    const doc = buildLenserDocument({ handle: 'x', display_name: 'X' })
+    // profiles are indexable; assert the robots wiring by forcing index:false
+    const noindex = renderBotHtml({ ...doc, meta: { ...doc.meta, index: false } })
+    expect(noindex).toContain('content="noindex,nofollow"')
+  })
+
+  it('escapes user content to prevent tag/script breakout', () => {
+    const html = renderBotHtml(
+      buildLensDocument({
+        id: 'x',
+        title: '</title><script>alert(1)</script>',
+        author: { displayName: 'a', handle: 'a' },
+      }),
+    )
+    expect(html).not.toContain('<script>alert(1)</script>')
+    expect(html).toContain('&lt;script&gt;')
   })
 })

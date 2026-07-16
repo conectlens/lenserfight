@@ -1,0 +1,17 @@
+# Cloudflare Pages config for moon.lenserfight.com (apps/web).
+# The SPA is served from the build output; dist/apps/web/_worker.js (advanced
+# mode, bundled by tools/seo/build-worker.mjs) fronts it for bots + sitemaps.
+name = "lenserfight-web"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "../../dist/apps/web"
+
+# Public config (the anon key is already shipped in the browser SPA; RLS is the
+# security boundary). Set the real values in the Pages project, or here.
+[vars]
+# SUPABASE_URL = "https://<project-ref>.supabase.co"
+# SUPABASE_ANON_KEY = "<anon-key>"
+
+# INDEXNOW_KEY: a random 32-hex string, also auto-served at /<key>.txt.
+# Set via: wrangler pages secret put INDEXNOW_KEY --project-name lenserfight-web
+# (or add to [vars] above — it is served publicly at the key file anyway).
