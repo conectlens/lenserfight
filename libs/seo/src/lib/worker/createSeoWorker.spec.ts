@@ -7,7 +7,7 @@ function makeEnv(): SeoWorkerEnv {
   return {
     ASSETS: { fetch: vi.fn(async () => new Response(ASSETS_SENTINEL, { status: 200 })) },
     SUPABASE_URL: 'https://db.example.co',
-    SUPABASE_ANON_KEY: 'anon',
+    SUPABASE_PUBLISHABLE_KEY: 'anon',
     INDEXNOW_KEY: 'key123',
   }
 }

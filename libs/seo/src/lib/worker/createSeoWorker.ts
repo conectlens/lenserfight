@@ -26,7 +26,7 @@ import type { SupabaseAnonConfig } from '../fetchers'
 export interface SeoWorkerEnv {
   ASSETS: { fetch: (request: Request) => Promise<Response> }
   SUPABASE_URL: string
-  SUPABASE_ANON_KEY: string
+  SUPABASE_PUBLISHABLE_KEY: string
   INDEXNOW_KEY?: string
 }
 
@@ -92,7 +92,7 @@ export function createSeoWorker(config: SeoWorkerConfig) {
       const url = new URL(request.url)
       const anon: SupabaseAnonConfig = {
         supabaseUrl: env.SUPABASE_URL,
-        anonKey: env.SUPABASE_ANON_KEY,
+        anonKey: env.SUPABASE_PUBLISHABLE_KEY,
       }
 
       try {

@@ -6,7 +6,7 @@
 // - /sitemap.xml + /sitemaps/*: dynamic, DB-backed, edge-cached.
 // - IndexNow key file: /<INDEXNOW_KEY>.txt.
 //
-// Env (Cloudflare Pages project settings): SUPABASE_URL, SUPABASE_ANON_KEY,
+// Env (Cloudflare Pages project settings): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY,
 // and secret INDEXNOW_KEY. ASSETS is provided automatically in advanced mode.
 
 import { createSeoWorker, renderEntity, type SitemapEntry } from '@lenserfight/seo'
