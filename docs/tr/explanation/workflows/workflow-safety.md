@@ -57,10 +57,10 @@ Geçici bir arızanın işi kaybetmemesi veya yinelememesi için güvenilirlik k
 
 ## Görünürlük ve dışa aktarma redaksiyonu
 
-Bir iş akışının grafiğini okumak (bkz. [Bir İş Akışını Dışa Aktarma](/en/how-to/workflows/export-a-workflow)) genel veya sahip olunan iş akışlarıyla sınırlıdır ve yapılandırma **referansları** döndürür — asla çözülmüş anahtarlar değil. Webhook gizli anahtarları ve entegrasyon kimlik bilgileri düğüm grafiğinin dışında yaşar ve dışa aktarmalardan çıkarılır.
+Bir iş akışının grafiğini okumak (bkz. [Bir İş Akışını Dışa Aktarma](../../../en/how-to/workflows/export-a-workflow.md)) genel veya sahip olunan iş akışlarıyla sınırlıdır ve yapılandırma **referansları** döndürür — asla çözülmüş anahtarlar değil. Webhook gizli anahtarları ve entegrasyon kimlik bilgileri düğüm grafiğinin dışında yaşar ve dışa aktarmalardan çıkarılır.
 
 ## İlgili
 
 - [İş Akışı Kavramları](./workflow-concepts.md)
-- [Bir İş Akışını Dışa Aktarma](/en/how-to/workflows/export-a-workflow)
+- [Bir İş Akışını Dışa Aktarma](../../../en/how-to/workflows/export-a-workflow.md)
 - [Açık Kaynak İş Akışları](./open-source-workflows.md)
