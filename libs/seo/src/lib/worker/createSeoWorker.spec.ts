@@ -95,7 +95,11 @@ describe('createSeoWorker', () => {
     expect(await res.text()).toBe(ASSETS_SENTINEL)
   })
 
-  it('marks gzip shard responses no-transform so Cloudflare will not re-compress an already-gzip body', async () => {
+  it('serves .xml.gz shards as an opaque gzip file: application/gzip, no Content-Encoding, no-transform', async () => {
+    // .xml.gz is a gzip FILE per the sitemaps.org protocol (the crawler
+    // decompresses it itself) — Content-Encoding must NOT be set, or a
+    // standards-compliant client auto-strips one gzip layer and is left with
+    // the still-compressed file underneath (an "encoding error" for any parser).
     vi.stubGlobal(
       'fetch',
       async () =>
@@ -106,7 +110,8 @@ describe('createSeoWorker', () => {
     const env = makeEnv()
     const worker = createSeoWorker(baseConfig)
     const res = await worker.fetch(req('/sitemaps/lenses-1.xml.gz', GOOGLEBOT), env)
-    expect(res.headers.get('content-encoding')).toBe('gzip')
+    expect(res.headers.get('content-type')).toBe('application/gzip')
+    expect(res.headers.get('content-encoding')).toBeNull()
     expect(res.headers.get('cache-control')).toContain('no-transform')
   })
 
