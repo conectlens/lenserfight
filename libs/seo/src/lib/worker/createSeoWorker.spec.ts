@@ -95,11 +95,7 @@ describe('createSeoWorker', () => {
     expect(await res.text()).toBe(ASSETS_SENTINEL)
   })
 
-  it('serves .xml.gz shards as an opaque gzip file: application/gzip, no Content-Encoding, no-transform', async () => {
-    // .xml.gz is a gzip FILE per the sitemaps.org protocol (the crawler
-    // decompresses it itself) — Content-Encoding must NOT be set, or a
-    // standards-compliant client auto-strips one gzip layer and is left with
-    // the still-compressed file underneath (an "encoding error" for any parser).
+  it('serves .xml.gz shards as application/xml + Content-Encoding: gzip, with no-transform', async () => {
     vi.stubGlobal(
       'fetch',
       async () =>
@@ -110,9 +106,35 @@ describe('createSeoWorker', () => {
     const env = makeEnv()
     const worker = createSeoWorker(baseConfig)
     const res = await worker.fetch(req('/sitemaps/lenses-1.xml.gz', GOOGLEBOT), env)
-    expect(res.headers.get('content-type')).toBe('application/gzip')
-    expect(res.headers.get('content-encoding')).toBeNull()
+    expect(res.headers.get('content-type')).toContain('application/xml')
+    expect(res.headers.get('content-encoding')).toBe('gzip')
     expect(res.headers.get('cache-control')).toContain('no-transform')
+  })
+
+  it('constructs the gzip shard Response with encodeBody: manual so the Workers runtime does not re-compress an already-gzip body', async () => {
+    // Node's Response never auto-recompresses (that's Cloudflare-Workers-
+    // runtime-specific behavior Miniflare/Node can't reproduce), so the only
+    // way to pin this invariant in a unit test is to check what init options
+    // the code actually passes to the Response constructor.
+    vi.stubGlobal(
+      'fetch',
+      async () =>
+        new Response(JSON.stringify([{ entity_key: 'a', lastmod: null, sort_id: '1' }]), {
+          status: 200,
+        }),
+    )
+    const RealResponse = Response
+    const responseSpy = vi.fn(function (this: unknown, body: BodyInit | null, init?: ResponseInit) {
+      return new RealResponse(body, init)
+    })
+    vi.stubGlobal('Response', responseSpy)
+    const env = makeEnv()
+    const worker = createSeoWorker(baseConfig)
+    await worker.fetch(req('/sitemaps/lenses-1.xml.gz', GOOGLEBOT), env)
+    const gzipCall = responseSpy.mock.calls.find(
+      ([, init]) => (init as { encodeBody?: string } | undefined)?.encodeBody !== undefined,
+    )
+    expect(gzipCall?.[1]).toMatchObject({ encodeBody: 'manual' })
   })
 
   it('does not add no-transform to the non-gzip index route', async () => {
