@@ -123,6 +123,33 @@ export function canonicalForPage(relativePath: string): string {
   return `${DOCS_HOST}${path === '/index' ? '/' : path}`
 }
 
+/**
+ * Per-page hreflang alternates. Only emits a locale's <link> when that locale
+ * actually has the matching file on disk, and always points at the exact
+ * equivalent page rather than the locale homepage. A page-invariant, homepage-only
+ * hreflang block (the previous approach) tells Google every page has a translated
+ * counterpart at every locale's root — which it then tries to reconcile with the
+ * real per-page canonical URLs, producing guessed URLs that were never real
+ * (e.g. `/fr/en/...`) and canonical-selection conflicts.
+ */
+export function buildHreflangTags(relativePath: string, docsDir: string): HeadTag[] {
+  const locale = localeFromPath(relativePath)
+  const rest = relativePath.slice(locale.length)
+  const tags: HeadTag[] = []
+  let defaultHref = canonicalForPage(relativePath)
+
+  for (const loc of KNOWN_LOCALES) {
+    const candidateRelative = `${loc}${rest}`
+    if (loc !== locale && !existsSync(resolve(docsDir, candidateRelative))) continue
+    const href = canonicalForPage(candidateRelative)
+    tags.push(['link', { rel: 'alternate', hreflang: loc, href }])
+    if (loc === 'en') defaultHref = href
+  }
+
+  tags.push(['link', { rel: 'alternate', hreflang: 'x-default', href: defaultHref }])
+  return tags
+}
+
 // ── Content utilities ──────────────────────────────────────────────────────────
 
 export function readPageExcerpt(relativePath: string, docsDir: string): string {
@@ -335,6 +362,7 @@ export function buildPageHeadTags(
   relativePath: string,
   title: string,
   description: string,
+  docsDir: string,
   frontmatter: Record<string, unknown> = {}
 ): HeadTag[] {
   const canonical = canonicalForPage(relativePath)
@@ -347,6 +375,7 @@ export function buildPageHeadTags(
   const tags: HeadTag[] = [
     // ── Indexing ──────────────────────────────────────────────────────────────
     ['link', { rel: 'canonical', href: canonical }],
+    ...buildHreflangTags(relativePath, docsDir),
     ['meta', { name: 'robots', content: 'index,follow,max-image-preview:large' }],
     ['meta', { name: 'author', content: 'LenserFight' }],
     ['meta', { name: 'keywords', content: keywords }],
@@ -498,7 +527,7 @@ ${DOCS_HOST}/sitemap.xml
  */
 export function generateChangelogRss(lastmod: Date = new Date()): string {
   const isoDate = lastmod.toISOString()
-  const changelogUrl = `${DOCS_HOST}/en/changelog`
+  const changelogUrl = `${DOCS_HOST}/changelog`
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>

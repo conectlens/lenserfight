@@ -30,7 +30,10 @@ import {
 } from './seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const docsDir = resolve(__dirname, '../../docs')
+// __dirname is apps/docs/.vitepress — srcDir (below) is resolved by VitePress relative to
+// the site root (apps/docs), but this manual docsDir needs one more level up to reach the
+// same repo-root docs/ that srcDir points at.
+const docsDir = resolve(__dirname, '../../../docs')
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mermaidFencePlugin(md: any) {
@@ -549,7 +552,7 @@ export default defineConfig({
     pageData.frontmatter['description'] = description
     pageData.frontmatter['head'] ??= []
       ; (pageData.frontmatter['head'] as unknown[]).push(
-        ...buildPageHeadTags(relativePath, title, description, frontmatter)
+        ...buildPageHeadTags(relativePath, title, description, docsDir, frontmatter)
       )
   },
 
@@ -704,19 +707,10 @@ export default defineConfig({
     ['script', { type: 'application/ld+json' }, buildWebSiteJsonLd()],
     ['script', { type: 'application/ld+json' }, buildOrganizationJsonLd()],
     ['script', { type: 'application/ld+json' }, buildSoftwareAppJsonLd()],
-    // ── hreflang (for Googlebot multilingual discovery) ─────────────────────
-    ['link', { rel: 'alternate', hreflang: 'en', href: `${DOCS_HOST}/en/` }],
-    ['link', { rel: 'alternate', hreflang: 'tr', href: `${DOCS_HOST}/tr/` }],
-    ['link', { rel: 'alternate', hreflang: 'es', href: `${DOCS_HOST}/es/` }],
-    ['link', { rel: 'alternate', hreflang: 'fr', href: `${DOCS_HOST}/fr/` }],
-    ['link', { rel: 'alternate', hreflang: 'de', href: `${DOCS_HOST}/de/` }],
-    ['link', { rel: 'alternate', hreflang: 'zh', href: `${DOCS_HOST}/zh/` }],
-    ['link', { rel: 'alternate', hreflang: 'ja', href: `${DOCS_HOST}/ja/` }],
-    ['link', { rel: 'alternate', hreflang: 'ko', href: `${DOCS_HOST}/ko/` }],
-    ['link', { rel: 'alternate', hreflang: 'ru', href: `${DOCS_HOST}/ru/` }],
-    ['link', { rel: 'alternate', hreflang: 'pt', href: `${DOCS_HOST}/pt/` }],
-    ['link', { rel: 'alternate', hreflang: 'it', href: `${DOCS_HOST}/it/` }],
-    ['link', { rel: 'alternate', hreflang: 'x-default', href: DOCS_HOST }],
+    // hreflang is now emitted per-page in transformPageData (see buildHreflangTags in
+    // seo.ts) — a single page-invariant block here pointed every locale at its
+    // homepage regardless of which page was being viewed, which is what caused
+    // Google to guess non-existent locale-prefixed URLs and lose track of canonicals.
     // ── Feed autodiscovery ──────────────────────────────────────────────────
     [
       'link',

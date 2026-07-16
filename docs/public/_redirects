@@ -1,0 +1,17 @@
+# Cloudflare Pages redirects for docs.lenserfight.com
+#
+# English content lives under /en/** (docs/en/**), and the bare-domain
+# homepage was removed in favor of a single canonical page at /en/. These
+# rules 301 the pre-locale-prefix URLs (and bare root) to their real
+# canonical location so search engines consolidate on one indexable URL
+# instead of crawling both. /changelog is intentionally excluded — it's a
+# single shared page served without a locale prefix by design.
+/                    /en/                       301
+/explanation/*       /en/explanation/:splat     301
+/how-to/*            /en/how-to/:splat          301
+/reference/*         /en/reference/:splat       301
+/tutorials/*         /en/tutorials/:splat       301
+/platform-setup/*    /en/platform-setup/:splat  301
+/providers/*         /en/providers/:splat       301
+/rfcs/*              /en/rfcs/:splat            301
+/guides/*            /en/guides/:splat          301
