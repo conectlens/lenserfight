@@ -1,74 +1,129 @@
-/**
- * Lightweight Supabase RPC access for the edge Worker. Uses plain `fetch`
- * against PostgREST rather than the full `@supabase/supabase-js` client to keep
- * the Worker bundle small. The anon key is the only credential — RLS is the
- * security boundary, so a fetcher can never read a non-public row.
- */
+// Worker-safe Supabase anon read layer. Uses a plain `fetch` to the PostgREST
+// `/rest/v1/rpc/<fn>` endpoint with the anon key — no `@supabase/supabase-js`
+// (too heavy for the edge). RLS is the security boundary: these only ever return
+// publicly visible rows. `fetchImpl` is injectable so callers/tests can mock it.
 
-export interface SupabaseRestConfig {
+export interface SupabaseAnonConfig {
   supabaseUrl: string
   anonKey: string
-  /** Injectable for tests; defaults to the runtime `fetch`. */
   fetchImpl?: typeof fetch
 }
 
-export interface RpcOptions {
-  /**
-   * When true (default), a SETOF result is unwrapped: `[]` → `null`, `[row]` →
-   * `row`. Set false to receive the raw array.
-   */
-  single?: boolean
+/** One row of a fn_list_public_* result — the route key + honest lastmod. */
+export interface SitemapRow {
+  entity_key: string
+  lastmod: string | null
+  sort_id: string
 }
 
-/**
- * Call a Postgres function via PostgREST with the anon key.
- *
- * @returns the row (or unwrapped scalar) on success, `null` when not found /
- *   not public (empty set or 404). Throws on transport or server errors so the
- *   Worker can fall back to the SPA shell rather than serving a wrong page.
- */
-export async function callRpc<T = unknown>(
-  config: SupabaseRestConfig,
-  fnName: string,
-  params: Record<string, unknown> = {},
-  options: RpcOptions = {},
-): Promise<T | null> {
-  const { single = true } = options
-  const doFetch = config.fetchImpl ?? fetch
-  const res = await doFetch(`${config.supabaseUrl}/rest/v1/rpc/${fnName}`, {
+/** One row of fn_list_recent_public — kind-tagged for the fresh shard. */
+export interface RecentRow {
+  kind: string
+  entity_key: string
+  lastmod: string | null
+}
+
+/** sitemaps.org per-file URL cap; also the max page size the RPCs accept. */
+export const RPC_PAGE_SIZE = 50000
+
+async function callRpc<T>(
+  cfg: SupabaseAnonConfig,
+  fn: string,
+  args: Record<string, unknown>,
+): Promise<T[]> {
+  const doFetch = cfg.fetchImpl ?? fetch
+  const url = `${cfg.supabaseUrl.replace(/\/+$/, '')}/rest/v1/rpc/${fn}`
+  const res = await doFetch(url, {
     method: 'POST',
     headers: {
-      apikey: config.anonKey,
-      Authorization: `Bearer ${config.anonKey}`,
+      apikey: cfg.anonKey,
+      Authorization: `Bearer ${cfg.anonKey}`,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify(params),
+    body: JSON.stringify(args),
   })
-
-  if (res.status === 404) return null
+  // 404 / empty → treat as "no rows" so a missing entity degrades gracefully.
+  if (res.status === 404) return []
   if (!res.ok) {
-    throw new Error(`RPC ${fnName} failed: ${res.status}`)
+    throw new Error(`Supabase RPC ${fn} failed: ${res.status} ${res.statusText}`)
   }
+  const json = (await res.json()) as T[] | null
+  return Array.isArray(json) ? json : []
+}
 
-  const data = (await res.json()) as unknown
-  if (!single) return data as T
-  if (Array.isArray(data)) return (data.length ? (data[0] as T) : null)
-  return (data ?? null) as T | null
+/** Calls an RPC expected to return a single row (detail reads); null if empty. */
+export async function fetchOne(
+  cfg: SupabaseAnonConfig,
+  fn: string,
+  args: Record<string, unknown>,
+): Promise<Record<string, unknown> | null> {
+  const rows = await callRpc<Record<string, unknown>>(cfg, fn, args)
+  return rows.length > 0 ? rows[0] : null
+}
+
+const LIST_FN: Record<string, string> = {
+  lens: 'fn_list_public_lenses',
+  battle: 'fn_list_public_battles',
+  lenser: 'fn_list_public_lensers',
+  workflow: 'fn_list_public_workflows',
+  thread: 'fn_list_public_threads',
+  ray: 'fn_list_public_rays',
 }
 
 /**
- * Bind a config to the per-entity read functions. Each returns the raw public
- * row (or `null`); Phase 2 maps rows into the builder input shapes once the
- * anon read functions' columns are finalized (see Phase 0 audit).
+ * Fetches one keyset page of public entities of `kind`. Pass the previous page's
+ * last `sort_id` as `after` to continue. Returns up to `limit` rows ordered by
+ * uuid — stable, immutable id-range paging for archive shards.
  */
-export function makeSeoFetchers(config: SupabaseRestConfig) {
-  return {
-    getLens: (id: string) => callRpc(config, 'fn_get_lens_detail_bootstrap', { p_lens_id: id }),
-    getBattle: (slug: string) => callRpc(config, 'fn_get_battle_by_slug', { p_slug: slug }),
-    getLenser: (handle: string) => callRpc(config, 'fn_get_lenser_profile_full', { p_handle: handle }),
-    getWorkflow: (id: string) => callRpc(config, 'fn_get_workflow_public', { p_workflow_id: id }),
-    getThread: (id: string) => callRpc(config, 'fn_get_thread_public', { p_thread_id: id }),
-    getRay: (slug: string) => callRpc(config, 'fn_get_ray_public', { p_slug: slug }),
+export function listPublicEntities(
+  cfg: SupabaseAnonConfig,
+  kind: keyof typeof LIST_FN,
+  after: string | null = null,
+  limit: number = RPC_PAGE_SIZE,
+): Promise<SitemapRow[]> {
+  const fn = LIST_FN[kind]
+  if (!fn) throw new Error(`No sitemap list function for kind "${kind}"`)
+  return callRpc<SitemapRow>(cfg, fn, { p_after: after, p_limit: limit })
+}
+
+/**
+ * Pages through every public entity of `kind` by keyset until the source is
+ * exhausted. Guards against a non-advancing cursor (defensive: a buggy RPC that
+ * returns the same page would otherwise loop forever).
+ */
+export async function listAllPublicEntities(
+  cfg: SupabaseAnonConfig,
+  kind: keyof typeof LIST_FN,
+  pageSize: number = RPC_PAGE_SIZE,
+): Promise<SitemapRow[]> {
+  const all: SitemapRow[] = []
+  let after: string | null = null
+  // Hard ceiling: pageSize * this = absolute max URLs walked, prevents a runaway
+  // loop against an unbounded/broken source.
+  const MAX_PAGES = 1000
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const rows: SitemapRow[] = await listPublicEntities(cfg, kind, after, pageSize)
+    if (rows.length === 0) break
+    all.push(...rows)
+    const nextAfter = rows[rows.length - 1].sort_id
+    if (rows.length < pageSize || nextAfter === after) break
+    after = nextAfter
   }
+  return all
+}
+
+/**
+ * Fetches the fresh-shard rows: public entities of every type created/updated
+ * since `since`, newest first, capped server-side at 5000.
+ */
+export function listRecentPublic(
+  cfg: SupabaseAnonConfig,
+  since: Date,
+  limit = 5000,
+): Promise<RecentRow[]> {
+  return callRpc<RecentRow>(cfg, 'fn_list_recent_public', {
+    p_since: since.toISOString(),
+    p_limit: limit,
+  })
 }

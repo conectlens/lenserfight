@@ -1,11 +1,11 @@
-import { seoService } from '@lenserfight/data/repositories'
-import type {
-  Lenser,
-  LenserStats,
-  LensDetailViewModel,
-  TagUsage,
-  ThreadDetailViewModel,
-} from '@lenserfight/types'
+// Entity document builders: glue seoService metadata + the crawlable body into a
+// SeoDocument. Pure and unit-testable. seoService's input types are the full
+// React view-models; our *SeoInput shapes are structural subsets (seoService
+// only reads a handful of fields), so we cast at the call boundary.
+
+import { seoService, type SEOMetadata } from './meta/seoService'
+import { buildHreflang, type SeoDocument } from './renderDocument'
+import { absoluteUrl, entityPath, type EntityKind } from './routes'
 import {
   renderBattleBody,
   renderLensBody,
@@ -13,100 +13,51 @@ import {
   renderRayBody,
   renderThreadBody,
   renderWorkflowBody,
-} from './bodies/entities'
-import type { BattleSeoInput, HreflangAlternate, SeoDocument, WorkflowSeoInput } from './types'
+  type BattleSeoInput,
+  type LensSeoInput,
+  type LenserSeoInput,
+  type RaySeoInput,
+  type ThreadSeoInput,
+  type WorkflowSeoInput,
+} from './bodies'
 
-const FORUM_HOST = 'https://moon.lenserfight.com'
+const BASE = 'https://moon.lenserfight.com'
 
-export interface BuildContext {
-  /** BCP-47 locale for the rendered document. Defaults to 'en'. */
-  locale?: string
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyArg = any
 
-/**
- * Emit `en`, `tr`, and `x-default` alternates for a canonical URL, mirroring the
- * localization signal used across the existing sitemap.
- */
-export function buildHreflang(canonical: string): HreflangAlternate[] {
-  const sep = canonical.includes('?') ? '&' : '?'
-  return [
-    { lang: 'en', href: canonical },
-    { lang: 'tr', href: `${canonical}${sep}lang=tr` },
-    { lang: 'x-default', href: canonical },
-  ]
-}
-
-function assemble(
-  meta: ReturnType<typeof seoService.getHomeMeta>,
+function toDoc(
+  meta: SEOMetadata,
+  kind: EntityKind,
+  key: string,
   bodyHtml: string,
-  locale: string,
+  ogType: string,
 ): SeoDocument {
-  const canonical = meta.url ?? FORUM_HOST
-  return { meta, canonical, locale, hreflang: buildHreflang(canonical), bodyHtml }
+  const canonical = meta.url ?? absoluteUrl(BASE, entityPath(kind, key))
+  return { meta, canonical, hreflang: buildHreflang(canonical), bodyHtml, ogType, locale: 'en' }
 }
 
-export function buildLensDocument(vm: LensDetailViewModel, ctx: BuildContext = {}): SeoDocument {
-  const bodyHtml = renderLensBody({
-    title: vm.title,
-    description: vm.description,
-    authorName: vm.author.displayName,
-    authorHandle: vm.author.handle,
-    tags: vm.tags,
-    usageCount: vm.usageCount,
-  })
-  return assemble(seoService.getPromptMeta(vm), bodyHtml, ctx.locale ?? 'en')
+export function buildLensDocument(e: LensSeoInput): SeoDocument {
+  return toDoc(seoService.getPromptMeta(e as AnyArg), 'lens', e.id, renderLensBody(e), 'article')
 }
 
-export function buildBattleDocument(input: BattleSeoInput, ctx: BuildContext = {}): SeoDocument {
-  const bodyHtml = renderBattleBody({
-    title: input.title,
-    taskPrompt: input.task_prompt,
-    totalVotes: input.total_vote_count,
-    authorName: input.author_display_name,
-    authorHandle: input.author_handle,
-  })
-  return assemble(seoService.getBattleMeta(input), bodyHtml, ctx.locale ?? 'en')
+export function buildBattleDocument(e: BattleSeoInput): SeoDocument {
+  return toDoc(seoService.getBattleMeta(e as AnyArg), 'battle', e.slug, renderBattleBody(e), 'article')
 }
 
-export function buildLenserDocument(
-  arg: { lenser: Lenser; stats?: LenserStats | null },
-  ctx: BuildContext = {},
-): SeoDocument {
-  const { lenser, stats } = arg
-  const bodyHtml = renderLenserBody({
-    handle: lenser.handle,
-    displayName: lenser.display_name,
-    headline: lenser.headline,
-    promptsCount: stats?.promptsCount,
-    threadsCount: stats?.threadsCount,
-    followersCount: stats?.followersCount,
-  })
-  return assemble(seoService.getProfileMeta(lenser, stats), bodyHtml, ctx.locale ?? 'en')
+export function buildLenserDocument(e: LenserSeoInput): SeoDocument {
+  const meta = seoService.getProfileMeta(e as AnyArg, (e.stats ?? null) as AnyArg)
+  return toDoc(meta, 'lenser', e.handle, renderLenserBody(e), 'profile')
 }
 
-export function buildWorkflowDocument(input: WorkflowSeoInput, ctx: BuildContext = {}): SeoDocument {
-  const bodyHtml = renderWorkflowBody({
-    title: input.title,
-    description: input.description,
-    authorName: input.author_display_name,
-    authorHandle: input.author_handle,
-    nodeCount: input.node_count,
-  })
-  return assemble(seoService.getWorkflowMeta(input), bodyHtml, ctx.locale ?? 'en')
+export function buildWorkflowDocument(e: WorkflowSeoInput): SeoDocument {
+  return toDoc(seoService.getWorkflowMeta(e as AnyArg), 'workflow', e.id, renderWorkflowBody(e), 'website')
 }
 
-export function buildThreadDocument(vm: ThreadDetailViewModel, ctx: BuildContext = {}): SeoDocument {
-  const bodyHtml = renderThreadBody({
-    title: vm.title,
-    authorName: vm.author.displayName,
-    authorHandle: vm.author.handle,
-    tags: vm.tags,
-    replyCount: vm.replies?.length,
-  })
-  return assemble(seoService.getThreadMeta(vm), bodyHtml, ctx.locale ?? 'en')
+export function buildThreadDocument(e: ThreadSeoInput): SeoDocument {
+  return toDoc(seoService.getThreadMeta(e as AnyArg), 'thread', e.id, renderThreadBody(e), 'article')
 }
 
-export function buildRayDocument(tag: TagUsage, ctx: BuildContext = {}): SeoDocument {
-  const bodyHtml = renderRayBody({ slug: tag.slug, name: tag.name, count: tag.count })
-  return assemble(seoService.getTagMeta(tag), bodyHtml, ctx.locale ?? 'en')
+export function buildRayDocument(e: RaySeoInput): SeoDocument {
+  return toDoc(seoService.getTagMeta(e as AnyArg), 'ray', e.slug, renderRayBody(e), 'website')
 }

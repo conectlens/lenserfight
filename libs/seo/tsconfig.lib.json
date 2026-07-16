@@ -2,7 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "types": ["node", "vite/client"]
+    "types": ["node"],
+    "lib": ["ES2022", "DOM"]
   },
   "exclude": [
     "**/*.spec.ts",
