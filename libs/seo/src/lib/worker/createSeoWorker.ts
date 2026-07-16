@@ -61,13 +61,15 @@ const NOT_FOUND_HTML =
 function sitemapToResponse(r: SitemapResponse): Response {
   const headers: Record<string, string> = {
     'content-type': r.contentType,
-    // no-transform stops Cloudflare's edge from re-compressing an already-gzip
-    // body (e.g. into brotli) — without it, a client that accepts br gets a
-    // brotli-encoded response whose payload, once brotli-decoded, is still raw
-    // gzip bytes: an "encoding error" at byte 1 for any XML/sitemap consumer.
+    // no-transform stops Cloudflare's edge from compressing an already-gzip
+    // .xml.gz body further (e.g. into brotli). Content-Encoding is deliberately
+    // NOT set for gzip sitemap files: per the sitemaps.org protocol, .xml.gz is
+    // a gzip FILE the crawler downloads and decompresses itself, not an HTTP
+    // transport encoding — setting Content-Encoding: gzip would make any
+    // standards-compliant client auto-strip one gzip layer and choke on the
+    // still-compressed file underneath.
     'cache-control': r.gzip ? `${r.cacheControl}, no-transform` : r.cacheControl,
   }
-  if (r.gzip) headers['content-encoding'] = 'gzip'
   return new Response(r.body as BodyInit, { status: r.status, headers })
 }
 

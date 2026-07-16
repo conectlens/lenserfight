@@ -77,6 +77,9 @@ describe('handleSitemap entity shard', () => {
       ],
     }), config)
     expect(res.gzip).toBe(true)
+    // application/gzip, not application/xml: this is a gzip FILE per the
+    // sitemaps.org protocol, not an HTTP transport-encoded XML response.
+    expect(res.contentType).toBe('application/gzip')
     const text = await gunzip(res.body as Uint8Array)
     expect(text).toContain('<loc>https://moon.lenserfight.com/lenses/abc</loc>')
     expect(text).toContain('<lastmod>2026-07-15</lastmod>')
