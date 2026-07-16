@@ -58,19 +58,33 @@ export interface SeoWorkerConfig {
 const NOT_FOUND_HTML =
   '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Not found</title><meta name="robots" content="noindex"></head><body><h1>404 — Not found</h1></body></html>'
 
+// `encodeBody` is a Cloudflare Workers-runtime-specific ResponseInit field
+// (see developers.cloudflare.com/workers/runtime-apis/response) not present in
+// the standard DOM lib types this file otherwise relies on to stay
+// Miniflare/Node-testable — narrow local augmentation instead of depending on
+// @cloudflare/workers-types. Harmless no-op outside the Workers runtime.
+interface CfResponseInit extends ResponseInit {
+  encodeBody?: 'manual' | 'automatic'
+}
+
 function sitemapToResponse(r: SitemapResponse): Response {
   const headers: Record<string, string> = {
     'content-type': r.contentType,
-    // no-transform stops Cloudflare's edge from compressing an already-gzip
-    // .xml.gz body further (e.g. into brotli). Content-Encoding is deliberately
-    // NOT set for gzip sitemap files: per the sitemaps.org protocol, .xml.gz is
-    // a gzip FILE the crawler downloads and decompresses itself, not an HTTP
-    // transport encoding — setting Content-Encoding: gzip would make any
-    // standards-compliant client auto-strip one gzip layer and choke on the
-    // still-compressed file underneath.
+    // no-transform: defense in depth against any edge/CDN re-compression of an
+    // already-gzip body (separate from the runtime issue below).
     'cache-control': r.gzip ? `${r.cacheControl}, no-transform` : r.cacheControl,
   }
-  return new Response(r.body as BodyInit, { status: r.status, headers })
+  const init: CfResponseInit = { status: r.status, headers }
+  if (r.gzip) {
+    headers['content-encoding'] = 'gzip'
+    // The Workers runtime compresses the body to match Content-Encoding by
+    // default — for a body that's ALREADY gzip (built via gzipXml()), that
+    // means gzip-in-gzip unless we opt out. Without this, a client decodes one
+    // gzip layer per the header and is left holding a still-compressed blob
+    // (an "encoding error" for any XML/sitemap parser).
+    init.encodeBody = 'manual'
+  }
+  return new Response(r.body as BodyInit, init)
 }
 
 // Edge cache helpers — guarded so Node/Miniflare tests without `caches` skip them.

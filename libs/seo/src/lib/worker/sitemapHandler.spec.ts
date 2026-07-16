@@ -77,9 +77,9 @@ describe('handleSitemap entity shard', () => {
       ],
     }), config)
     expect(res.gzip).toBe(true)
-    // application/gzip, not application/xml: this is a gzip FILE per the
-    // sitemaps.org protocol, not an HTTP transport-encoded XML response.
-    expect(res.contentType).toBe('application/gzip')
+    // application/xml: gzip is described via Content-Encoding (set by
+    // createSeoWorker), not by the content-type itself.
+    expect(res.contentType).toBe('application/xml; charset=utf-8')
     const text = await gunzip(res.body as Uint8Array)
     expect(text).toContain('<loc>https://moon.lenserfight.com/lenses/abc</loc>')
     expect(text).toContain('<lastmod>2026-07-15</lastmod>')
