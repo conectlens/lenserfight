@@ -19,7 +19,7 @@ jobs:
       - name: Run scripts/coverage-gate.sh
         run: bash scripts/coverage-gate.sh
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
 
