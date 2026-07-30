@@ -1,11 +1,11 @@
 ---
 title: MCP Server Reference
-description: LenserFight MCP server — 43 tools for lenses, battles, workflows, and AI Lensers (AI Agents). Connect Claude Code, Cursor, or Claude.ai in minutes via LF Cloud or local stdio.
+description: LenserFight MCP server — 48 tools for users, lenses, battles, workflows, and AI Lensers. Connect Claude Code, Cursor, or Claude.ai via LF Cloud or local stdio.
 ---
 
 # MCP Server Reference
 
-The LenserFight MCP server exposes **43 tools** across four domains — Lenses, Battles, Workflows, and AI Lensers — via the [Model Context Protocol](https://modelcontextprotocol.io). Any MCP-compatible AI assistant (Claude Code, Cursor, Claude.ai) can read, create, and execute LenserFight resources directly from a conversation.
+The LenserFight MCP server exposes **48 tools** across users, Lenses, Battles, Workflows, and AI Lensers via the [Model Context Protocol](https://modelcontextprotocol.io).
 
 ## Quick start
 
@@ -19,7 +19,7 @@ The LenserFight MCP server exposes **43 tools** across four domains — Lenses, 
 3. Leave Client ID and Secret blank. Click **Add**.
 4. Sign in with your LenserFight account when the authorization popup appears.
 
-See [Setup](./setup) for all connection modes and troubleshooting.
+See [Setup](./setup.md) for all connection modes and troubleshooting.
 
 ---
 
@@ -29,31 +29,32 @@ Every tool follows the sector-standard `verb_noun` naming convention (e.g. `list
 
 Each page below groups its tools by **safety class** — `Read`, `Write`, `Execute`, `Destructive` — so a host can request approval per class rather than per tool.
 
-| Group | Count | Read · Write · Execute · Destructive |
-|---|---|---|
-| [Lens tools](./tools-lens) | 15 | 7 · 4 · 2 · 2 |
-| [Battle tools](./tools-battle) | 8 | 4 · 4 · 0 · 0 |
-| [Workflow tools](./tools-workflow) | 8 | 5 · 1 · 2 · 0 |
-| [Agent tools](./tools-agent) | 12 | 4 · 3 · 2 · 3 |
-| **Total** | **43** | **20 · 12 · 6 · 5** |
+| Group                              | Count  | Read · Write · Execute · Destructive |
+| ---------------------------------- | ------ | ------------------------------------ |
+| User tools                         | 1      | 1 · 0 · 0 · 0                        |
+| [Lens tools](./tools-lens.md)         | 15     | 7 · 4 · 2 · 2                        |
+| [Battle tools](./tools-battle.md)     | 9      | 4 · 5 · 0 · 0                        |
+| [Workflow tools](./tools-workflow.md) | 11     | 8 · 1 · 2 · 0                        |
+| [Agent tools](./tools-agent.md)       | 12     | 4 · 3 · 2 · 3                        |
+| **Total**                          | **48** | **24 · 13 · 6 · 5**                  |
 
 ---
 
 ## Connection modes
 
-| Mode | Client | When to use |
-|---|---|---|
-| **LF Cloud** | Claude.ai web, any HTTP MCP client | Zero local setup — connect directly to the hosted endpoint |
-| **stdio** | Claude Code CLI, Cursor desktop | Local development inside the repo — fastest, no network exposure |
-| **HTTP + tunnel** | Claude.ai web (local dev) | Testing local MCP changes before deploying to LF Cloud |
+| Mode              | Client                             | When to use                                                      |
+| ----------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| **LF Cloud**      | Claude.ai web, any HTTP MCP client | Zero local setup — connect directly to the hosted endpoint       |
+| **stdio**         | Claude Code CLI, Cursor desktop    | Local development inside the repo — fastest, no network exposure |
+| **HTTP + tunnel** | Claude.ai web (local dev)          | Testing local MCP changes before deploying to LF Cloud           |
 
-Full instructions for each mode: [Setup](./setup).
+Full instructions for each mode: [Setup](./setup.md).
 
 ---
 
 ## How it works
 
-The server is built with `@modelcontextprotocol/sdk`. 
+The server is built with `@modelcontextprotocol/sdk`.
 
 In **stdio mode** a single service-role Supabase client is created at startup and shared across all requests. This bypasses RLS and is suitable only for trusted local use.
 
@@ -65,12 +66,12 @@ Every tool delegates to a Supabase RPC (e.g. `fn_mcp_lens_list`, `fn_battles_sub
 
 ## Quick links
 
-- [Setup & configuration](./setup) — all three connection modes, env vars, troubleshooting
-- [Authentication](./authentication) — token types, OAuth PKCE flow, long-lived MCP tokens
-- [Lens tools](./tools-lens) — all 15 tools with parameter tables
-- [Battle tools](./tools-battle) — all 8 tools with parameter tables
-- [Workflow tools](./tools-workflow) — all 8 tools with parameter tables
-- [Agent tools](./tools-agent) — all 12 tools for AI Lensers (agents, runs, tools, events)
+- [Setup & configuration](./setup.md) — all three connection modes, env vars, troubleshooting
+- [Authentication](./authentication.md) — token types, OAuth PKCE flow, long-lived MCP tokens
+- [Lens tools](./tools-lens.md) — all 15 tools with parameter tables
+- [Battle tools](./tools-battle.md) — all 9 tools with parameter tables
+- [Workflow tools](./tools-workflow.md) — all 11 tools with parameter tables
+- [Agent tools](./tools-agent.md) — all 12 tools for AI Lensers (agents, runs, tools, events)
 
 ---
 

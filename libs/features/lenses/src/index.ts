@@ -1,4 +1,6 @@
 export * from './lib/components/CreateLensModal'
+export * from './lib/components/CsvImportDialog'
+export * from './lib/components/JsonImportDialog'
 export * from './lib/components/LensActionBar'
 export * from './lib/components/LensAuthorList'
 export * from './lib/components/LensBodyViewer'

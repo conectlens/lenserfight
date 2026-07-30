@@ -64,6 +64,10 @@ export function ExportModal<T>({
   const [isCopied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const formats: ExportFormat[] | undefined =
+    availableFormats ?? (kind === 'workflow' ? ['markdown'] : undefined)
+  const isWorkflowGuide = kind === 'workflow' && formats?.length === 1
+  const effectiveFormat: ExportFormat = isWorkflowGuide ? 'markdown' : format
 
   const buildContext = useCallback((): ExportContext => ({
     userId: user?.id ?? null,
@@ -92,9 +96,10 @@ export function ExportModal<T>({
   const helpPath = useMemo(() => {
     const map: Record<ExportKind, string> = {
       battle: '/explanation/architecture/universal-export-system',
-      workflow: '/explanation/architecture/universal-export-system',
+      workflow: '/reference/workflows/workflow-export-format',
       lens: '/explanation/architecture/universal-export-system',
       agent: '/explanation/architecture/universal-export-system',
+      skill: '/explanation/architecture/universal-export-system',
       bundle: '/explanation/architecture/universal-export-system',
     }
     return map[kind]
@@ -116,7 +121,7 @@ export function ExportModal<T>({
       const registry = bootstrapSerializers(getDefaultRegistry())
       const orchestrator = new ExportOrchestrator(registry)
       const ctx = buildContext()
-      const request: ExportRequest = { kind, slug, format }
+      const request: ExportRequest = { kind, slug, format: effectiveFormat }
       await orchestrator.run<T>({ request, ctx, fetchPayload, transport: captureTransport })
       await navigator.clipboard.writeText(capturedText)
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
@@ -127,16 +132,16 @@ export function ExportModal<T>({
     } finally {
       setRunning(false)
     }
-  }, [buildContext, fetchPayload, format, kind, slug])
+  }, [buildContext, effectiveFormat, fetchPayload, kind, slug])
 
   const handleConfirm = async () => {
     setError(null)
     setRunning(true)
     try {
       if (onConfirm) {
-        await onConfirm({ format, destination })
+        await onConfirm({ format: effectiveFormat, destination })
       } else {
-        await runExportDefault({ format, destination })
+        await runExportDefault({ format: effectiveFormat, destination })
       }
       onClose()
     } catch (err) {
@@ -148,13 +153,16 @@ export function ExportModal<T>({
 
   const headerTitle = title ? `Export "${title}"` : `Export ${kind}`
   const safeHeader = headerTitle.length > 60 ? `${headerTitle.slice(0, 57)}...` : headerTitle
+  const description = kind === 'workflow'
+    ? 'Create an AI-readable guide with ordered steps, inputs, and data flow.'
+    : `Kind: ${kind} · Slug: ${slug}`
 
   return (
     <Dialog
       open={open}
       onClose={isRunning ? undefined : onClose}
       title={safeHeader}
-      description={`Kind: ${kind} · Slug: ${slug}`}
+      description={description}
       icon={<FileDown size={18} />}
       maxWidth="max-w-lg"
       dismissOnBackdrop={!isRunning}
@@ -199,32 +207,47 @@ export function ExportModal<T>({
             </label>
             <HelpButton path={helpPath} label="Export docs" />
           </div>
-          <FormatSelector
-            value={format}
-            onChange={setFormat}
-            available={availableFormats}
-            disabled={isRunning}
-          />
+          {isWorkflowGuide ? (
+            <div className="rounded-xl border border-surface-border bg-surface-raised px-3.5 py-3">
+              <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                AI-ready Markdown
+              </p>
+              <p className="mt-1 text-xs text-greyscale-500 dark:text-greyscale-400">
+                A concise execution plan with readable step aliases and only configured inputs.
+              </p>
+            </div>
+          ) : (
+            <FormatSelector
+              value={format}
+              onChange={setFormat}
+              available={formats}
+              disabled={isRunning}
+            />
+          )}
           <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
-            {format === 'markdown'
-              ? 'Markdown is portable (GitHub-renderable) and includes a checksum footer.'
-              : format === 'json'
+            {effectiveFormat === 'markdown'
+              ? kind === 'workflow'
+                ? 'Internal IDs, credentials, empty settings, and storage details are omitted.'
+                : 'Markdown is portable (GitHub-renderable) and includes a checksum footer.'
+              : effectiveFormat === 'json'
                 ? 'JSON is canonical (RFC 8785 key order). Identical content yields identical checksums.'
                 : 'YAML is GitOps-portable: block style only, no anchors / aliases.'}
           </p>
         </section>
 
-        <section className="flex flex-col gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
-            Destination
-          </label>
-          <DestinationSelector
-            mode={mode}
-            value={destination}
-            onChange={setDestination}
-            disabled={isRunning}
-          />
-        </section>
+        {!(isWorkflowGuide && mode === 'cloud') && (
+          <section className="flex flex-col gap-2">
+            <label className="text-xs font-semibold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
+              Destination
+            </label>
+            <DestinationSelector
+              mode={mode}
+              value={destination}
+              onChange={setDestination}
+              disabled={isRunning}
+            />
+          </section>
+        )}
 
         {error ? (
           <InlineNotice variant="error" title="Export failed">
@@ -232,9 +255,8 @@ export function ExportModal<T>({
           </InlineNotice>
         ) : (
           <InlineNotice variant="info">
-            Exports apply the redaction policy: secrets, BYOK tokens, and judge prompts are
-            always stripped. Owner-only fields (email, billing) are stripped unless you own
-            the entity.
+            Secrets, credentials, and key references are always stripped. Private account
+            fields are included only when the export policy allows them.
           </InlineNotice>
         )}
       </div>

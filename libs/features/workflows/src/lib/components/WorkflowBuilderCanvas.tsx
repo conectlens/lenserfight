@@ -73,6 +73,7 @@ import { useWorkflowSimulation } from '../hooks/useWorkflowSimulation'
 
 import { WorkflowCanvasEdge } from './WorkflowCanvasEdge'
 import { WorkflowCanvasNode } from './WorkflowCanvasNode'
+import { WorkflowInstructionsButton } from './WorkflowInstructionsButton'
 
 import type { WorkflowNodeData, WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { DraggedLensData } from './WorkflowLensPalette'
@@ -1779,6 +1780,7 @@ function WorkflowBuilderCanvasInner({
                 Edit
               </button>
               <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Builder Guide" />
+              <WorkflowInstructionsButton />
             </div>
           </Panel>
         )}

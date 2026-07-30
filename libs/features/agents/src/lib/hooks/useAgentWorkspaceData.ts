@@ -98,7 +98,7 @@ export function useAgentWorkspaceData({
   })
 
   const ownerFleetAgentsQuery = useQuery<AgentProfileView[]>({
-    queryKey: [...queryKeys.agents.all, 'byOwner', ownerFleetOwnerId ?? ''],
+    queryKey: queryKeys.agents.byOwner(ownerFleetOwnerId ?? ''),
     queryFn: () => agentsService.getAgentsByOwner(ownerFleetOwnerId!),
     enabled: (isHumanOwner || isAgentOwner) && !!ownerFleetOwnerId,
     staleTime: 30_000,

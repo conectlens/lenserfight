@@ -1,9 +1,9 @@
 /**
  * WorkflowOutputFieldRow — renders a single output field from an upstream node.
  *
- * Draggable via HTML5 Drag API. On dragstart it writes
- * `[[nodeId.fieldName]]` to dataTransfer so WorkflowExpressionInput can
- * intercept the drop and insert the expression at the cursor.
+ * Draggable via HTML5 Drag API. On dragstart it writes the canonical
+ * `[[nodeId.fieldName]]` reference and field type to dataTransfer so
+ * WorkflowExpressionInput can validate and insert it at the cursor.
  *
  * Large values are truncated at 200 chars. Sensitive fields show a mask
  * instead of the value and are not copyable.
@@ -12,6 +12,12 @@ import { Check, Copy, GripVertical } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
 
 import type { WorkflowNodeIOType } from '@lenserfight/infra/execution'
+
+import {
+  formatWorkflowExpression,
+  WORKFLOW_EXPRESSION_DRAG_TYPE,
+  WORKFLOW_EXPRESSION_OUTPUT_TYPE_DRAG_TYPE,
+} from '../../utils/workflow-expression'
 
 const MAX_VALUE_CHARS = 200
 
@@ -34,7 +40,7 @@ export function WorkflowOutputFieldRow({
 }: WorkflowOutputFieldRowProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [copied, setCopied] = useState(false)
-  const expression = `[[${nodeId}.${fieldName}]]`
+  const expression = formatWorkflowExpression(nodeId, fieldName)
 
   const handleCopyRef = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -49,6 +55,11 @@ export function WorkflowOutputFieldRow({
   const isTruncated = hasValue && !sensitive && displayValue!.length > MAX_VALUE_CHARS
 
   function handleDragStart(e: React.DragEvent) {
+    e.dataTransfer.setData(WORKFLOW_EXPRESSION_DRAG_TYPE, expression)
+    e.dataTransfer.setData(
+      WORKFLOW_EXPRESSION_OUTPUT_TYPE_DRAG_TYPE,
+      fieldType,
+    )
     e.dataTransfer.setData('text/plain', expression)
     e.dataTransfer.effectAllowed = 'copy'
     setIsDragging(true)

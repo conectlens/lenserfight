@@ -44,7 +44,7 @@ describe('SerializerRegistry', () => {
   it('throws ExportUnsupportedError for unregistered pair', () => {
     const r = new SerializerRegistry()
     bootstrapSerializers(r)
-    expect(() => r.resolve('agent', 'json')).toThrow(ExportUnsupportedError)
+    expect(() => r.resolve('bundle', 'json')).toThrow(ExportUnsupportedError)
     expect(() => r.resolve('bundle', 'markdown')).toThrow(ExportUnsupportedError)
   })
 

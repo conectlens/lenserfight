@@ -17,6 +17,11 @@ import type { NodeOutputEnvelope } from '@lenserfight/types'
 /** Matches [[nodeId.field.path]] — requires at least one dot after the nodeId. */
 const UPSTREAM_REF_RE = /\[\[([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_.[\]]+)\]\]/g
 
+export const WORKFLOW_EXPRESSION_DRAG_TYPE =
+  'application/x-lenserfight-workflow-expression'
+export const WORKFLOW_EXPRESSION_OUTPUT_TYPE_DRAG_TYPE =
+  'application/x-workflow-output-type'
+
 export interface WorkflowExpressionRef {
   /** The upstream node ID (part before the first dot). */
   nodeId: string
@@ -24,6 +29,17 @@ export interface WorkflowExpressionRef {
   fieldPath: string
   /** The full [[nodeId.fieldPath]] string as it appears in the value. */
   raw: string
+}
+
+/** Build the persisted expression format consumed by the execution runtime. */
+export function formatWorkflowExpression(nodeId: string, fieldPath: string): string {
+  return `[[${nodeId}.${fieldPath}]]`
+}
+
+/** Return true only for one standalone expression in the runtime format. */
+export function isCanonicalWorkflowExpression(value: string): boolean {
+  const refs = parseWorkflowExpression(value)
+  return refs.length === 1 && refs[0].raw === value
 }
 
 /**

@@ -282,6 +282,7 @@ const EN_REFERENCE_WORKFLOWS_SIDEBAR = [
       { text: 'Execution Engine', link: '/en/reference/workflows/execution-engine' },
       { text: 'Node Catalog', link: '/en/reference/workflows/workflow-node-catalog' },
       { text: 'Contract Schema', link: '/en/reference/workflows/contract-schema' },
+      { text: 'Export Format', link: '/en/reference/workflows/workflow-export-format' },
       { text: 'Test Plan', link: '/en/reference/workflows/test-plan' },
       { text: 'CRON Expressions', link: '/en/reference/cron-expressions' },
       { text: 'Workflow Inputs Template', link: '/en/reference/workflow-inputs-template' },
@@ -1383,6 +1384,10 @@ export default defineConfig({
                   text: 'Açık Kaynak İş Akışları',
                   link: '/tr/explanation/workflows/open-source-workflows',
                 },
+                {
+                  text: 'İş Akışı Güvenliği',
+                  link: '/tr/explanation/workflows/workflow-safety',
+                },
               ],
             },
             {
@@ -1498,6 +1503,10 @@ export default defineConfig({
                 {
                   text: 'Açık Kaynak İş Akışları',
                   link: '/tr/explanation/workflows/open-source-workflows',
+                },
+                {
+                  text: 'İş Akışı Güvenliği',
+                  link: '/tr/explanation/workflows/workflow-safety',
                 },
               ],
             },

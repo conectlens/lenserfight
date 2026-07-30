@@ -4,7 +4,7 @@ import { agentsService, AgentProfileView } from '@lenserfight/data/repositories'
 
 export const useAgents = (ownerLenserId: string | undefined) =>
   useQuery<AgentProfileView[]>({
-    queryKey: [...queryKeys.agents.all, 'owner', ownerLenserId ?? ''],
+    queryKey: queryKeys.agents.byOwner(ownerLenserId ?? ''),
     queryFn: () => agentsService.getAgentsByOwner(ownerLenserId!),
     enabled: !!ownerLenserId,
     staleTime: 1000 * 60 * 2,

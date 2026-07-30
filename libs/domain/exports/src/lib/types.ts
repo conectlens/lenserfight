@@ -6,7 +6,7 @@
  * the only way to remove or rename a field (Protected Variations).
  */
 
-export type ExportKind = 'battle' | 'workflow' | 'lens' | 'agent' | 'bundle'
+export type ExportKind = 'battle' | 'workflow' | 'lens' | 'agent' | 'skill' | 'bundle'
 
 export type ExportFormat = 'markdown' | 'json' | 'yaml'
 
@@ -21,6 +21,7 @@ export const EXPORT_KINDS: readonly ExportKind[] = [
   'workflow',
   'lens',
   'agent',
+  'skill',
   'bundle',
 ] as const
 

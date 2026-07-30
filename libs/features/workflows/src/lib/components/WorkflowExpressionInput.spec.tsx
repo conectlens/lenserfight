@@ -3,10 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 import React from 'react'
 
 import { WorkflowExpressionInput } from './WorkflowExpressionInput'
+import {
+  WORKFLOW_EXPRESSION_DRAG_TYPE,
+  WORKFLOW_EXPRESSION_OUTPUT_TYPE_DRAG_TYPE,
+} from '../utils/workflow-expression'
 
 function makeDragEvent(text: string, outputType?: string): Partial<DragEvent> {
-  const data: Record<string, string> = { 'text/plain': text }
-  if (outputType) data['application/x-workflow-output-type'] = outputType
+  const data: Record<string, string> = {
+    [WORKFLOW_EXPRESSION_DRAG_TYPE]: text,
+    'text/plain': text,
+  }
+  if (outputType) data[WORKFLOW_EXPRESSION_OUTPUT_TYPE_DRAG_TYPE] = outputType
   return {
     dataTransfer: {
       types: Object.keys(data),
@@ -66,20 +73,13 @@ describe('WorkflowExpressionInput', () => {
     )
     const container = screen.getByRole('textbox').parentElement!
 
-    fireEvent.dragOver(container, {
-      dataTransfer: { types: ['text/plain'], getData: () => '[[n1.text]]', dropEffect: 'copy' },
-    })
-    fireEvent.drop(container, {
-      dataTransfer: {
-        types: ['text/plain'],
-        getData: (key: string) => key === 'text/plain' ? '[[n1.text]]' : '',
-      },
-    })
+    fireEvent.dragOver(container, makeDragEvent('[[n1.text]]'))
+    fireEvent.drop(container, makeDragEvent('[[n1.text]]'))
 
     expect(onChange).toHaveBeenCalledWith('[[n1.text]]')
   })
 
-  it('does not accept drop when dataTransfer lacks text/plain', () => {
+  it('does not accept drop when dataTransfer lacks the workflow expression type', () => {
     const onChange = vi.fn()
     render(<WorkflowExpressionInput value="existing" onChange={onChange} fieldType="text" />)
     const container = screen.getByRole('textbox').parentElement!
@@ -94,20 +94,23 @@ describe('WorkflowExpressionInput', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('rejects malformed workflow expression payloads', () => {
+    const onChange = vi.fn()
+    render(<WorkflowExpressionInput value="existing" onChange={onChange} fieldType="text" />)
+    const container = screen.getByRole('textbox').parentElement!
+
+    fireEvent.drop(container, makeDragEvent('[[n1.text]] trailing text'))
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   it('shows warning compatibility indicator after drop with type mismatch', () => {
     const onChange = vi.fn()
     render(<WorkflowExpressionInput value="" onChange={onChange} fieldType="text" />)
     const container = screen.getByRole('textbox').parentElement!
 
-    fireEvent.dragOver(container, {
-      dataTransfer: { types: ['text/plain'], getData: () => '[[n1.text]]', dropEffect: 'copy' },
-    })
-    fireEvent.drop(container, {
-      dataTransfer: {
-        types: ['text/plain', 'application/x-workflow-output-type'],
-        getData: (key: string) => key === 'text/plain' ? '[[n1.text]]' : 'json',
-      },
-    })
+    fireEvent.dragOver(container, makeDragEvent('[[n1.text]]', 'json'))
+    fireEvent.drop(container, makeDragEvent('[[n1.text]]', 'json'))
 
     expect(screen.getByText(/type mismatch/i)).toBeDefined()
   })
@@ -117,15 +120,8 @@ describe('WorkflowExpressionInput', () => {
     render(<WorkflowExpressionInput value="" onChange={onChange} fieldType="text" />)
     const container = screen.getByRole('textbox').parentElement!
 
-    fireEvent.dragOver(container, {
-      dataTransfer: { types: ['text/plain'], getData: () => '[[n1.vec]]', dropEffect: 'copy' },
-    })
-    fireEvent.drop(container, {
-      dataTransfer: {
-        types: ['text/plain', 'application/x-workflow-output-type'],
-        getData: (key: string) => key === 'text/plain' ? '[[n1.vec]]' : 'embedding',
-      },
-    })
+    fireEvent.dragOver(container, makeDragEvent('[[n1.vec]]', 'embedding'))
+    fireEvent.drop(container, makeDragEvent('[[n1.vec]]', 'embedding'))
 
     expect(screen.getByText(/incompatible/i)).toBeDefined()
   })
