@@ -1,15 +1,20 @@
 import { lensesService } from '@lenserfight/data/repositories'
-import { VersionParamFields } from '@lenserfight/features/lenses'
+import { CsvImportDialog, JsonImportDialog, VersionParamFields } from '@lenserfight/features/lenses'
 import { Button } from '@lenserfight/ui/components'
 import { useQueries } from '@tanstack/react-query'
 import { FileText } from 'lucide-react'
 import React, { useEffect, useState, useMemo } from 'react'
 
+import {
+  isWorkflowParameterValuePresent,
+  normalizeWorkflowParameterEditorValues,
+  serializeWorkflowParameterValue,
+  type WorkflowParameterEditorValues,
+} from '../utils/workflow-parameter-values'
+import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
+
 import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
 import type { LensVersionParam } from '@lenserfight/types'
-import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
-import { CsvImportDialog } from '../../../../lenses/src/lib/components/CsvImportDialog'
-import { JsonImportDialog } from '../../../../lenses/src/lib/components/JsonImportDialog'
 
 interface WorkflowRootInputsPanelProps {
   nodes: WorkflowNodeRecord[]
@@ -22,6 +27,8 @@ interface WorkflowRootInputsPanelProps {
   executeHint?: string | null
   /** Optional in-memory config overrides from the builder session. */
   nodeConfigOverrides?: Record<string, { param_overrides?: Record<string, string> }>
+  /** auth.uid() used to offer AI-assisted parameter filling. */
+  currentUserId?: string
 }
 
 /**
@@ -36,8 +43,9 @@ export function WorkflowRootInputsPanel({
   canExecute = true,
   executeHint,
   nodeConfigOverrides,
+  currentUserId,
 }: WorkflowRootInputsPanelProps) {
-  const [inputs, setInputs] = useState<Record<string, string>>({})
+  const [inputs, setInputs] = useState<WorkflowParameterEditorValues>({})
   const [jsonImportOpen, setJsonImportOpen] = useState(false)
   const [csvImportOpen, setCsvImportOpen] = useState(false)
   const [activeImportNodeId, setActiveImportNodeId] = useState<string | null>(null)
@@ -83,6 +91,7 @@ export function WorkflowRootInputsPanel({
           nodeId: node.id,
           nodeLabel: node.label ?? `Node ${node.ordinal + 1}`,
           params,
+          lensContent: version?.templateBody,
         }
       })
       .filter((g) => g.params.length > 0)
@@ -100,12 +109,12 @@ export function WorkflowRootInputsPanel({
 
         for (const param of group.params) {
           const key = `${group.nodeId}:${param.label}`
-          if (next[key] && next[key].trim() !== '') continue
+          if (isWorkflowParameterValuePresent(next[key])) continue
 
           const persistedValue = resolveOverrideValue(persisted, param.label)
           const sessionValue = resolveOverrideValue(session, param.label)
           const value = sessionValue ?? persistedValue
-          if (typeof value === 'string' && value.trim() !== '') {
+          if (isWorkflowParameterValuePresent(value)) {
             next[key] = value
           }
         }
@@ -128,7 +137,7 @@ export function WorkflowRootInputsPanel({
         if (!isRequired) continue
         const key = `${group.nodeId}:${param.label}`
         const val = inputs[key]
-        if (!val || val.trim() === '') return false
+        if (!isWorkflowParameterValuePresent(val)) return false
       }
     }
     return true
@@ -180,7 +189,7 @@ export function WorkflowRootInputsPanel({
     const flatInputs: Record<string, string> = {}
     for (const [key, val] of Object.entries(inputs)) {
       const paramLabel = key.includes(':') ? key.split(':').slice(1).join(':') : key
-      flatInputs[paramLabel] = val
+      flatInputs[paramLabel] = serializeWorkflowParameterValue(val)
     }
     onSubmit(flatInputs)
   }
@@ -214,17 +223,19 @@ export function WorkflowRootInputsPanel({
             )}
             <VersionParamFields
               params={params}
-              values={Object.fromEntries(
-                Object.entries(inputs)
-                  .filter(([k]) => k.startsWith(`${nodeId}:`))
-                  .map(([k, v]) => [k.split(':').slice(1).join(':'), v])
+              values={normalizeWorkflowParameterEditorValues(
+                Object.fromEntries(
+                  Object.entries(inputs)
+                    .filter(([k]) => k.startsWith(`${nodeId}:`))
+                    .map(([k, v]) => [k.split(':').slice(1).join(':'), v])
+                ),
+                params
               )}
               errors={{}}
               onChange={(name, value) =>
                 setInputs((prev) => {
                   const key = `${nodeId}:${name}`
-                  const nextVal = String(value ?? '')
-                  return { ...prev, [key]: nextVal }
+                  return { ...prev, [key]: value }
                 })
               }
               onImportJson={() => {
@@ -274,12 +285,15 @@ export function WorkflowRootInputsPanel({
           setInputs((prev) => {
             const next = { ...prev }
             for (const [key, value] of Object.entries(patch)) {
-              next[`${activeImportNodeId}:${key}`] = String(value ?? '')
+              next[`${activeImportNodeId}:${key}`] = value
             }
             return next
           })
         }}
         currentValues={activeImportValues}
+        lensTitle={activeImportGroup?.nodeLabel}
+        lensContent={activeImportGroup?.lensContent}
+        profileId={currentUserId}
       />
 
       <CsvImportDialog
@@ -291,12 +305,15 @@ export function WorkflowRootInputsPanel({
           setInputs((prev) => {
             const next = { ...prev }
             for (const [key, value] of Object.entries(patch)) {
-              next[`${activeImportNodeId}:${key}`] = String(value ?? '')
+              next[`${activeImportNodeId}:${key}`] = value
             }
             return next
           })
         }}
         currentValues={activeImportValues}
+        lensTitle={activeImportGroup?.nodeLabel}
+        lensContent={activeImportGroup?.lensContent}
+        profileId={currentUserId}
       />
     </form>
   )
@@ -305,9 +322,9 @@ export function WorkflowRootInputsPanel({
 function resolveOverrideValue(
   values: Record<string, unknown> | Record<string, string>,
   label: string,
-): string | undefined {
-  if (typeof values[label] === 'string') return values[label] as string
+): unknown {
+  if (values[label] !== undefined) return values[label]
   const lower = label.toLowerCase()
-  const match = Object.entries(values).find(([k, v]) => k.toLowerCase() === lower && typeof v === 'string')
-  return match ? (match[1] as string) : undefined
+  const match = Object.entries(values).find(([key]) => key.toLowerCase() === lower)
+  return match?.[1]
 }

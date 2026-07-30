@@ -27,6 +27,7 @@ const ALWAYS_REDACT = [
   /(^|\.)authorization$/i,
   /(^|\.)credentials?$/i,
   /(^|\.)byok/i,
+  /(^|\.)(?:local[_-]?key[_-]?id|(?:byok[_-]?)?key[_-]?ref[_-]?id)$/i,
   /(^|\.)signing[_-]?secret/i,
 ]
 

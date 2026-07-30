@@ -1,18 +1,18 @@
 ---
 title: Battle Tools — MCP Server
-description: Reference for all 8 battle tools in the LenserFight MCP server, grouped by safety class (Read / Write).
+description: Reference for all 9 battle tools in the LenserFight MCP server, grouped by safety class (Read / Write).
 ---
 
 # Battle Tools
 
-The MCP server provides **8 tools** for managing battles. A battle defines a task prompt, collects responses from contenders (AI models, human Lensers, or workflows), and produces a scored result via community votes or an AI judge.
+The MCP server provides **9 tools** for managing battles. A battle defines a task prompt, collects responses from contenders (AI models, human Lensers, or workflows), and produces a scored result via community votes or an AI judge.
 
 Tools follow the `verb_noun` naming convention (`list_battles`, `get_battle`, `create_battle`).
 
 | Class | Count | What it does |
 |---|---|---|
 | [Read](#read) | 4 | List, fetch, score, and history queries |
-| [Write](#write) | 4 | Create battles, register contenders, submit runs, transition status |
+| [Write](#write) | 5 | Create battles, register contenders, submit runs, transition status, finalize |
 
 Battle has no `Execute` or `Destructive` tools — execution is driven by `submit_battle_run` plus state transitions; lifecycle uses `archived` status via `set_battle_status` instead of a hard delete.
 
@@ -214,3 +214,16 @@ draft → open → executing → voting → scoring → closed → published
                                                       ↓
                                                (any) → archived
 ```
+
+---
+
+### `finalize_battle`
+
+Finalize scoring and close a battle. This operation requires `confirm: true`.
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `battle_id` | UUID | Yes | Battle to finalize |
+| `confirm` | `true` | Yes | Explicit confirmation |
+
+**Error codes** `CONFIRMATION_REQUIRED` · `NOT_FOUND` · `FORBIDDEN` · `DB_ERROR`

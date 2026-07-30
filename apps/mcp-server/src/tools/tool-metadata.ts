@@ -1,8 +1,8 @@
-import type { McpToolMeta } from './register-tool.js';
+import type { McpToolMeta } from './register-tool.js'
 
-const readOnly = { readOnlyHint: true as const };
-const destructive = { destructiveHint: true as const };
-const openWorld = { openWorldHint: true as const };
+const readOnly = { readOnlyHint: true as const }
+const destructive = { destructiveHint: true as const }
+const openWorld = { openWorldHint: true as const }
 
 const TOOL_CATALOG = {
   // --- User ---
@@ -40,7 +40,7 @@ const TOOL_CATALOG = {
     name: 'create_lens',
     title: 'Create Lens',
     description:
-      'Create a new lens with a template body and optional parameters. Template must be at least 50 characters. Use [[ParamName]] for required parameters and [[ParamName!]] for optional ones. Returns the new lens id and head version id.',
+      'Create reusable AI instructions before referencing them from a workflow. Write a focused template of at least 50 characters; declare required values as [[Parameter Label]], optional values as [[Parameter Label!]], and field hints such as [[Context:textarea]], [[Word Count:integer]], [[Publish:boolean]], or [[Source PDF:file]]. List each token in params with the same label and optional flag. Keep tools, schedules, routing, and connectors in workflow steps rather than embedding them in the Lens prompt. Returns lens id and head version id for a create_workflow Lens step.',
   },
   update_lens: {
     name: 'update_lens',
@@ -205,14 +205,21 @@ const TOOL_CATALOG = {
     name: 'describe_workflow',
     title: 'Describe Workflow',
     description:
-      "Return a compact, structured explanation of how a workflow is wired: a prose summary, its trigger nodes, each node (type, bound lens, model, parameter overrides), and the connections (source output key → target parameter label, merge strategy, whether conditional). Built for quickly understanding or explaining a workflow without parsing the raw graph. Visibility-gated to public or owned workflows.",
+      'Return a compact, structured explanation of how a workflow is wired: a prose summary, its trigger nodes, each node (type, bound lens, model, parameter overrides), and the connections (source output key → target parameter label, merge strategy, whether conditional). Built for quickly understanding or explaining a workflow without parsing the raw graph. Visibility-gated to public or owned workflows.',
+    annotations: readOnly,
+  },
+  validate_workflow: {
+    name: 'validate_workflow',
+    title: 'Validate Workflow',
+    description:
+      'Check a workflow graph before execution without running it. Returns readable execution order, root nodes, configured and upstream-wired parameters, plus actionable errors for missing nodes, broken parameter mappings, unknown node kinds, duplicate ids, and cycles. Warnings identify missing or multiple triggers. Call after editing or importing a workflow and before run_workflow.',
     annotations: readOnly,
   },
   create_workflow: {
     name: 'create_workflow',
     title: 'Create Workflow',
     description:
-      'Create a new workflow container for multi-step executions that chain lens runs and AI operations. lenser_id defaults to the authenticated user when omitted.',
+      'Create an empty workflow or atomically build a complete workflow from readable steps and connections. Recommended order: (1) understand the outcome, (2) call create_lens for each missing reusable AI instruction and keep its returned id, (3) choose one trigger such as manual_trigger or schedule_trigger, (4) add Lens steps for AI reasoning and tool steps for deterministic work, (5) attach configured connectors by connection_ref rather than credentials, (6) map outputs to exact downstream input parameters, then (7) call validate_workflow before run_workflow. Step keys are readable local references; never invent database node ids or secrets.',
   },
   run_workflow: {
     name: 'run_workflow',
@@ -331,10 +338,10 @@ const TOOL_CATALOG = {
       'Invoke the autonomous action entry point for an AI Lenser. Evaluates policy, daily quota, and logging. Outcomes include success, blocked_by_policy, throttled, or failed. Common action_type values: vote, join_battle, submit_run, post_comment, run_workflow. Link context_type and context_id to domain objects such as battles or workflow runs.',
     annotations: openWorld,
   },
-} as const satisfies Record<string, McpToolMeta>;
+} as const satisfies Record<string, McpToolMeta>
 
-export type McpToolName = keyof typeof TOOL_CATALOG;
+export type McpToolName = keyof typeof TOOL_CATALOG
 
 export function getToolMeta(name: McpToolName): McpToolMeta {
-  return TOOL_CATALOG[name];
+  return TOOL_CATALOG[name]
 }

@@ -1,30 +1,58 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { McpError } from './mcp-error.js';
+import { SupabaseClient } from '@supabase/supabase-js'
 
-type RpcResult<T> = { data: T | null; error: { message: string } | null };
+import { McpError } from './mcp-error.js'
+
+type RpcResult<T> = { data: T | null; error: { message: string } | null }
 
 export interface ListWorkflowsArgs {
-  limit: number;
-  offset: number;
-  visibility?: string | null;
-  lenser_id?: string | null;
+  limit: number
+  offset: number
+  visibility?: string | null
+  lenser_id?: string | null
 }
-export interface PagedResult { items: unknown[]; total: number }
-export interface WorkflowGraph { workflow: unknown; nodes: unknown[]; edges: unknown[] }
+export interface PagedResult {
+  items: unknown[]
+  total: number
+}
+export interface WorkflowGraph {
+  workflow: unknown
+  nodes: unknown[]
+  edges: unknown[]
+}
 
 export interface CreateWorkflowArgs {
-  lenser_id: string;
-  title: string;
-  description: string | null;
-  visibility: string;
+  lenser_id: string
+  title: string
+  description: string | null
+  visibility: string
+  nodes?: WorkflowCreateNode[]
+  edges?: WorkflowCreateEdge[]
+}
+
+export interface WorkflowCreateNode {
+  id: string
+  lens_id: string | null
+  version_id: string | null
+  position_x: number
+  position_y: number
+  label: string
+  ordinal: number
+  config: Record<string, unknown>
+}
+
+export interface WorkflowCreateEdge {
+  source_node_id: string
+  target_node_id: string
+  source_output_key: string
+  target_param_label: string
 }
 
 export interface StartRunArgs {
-  workflow_id: string;
-  inputs: Record<string, unknown>;
-  global_model_id: string | null;
-  idempotency_key: string | null;
-  metadata: Record<string, unknown>;
+  workflow_id: string
+  inputs: Record<string, unknown>
+  global_model_id: string | null
+  idempotency_key: string | null
+  metadata: Record<string, unknown>
 }
 
 /** Node config keys whose values must never be surfaced to an MCP client. */
@@ -35,7 +63,7 @@ const SENSITIVE_CONFIG_KEYS = new Set([
   'secret',
   'api_key',
   'token',
-]);
+])
 
 /**
  * Redact secret-bearing fields from each node's config before returning a graph.
@@ -43,28 +71,32 @@ const SENSITIVE_CONFIG_KEYS = new Set([
  * only credential references are masked.
  */
 function redactNodeConfigs(nodes: unknown[]): unknown[] {
-  if (!Array.isArray(nodes)) return [];
+  if (!Array.isArray(nodes)) return []
   return nodes.map((n) => {
-    if (!n || typeof n !== 'object') return n;
-    const node = n as Record<string, unknown>;
-    const config = node.config;
-    if (!config || typeof config !== 'object') return node;
-    const redacted: Record<string, unknown> = {};
+    if (!n || typeof n !== 'object') return n
+    const node = n as Record<string, unknown>
+    const config = node.config
+    if (!config || typeof config !== 'object') return node
+    const redacted: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(config as Record<string, unknown>)) {
-      redacted[k] = SENSITIVE_CONFIG_KEYS.has(k) && v != null ? '[redacted]' : v;
+      redacted[k] = SENSITIVE_CONFIG_KEYS.has(k) && v != null ? '[redacted]' : v
     }
-    return { ...node, config: redacted };
-  });
+    return { ...node, config: redacted }
+  })
 }
 
 function mapError(message: string | undefined): McpError | null {
-  if (!message) return null;
-  if (message.includes('access_denied')) return new McpError('FORBIDDEN', 'You do not have access to this workflow');
-  if (message.includes('workflow_not_found')) return new McpError('NOT_FOUND', 'Workflow not found');
-  if (message.includes('run_not_found')) return new McpError('NOT_FOUND', 'Workflow run not found');
+  if (!message) return null
+  if (message.includes('access_denied'))
+    return new McpError('FORBIDDEN', 'You do not have access to this workflow')
+  if (message.includes('workflow_not_found')) return new McpError('NOT_FOUND', 'Workflow not found')
+  if (message.includes('run_not_found')) return new McpError('NOT_FOUND', 'Workflow run not found')
   if (message.includes('missing_lenser_id'))
-    return new McpError('MISSING_LENSER', 'lenser_id required. Set LENSERFIGHT_LENSER_ID or pass lenser_id.');
-  return null;
+    return new McpError(
+      'MISSING_LENSER',
+      'lenser_id required. Set LENSERFIGHT_LENSER_ID or pass lenser_id.'
+    )
+  return null
 }
 
 export const workflowService = {
@@ -74,17 +106,17 @@ export const workflowService = {
       p_offset: args.offset,
       p_visibility: args.visibility ?? null,
       p_lenser_id: args.lenser_id ?? null,
-    })) as unknown as RpcResult<{ data: unknown[]; count: number }>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    return { items: data?.data ?? [], total: data?.count ?? 0 };
+    })) as unknown as RpcResult<{ data: unknown[]; count: number }>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    return { items: data?.data ?? [], total: data?.count ?? 0 }
   },
 
   async get(sb: SupabaseClient, workflow_id: string): Promise<unknown | null> {
     const { data, error } = (await sb.rpc('fn_mcp_workflow_get' as never, {
       p_workflow_id: workflow_id,
-    })) as unknown as RpcResult<unknown>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    return data ?? null;
+    })) as unknown as RpcResult<unknown>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    return data ?? null
   },
 
   async getGraph(sb: SupabaseClient, workflow_id: string): Promise<WorkflowGraph | null> {
@@ -92,22 +124,41 @@ export const workflowService = {
     // returns an array of rows (here at most one, visibility-gated in the RPC).
     const { data, error } = (await sb.rpc('fn_get_workflow_bootstrap' as never, {
       p_workflow_id: workflow_id,
-    })) as unknown as RpcResult<WorkflowGraph[]>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    const row = Array.isArray(data) ? data[0] : null;
-    if (!row || !row.workflow) return null;
-    return { workflow: row.workflow, nodes: redactNodeConfigs(row.nodes ?? []), edges: row.edges ?? [] };
+    })) as unknown as RpcResult<WorkflowGraph[]>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    const row = Array.isArray(data) ? data[0] : null
+    if (!row || !row.workflow) return null
+    return {
+      workflow: row.workflow,
+      nodes: redactNodeConfigs(row.nodes ?? []),
+      edges: row.edges ?? [],
+    }
   },
 
   async create(sb: SupabaseClient, args: CreateWorkflowArgs): Promise<unknown> {
-    const { data, error } = (await sb.rpc('fn_mcp_workflow_create' as never, {
-      p_lenser_id: args.lenser_id,
-      p_title: args.title,
-      p_description: args.description,
-      p_visibility: args.visibility,
-    })) as unknown as RpcResult<unknown>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    return data;
+    const hasGraph = (args.nodes?.length ?? 0) > 0
+    const rpc = hasGraph ? 'fn_mcp_workflow_create_graph' : 'fn_mcp_workflow_create'
+    const params = hasGraph
+      ? {
+          p_lenser_id: args.lenser_id,
+          p_title: args.title,
+          p_description: args.description,
+          p_visibility: args.visibility,
+          p_nodes: args.nodes,
+          p_edges: args.edges ?? [],
+        }
+      : {
+          p_lenser_id: args.lenser_id,
+          p_title: args.title,
+          p_description: args.description,
+          p_visibility: args.visibility,
+        }
+    const { data, error } = (await sb.rpc(
+      rpc as never,
+      params as never
+    )) as unknown as RpcResult<unknown>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    return data
   },
 
   async startRun(sb: SupabaseClient, args: StartRunArgs): Promise<{ id: string } | null> {
@@ -117,40 +168,40 @@ export const workflowService = {
       p_global_model_id: args.global_model_id,
       p_idempotency_key: args.idempotency_key,
       p_metadata: args.metadata,
-    })) as unknown as RpcResult<{ id: string }>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    return data;
+    })) as unknown as RpcResult<{ id: string }>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    return data
   },
 
   async runStatus(sb: SupabaseClient, run_id: string): Promise<unknown | null> {
     const { data, error } = (await sb.rpc('fn_mcp_workflow_run_status' as never, {
       p_run_id: run_id,
-    })) as unknown as RpcResult<unknown>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    return data ?? null;
+    })) as unknown as RpcResult<unknown>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    return data ?? null
   },
 
   async runLogs(sb: SupabaseClient, run_id: string): Promise<unknown> {
     const { data, error } = (await sb.rpc('fn_mcp_workflow_run_logs' as never, {
       p_run_id: run_id,
-    })) as unknown as RpcResult<unknown>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    return data ?? { run: null, node_results: [] };
+    })) as unknown as RpcResult<unknown>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    return data ?? { run: null, node_results: [] }
   },
 
   async retry(sb: SupabaseClient, run_id: string): Promise<unknown> {
     const { data, error } = (await sb.rpc('fn_mcp_workflow_retry' as never, {
       p_run_id: run_id,
-    })) as unknown as RpcResult<unknown>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    return data;
+    })) as unknown as RpcResult<unknown>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    return data
   },
 
   async summarize(sb: SupabaseClient, run_id: string): Promise<unknown | null> {
     const { data, error } = (await sb.rpc('fn_mcp_workflow_summarize' as never, {
       p_run_id: run_id,
-    })) as unknown as RpcResult<unknown>;
-    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
-    return data ?? null;
+    })) as unknown as RpcResult<unknown>
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message)
+    return data ?? null
   },
-};
+}

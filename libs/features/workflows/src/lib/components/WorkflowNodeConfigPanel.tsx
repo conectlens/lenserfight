@@ -1,20 +1,36 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAIModels } from '@lenserfight/features/generations'
-import { FundingSourceToggle, LensBodyViewer, useFundingSource, VersionParamFields } from '@lenserfight/features/lenses'
+import {
+  CsvImportDialog,
+  FundingSourceToggle,
+  JsonImportDialog,
+  LensBodyViewer,
+  useFundingSource,
+  VersionParamFields,
+} from '@lenserfight/features/lenses'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { Button } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
 import { Pencil, X } from 'lucide-react'
 import React, { useState, useEffect, useMemo } from 'react'
 
-import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
-import type { WorkflowEdgeRecord, WorkflowNodeRecord, WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
-import type { AIProvider, AIProviderModel } from '@lenserfight/types'
-import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
-import { CsvImportDialog } from '../../../../lenses/src/lib/components/CsvImportDialog'
-import { JsonImportDialog } from '../../../../lenses/src/lib/components/JsonImportDialog'
-import { WorkflowUpstreamOutputPanel } from './upstream/WorkflowUpstreamOutputPanel'
 import { useUpstreamNodeOutputs } from '../hooks/useUpstreamNodeOutputs'
+import {
+  normalizeWorkflowParameterEditorValues,
+  serializeWorkflowParameterValues,
+  type WorkflowParameterEditorValues,
+} from '../utils/workflow-parameter-values'
+import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
+
+import { WorkflowUpstreamOutputPanel } from './upstream/WorkflowUpstreamOutputPanel'
+
+import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
+import type {
+  WorkflowEdgeRecord,
+  WorkflowNodeRecord,
+  WorkflowNodeResultRecord,
+} from '@lenserfight/data/repositories'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
@@ -51,7 +67,7 @@ export function WorkflowNodeConfigPanel({
     currentConfig.model_id ??
     (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
   )
-  const [paramOverrides, setParamOverrides] = useState<Record<string, string>>(
+  const [paramOverrides, setParamOverrides] = useState<WorkflowParameterEditorValues>(
     currentConfig.param_overrides ?? {}
   )
   const [jsonImportOpen, setJsonImportOpen] = useState(false)
@@ -92,8 +108,14 @@ export function WorkflowNodeConfigPanel({
   const nodeResult = nodeResults.find((r) => r.node_id === nodeId) ?? null
 
   // Incoming edge mappings for this node (which params are auto-wired from previous nodes)
-  const incomingEdges = edges.filter((e) => e.target_node_id === nodeId)
-  const autoWiredParams = new Set(incomingEdges.map((e) => e.target_param_label))
+  const incomingEdges = useMemo(
+    () => edges.filter((edge) => edge.target_node_id === nodeId),
+    [edges, nodeId]
+  )
+  const autoWiredParams = useMemo(
+    () => new Set(incomingEdges.map((edge) => edge.target_param_label)),
+    [incomingEdges]
+  )
   const selectedNode = nodes.find((n) => n.id === nodeId)
   const canEditLens =
     !!onEditLens &&
@@ -106,6 +128,10 @@ export function WorkflowNodeConfigPanel({
   const editableParams = useMemo(
     () => versionParams.filter((p) => !autoWiredParams.has(p.label)),
     [versionParams, autoWiredParams],
+  )
+  const editableParamValues = useMemo(
+    () => normalizeWorkflowParameterEditorValues(paramOverrides, editableParams),
+    [paramOverrides, editableParams]
   )
 
   // Derive providers/models from flat useAIModels list
@@ -137,7 +163,10 @@ export function WorkflowNodeConfigPanel({
       funding_source: nodeFunding.fundingSource,
       key_ref_id: nodeFunding.selectedKeyRefId,
       local_key_id: nodeFunding.selectedLocalKeyId,
-      param_overrides: Object.keys(paramOverrides).length > 0 ? paramOverrides : undefined,
+      param_overrides:
+        Object.keys(paramOverrides).length > 0
+          ? serializeWorkflowParameterValues(paramOverrides)
+          : undefined,
     })
     onClose()
   }
@@ -314,10 +343,10 @@ export function WorkflowNodeConfigPanel({
             {editableParams.length > 0 && (
               <VersionParamFields
                 params={editableParams}
-                values={paramOverrides}
+                values={editableParamValues}
                 errors={{}}
                 onChange={(name, value) =>
-                  setParamOverrides((prev) => ({ ...prev, [name]: String(value ?? '') }))
+                  setParamOverrides((prev) => ({ ...prev, [name]: value }))
                 }
                 onImportJson={() => setJsonImportOpen(true)}
                 onImportCsv={() => setCsvImportOpen(true)}
@@ -365,10 +394,13 @@ export function WorkflowNodeConfigPanel({
         onApply={(patch) =>
           setParamOverrides((prev) => ({
             ...prev,
-            ...Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, String(v ?? '')])),
+            ...patch,
           }))
         }
         currentValues={paramOverrides}
+        lensTitle={nodeLabel}
+        lensContent={lensVersion?.templateBody}
+        profileId={currentUserId}
       />
 
       <CsvImportDialog
@@ -378,12 +410,14 @@ export function WorkflowNodeConfigPanel({
         onApply={(patch) =>
           setParamOverrides((prev) => ({
             ...prev,
-            ...Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, String(v ?? '')])),
+            ...patch,
           }))
         }
         currentValues={paramOverrides}
+        lensTitle={nodeLabel}
+        lensContent={lensVersion?.templateBody}
+        profileId={currentUserId}
       />
-
     </aside>
   )
 }

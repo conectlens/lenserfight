@@ -9,10 +9,11 @@ import { Button } from '@lenserfight/ui/components'
 // ── external deps ─────────────────────────────────────────────────────────────
 
 vi.mock('@lenserfight/ui/overlays', () => ({
-  Dialog: ({ children, open, footer, title }: any) =>
+  Dialog: ({ children, open, footer, title, description }: any) =>
     open ? (
       <div data-testid="dialog">
         <span data-testid="dialog-title">{title}</span>
+        <span data-testid="dialog-description">{description}</span>
         {children}
         {footer}
       </div>
@@ -143,6 +144,46 @@ describe('ExportModal', () => {
     const header = screen.getByTestId('dialog-title').textContent ?? ''
     expect(header.length).toBeLessThanOrEqual(60)
     expect(header.endsWith('...')).toBe(true)
+  })
+
+  it('simplifies workflow export to an AI-readable Markdown guide', () => {
+    render(
+      <ExportModal
+        {...defaultProps}
+        kind="workflow"
+        slug="670db934-a77b-4262-a7a0-7d2e0228517d"
+      />,
+    )
+
+    expect(screen.getByText('AI-ready Markdown')).toBeTruthy()
+    expect(screen.queryByTestId('format-selector')).toBeNull()
+    expect(screen.queryByTestId('destination-selector')).toBeNull()
+    expect(screen.getByTestId('dialog-description').textContent).not.toContain(
+      '670db934-a77b-4262-a7a0-7d2e0228517d',
+    )
+  })
+
+  it('pins the workflow guide to Markdown when the modal instance changes kind', async () => {
+    const onConfirm = vi.fn().mockResolvedValue(undefined)
+    const { rerender } = render(<ExportModal {...defaultProps} onConfirm={onConfirm} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'JSON' }))
+    rerender(
+      <ExportModal
+        {...defaultProps}
+        kind="workflow"
+        slug="workflow-id"
+        onConfirm={onConfirm}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('confirm-btn'))
+
+    await waitFor(() => {
+      expect(onConfirm).toHaveBeenCalledWith({
+        format: 'markdown',
+        destination: 'cloud-download',
+      })
+    })
   })
 
   describe('handleConfirm — without onConfirm (the critical bug path)', () => {
