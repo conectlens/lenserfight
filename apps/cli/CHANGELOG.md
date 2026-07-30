@@ -1,3 +1,13 @@
+## 0.25.0 (2026-07-30)
+
+### 🚀 Features
+
+- **cli:** rewrite the top-level TUI dashboard with the ink framework ([f516c16dd](https://github.com/conectlens/lenserfight/commit/f516c16dd))
+
+### ❤️ Thank You
+
+- ÖMER FARUK COŞKUN
+
 ## 0.24.4 (2026-07-15)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.
