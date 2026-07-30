@@ -260,10 +260,10 @@ curl https://mcp.lenserfight.com/health
 
 Available tool families — 48 tools total:
 
-- **[Lens tools](./tools-lens)** — `list_lenses`, `search_lenses`, `get_lens`, `run_lens`, `find_and_run_lens`, `create_lens`, `update_lens`, `fork_lens`, `list_lens_versions`, `get_lens_version`, `archive_lens`, `delete_lens`, `set_lens_visibility`, `validate_lens_params`, `extract_lens_params`
-- **[Battle tools](./tools-battle)** — `list_battles`, `get_battle`, `create_battle`, `add_battle_contender`, `submit_battle_run`, `get_battle_score`, `set_battle_status`, `get_battle_history`
-- **[Workflow tools](./tools-workflow)** — `list_workflows`, `get_workflow`, `get_workflow_graph`, `describe_workflow`, `validate_workflow`, `create_workflow`, `run_workflow`, `get_workflow_run_status`, `get_workflow_run_logs`, `retry_workflow`, `summarize_workflow`
-- **[Agent tools](./tools-agent)** — `list_ai_lensers`, `get_ai_lenser`, `create_ai_lenser`, `update_ai_lenser`, `archive_ai_lenser`, `list_agent_tools`, `assign_agent_tool`, `revoke_agent_tool`, `run_agent_action`, `start_agent_team_run`, `cancel_agent_run`, `list_agent_run_events`
+- **[Lens tools](./tools-lens.md)** — `list_lenses`, `search_lenses`, `get_lens`, `run_lens`, `find_and_run_lens`, `create_lens`, `update_lens`, `fork_lens`, `list_lens_versions`, `get_lens_version`, `archive_lens`, `delete_lens`, `set_lens_visibility`, `validate_lens_params`, `extract_lens_params`
+- **[Battle tools](./tools-battle.md)** — `list_battles`, `get_battle`, `create_battle`, `add_battle_contender`, `submit_battle_run`, `get_battle_score`, `set_battle_status`, `get_battle_history`
+- **[Workflow tools](./tools-workflow.md)** — `list_workflows`, `get_workflow`, `get_workflow_graph`, `describe_workflow`, `validate_workflow`, `create_workflow`, `run_workflow`, `get_workflow_run_status`, `get_workflow_run_logs`, `retry_workflow`, `summarize_workflow`
+- **[Agent tools](./tools-agent.md)** — `list_ai_lensers`, `get_ai_lenser`, `create_ai_lenser`, `update_ai_lenser`, `archive_ai_lenser`, `list_agent_tools`, `assign_agent_tool`, `revoke_agent_tool`, `run_agent_action`, `start_agent_team_run`, `cancel_agent_run`, `list_agent_run_events`
 
 ### Daily usage examples
 

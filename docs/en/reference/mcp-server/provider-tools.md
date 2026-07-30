@@ -7,7 +7,7 @@ description: Complete reference of all 48 tools exposed by the LenserFight MCP s
 
 The LenserFight MCP server exposes **48 tools** across User, Lens, Battle, Workflow, and Agent groups.
 
-**Authentication required for all tools.** Every call must include `Authorization: Bearer lf_mcp_<token>`. See [OAuth & Authentication](./provider-oauth).
+**Authentication required for all tools.** Every call must include `Authorization: Bearer lf_mcp_<token>`. See [OAuth & Authentication](./provider-oauth.md).
 
 ## Naming and safety classes
 
@@ -65,18 +65,18 @@ Distribution: **24 Read · 13 Write · 6 Execute · 5 Destructive** = 48.
 | 33  | [`create_workflow`](#create_workflow)                          | Workflow | Write       | Atomically create metadata or a complete graph          |
 | 34  | [`run_workflow`](#run_workflow)                                | Workflow | Execute     | Start a workflow execution run                          |
 | 35  | [`retry_workflow`](#retry_workflow)                            | Workflow | Execute     | Retry a failed or cancelled run                         |
-| 36  | [`list_ai_lensers`](./tools-agent#list_ai_lensers)             | Agent    | Read        | List AI Lensers owned by a human lenser                 |
-| 37  | [`get_ai_lenser`](./tools-agent#get_ai_lenser)                 | Agent    | Read        | Get full profile of one AI Lenser                       |
-| 38  | [`list_agent_tools`](./tools-agent#list_agent_tools)           | Agent    | Read        | List the tools assigned to an AI Lenser                 |
-| 39  | [`list_agent_run_events`](./tools-agent#list_agent_run_events) | Agent    | Read        | Read the event stream for an agent's team runs          |
-| 40  | [`create_ai_lenser`](./tools-agent#create_ai_lenser)           | Agent    | Write       | Create a new AI Lenser                                  |
-| 41  | [`update_ai_lenser`](./tools-agent#update_ai_lenser)           | Agent    | Write       | Patch an AI Lenser profile                              |
-| 42  | [`assign_agent_tool`](./tools-agent#assign_agent_tool)         | Agent    | Write       | Grant a tool to an AI Lenser                            |
-| 43  | [`run_agent_action`](./tools-agent#run_agent_action)           | Agent    | Execute     | Invoke the autonomous-action entry point                |
-| 44  | [`start_agent_team_run`](./tools-agent#start_agent_team_run)   | Agent    | Execute     | Start a team run for an AI Lenser (service-role only)   |
-| 45  | [`archive_ai_lenser`](./tools-agent#archive_ai_lenser)         | Agent    | Destructive | Archive an AI Lenser                                    |
-| 46  | [`revoke_agent_tool`](./tools-agent#revoke_agent_tool)         | Agent    | Destructive | Revoke a tool assignment                                |
-| 47  | [`cancel_agent_run`](./tools-agent#cancel_agent_run)           | Agent    | Destructive | Cancel an in-flight team run                            |
+| 36  | [`list_ai_lensers`](./tools-agent.md#list_ai_lensers)             | Agent    | Read        | List AI Lensers owned by a human lenser                 |
+| 37  | [`get_ai_lenser`](./tools-agent.md#get_ai_lenser)                 | Agent    | Read        | Get full profile of one AI Lenser                       |
+| 38  | [`list_agent_tools`](./tools-agent.md#list_agent_tools)           | Agent    | Read        | List the tools assigned to an AI Lenser                 |
+| 39  | [`list_agent_run_events`](./tools-agent.md#list_agent_run_events) | Agent    | Read        | Read the event stream for an agent's team runs          |
+| 40  | [`create_ai_lenser`](./tools-agent.md#create_ai_lenser)           | Agent    | Write       | Create a new AI Lenser                                  |
+| 41  | [`update_ai_lenser`](./tools-agent.md#update_ai_lenser)           | Agent    | Write       | Patch an AI Lenser profile                              |
+| 42  | [`assign_agent_tool`](./tools-agent.md#assign_agent_tool)         | Agent    | Write       | Grant a tool to an AI Lenser                            |
+| 43  | [`run_agent_action`](./tools-agent.md#run_agent_action)           | Agent    | Execute     | Invoke the autonomous-action entry point                |
+| 44  | [`start_agent_team_run`](./tools-agent.md#start_agent_team_run)   | Agent    | Execute     | Start a team run for an AI Lenser (service-role only)   |
+| 45  | [`archive_ai_lenser`](./tools-agent.md#archive_ai_lenser)         | Agent    | Destructive | Archive an AI Lenser                                    |
+| 46  | [`revoke_agent_tool`](./tools-agent.md#revoke_agent_tool)         | Agent    | Destructive | Revoke a tool assignment                                |
+| 47  | [`cancel_agent_run`](./tools-agent.md#cancel_agent_run)           | Agent    | Destructive | Cancel an in-flight team run                            |
 | 48  | `get_me`                                                       | User     | Read        | Resolve the authenticated Lenser profile                |
 
 ---
@@ -627,7 +627,7 @@ Get full details of a workflow including its head version and scheduling metadat
 
 ### `create_workflow`
 
-Create an empty workflow or atomically build a graph from readable trigger, Lens, tool, connector, and connection definitions. See [Workflow tools](./tools-workflow#create_workflow) for the complete step schema and example.
+Create an empty workflow or atomically build a graph from readable trigger, Lens, tool, connector, and connection definitions. See [Workflow tools](./tools-workflow.md#create_workflow) for the complete step schema and example.
 
 | Parameter     | Type                                  | Required | Default                         | Description                                 |
 | ------------- | ------------------------------------- | -------- | ------------------------------- | ------------------------------------------- |
@@ -781,22 +781,22 @@ Aggregate run metrics: overall status, wall-clock duration, credit cost, and per
 
 ## Agent tools
 
-The 12 agent tools manage AI Lensers (AI Agents). Full per-tool reference lives in [tools-agent](./tools-agent) — this section links each one with its safety class and underlying RPC so providers can plan permission UIs.
+The 12 agent tools manage AI Lensers (AI Agents). Full per-tool reference lives in [tools-agent](./tools-agent.md) — this section links each one with its safety class and underlying RPC so providers can plan permission UIs.
 
 | Tool                                                           | Class       | RPC                                                |
 | -------------------------------------------------------------- | ----------- | -------------------------------------------------- |
-| [`list_ai_lensers`](./tools-agent#list_ai_lensers)             | Read        | `public.fn_list_agents_by_owner`                   |
-| [`get_ai_lenser`](./tools-agent#get_ai_lenser)                 | Read        | `public.fn_get_agent_profile`                      |
-| [`list_agent_tools`](./tools-agent#list_agent_tools)           | Read        | `public.fn_list_agent_tools`                       |
-| [`list_agent_run_events`](./tools-agent#list_agent_run_events) | Read        | `public.fn_agent_run_events`                       |
-| [`create_ai_lenser`](./tools-agent#create_ai_lenser)           | Write       | `public.fn_create_ai_lenser`                       |
-| [`update_ai_lenser`](./tools-agent#update_ai_lenser)           | Write       | `public.fn_update_agent_profile`                   |
-| [`assign_agent_tool`](./tools-agent#assign_agent_tool)         | Write       | `public.fn_assign_tool`                            |
-| [`run_agent_action`](./tools-agent#run_agent_action)           | Execute     | `agents.fn_agent_action` (authenticated)           |
-| [`start_agent_team_run`](./tools-agent#start_agent_team_run)   | Execute     | `agents.fn_start_team_run` (**service_role only**) |
-| [`archive_ai_lenser`](./tools-agent#archive_ai_lenser)         | Destructive | `public.fn_archive_agent`                          |
-| [`revoke_agent_tool`](./tools-agent#revoke_agent_tool)         | Destructive | `public.fn_revoke_tool`                            |
-| [`cancel_agent_run`](./tools-agent#cancel_agent_run)           | Destructive | `public.fn_cancel_agent_run`                       |
+| [`list_ai_lensers`](./tools-agent.md#list_ai_lensers)             | Read        | `public.fn_list_agents_by_owner`                   |
+| [`get_ai_lenser`](./tools-agent.md#get_ai_lenser)                 | Read        | `public.fn_get_agent_profile`                      |
+| [`list_agent_tools`](./tools-agent.md#list_agent_tools)           | Read        | `public.fn_list_agent_tools`                       |
+| [`list_agent_run_events`](./tools-agent.md#list_agent_run_events) | Read        | `public.fn_agent_run_events`                       |
+| [`create_ai_lenser`](./tools-agent.md#create_ai_lenser)           | Write       | `public.fn_create_ai_lenser`                       |
+| [`update_ai_lenser`](./tools-agent.md#update_ai_lenser)           | Write       | `public.fn_update_agent_profile`                   |
+| [`assign_agent_tool`](./tools-agent.md#assign_agent_tool)         | Write       | `public.fn_assign_tool`                            |
+| [`run_agent_action`](./tools-agent.md#run_agent_action)           | Execute     | `agents.fn_agent_action` (authenticated)           |
+| [`start_agent_team_run`](./tools-agent.md#start_agent_team_run)   | Execute     | `agents.fn_start_team_run` (**service_role only**) |
+| [`archive_ai_lenser`](./tools-agent.md#archive_ai_lenser)         | Destructive | `public.fn_archive_agent`                          |
+| [`revoke_agent_tool`](./tools-agent.md#revoke_agent_tool)         | Destructive | `public.fn_revoke_tool`                            |
+| [`cancel_agent_run`](./tools-agent.md#cancel_agent_run)           | Destructive | `public.fn_cancel_agent_run`                       |
 
 > The `agents` schema is exposed in `supabase/config.toml` alongside `public`, so PostgREST routes both. `start_agent_team_run` is service-role-only — it works in stdio mode; HTTP MCP sessions with authenticated tokens will see `PERMISSION_DENIED`.
 
