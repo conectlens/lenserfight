@@ -13,25 +13,21 @@
  * Static values (no [[...]]) pass through unchanged and existing validation
  * continues to work normally.
  *
- * The drag key "text/plain" is the same key used by WorkflowOutputFieldRow so
- * any drag source that sets a plain-text payload will be accepted. The canvas
- * XYFlow drag sources use "application/reactflow" which is distinct, so canvas
- * node dragging is unaffected.
+ * WorkflowOutputFieldRow uses a dedicated MIME type so unrelated plain-text
+ * drags and XYFlow canvas node drags cannot be mistaken for output references.
  */
 import React, { useRef, useState } from 'react'
 import { Braces, AlertTriangle, AlertCircle } from 'lucide-react'
 
 import type { RunnerConfigFieldType } from '../types/workflow-node.types'
-import { hasWorkflowExpression, parseWorkflowExpression } from '../utils/workflow-expression'
+import {
+  isCanonicalWorkflowExpression,
+  parseWorkflowExpression,
+  WORKFLOW_EXPRESSION_DRAG_TYPE,
+  WORKFLOW_EXPRESSION_OUTPUT_TYPE_DRAG_TYPE,
+} from '../utils/workflow-expression'
 import { validateParameterMapping } from '../utils/validate-parameter-mapping'
 import type { MappingCompatibility } from '../utils/validate-parameter-mapping'
-
-// Matches the dragstart payload from WorkflowOutputFieldRow:
-// [[nodeId.field]] — we need to extract the output type to validate compatibility
-// Since we don't get the type from the drag payload, we store it in a meta attribute
-// on the draggable element. As a fallback, compatibility defaults to 'warning'.
-const EXPR_DRAG_KEY = 'text/plain'
-const EXPR_TYPE_DRAG_KEY = 'application/x-workflow-output-type'
 
 export interface WorkflowExpressionInputProps {
   value: string
@@ -72,7 +68,7 @@ export function WorkflowExpressionInput({
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
     // Only accept drops that carry our expression payload
-    if (e.dataTransfer.types.includes(EXPR_DRAG_KEY)) {
+    if (e.dataTransfer.types.includes(WORKFLOW_EXPRESSION_DRAG_TYPE)) {
       e.preventDefault()
       e.dataTransfer.dropEffect = 'copy'
       setIsDragOver(true)
@@ -88,11 +84,13 @@ export function WorkflowExpressionInput({
     e.stopPropagation()  // Don't let canvas XYFlow onDrop fire
     setIsDragOver(false)
 
-    const expression = e.dataTransfer.getData(EXPR_DRAG_KEY)
-    if (!expression || !expression.startsWith('[[')) return
+    const expression = e.dataTransfer.getData(WORKFLOW_EXPRESSION_DRAG_TYPE)
+    if (!isCanonicalWorkflowExpression(expression)) return
 
     // Check type compatibility if the drag source provided it
-    const outputType = e.dataTransfer.getData(EXPR_TYPE_DRAG_KEY)
+    const outputType = e.dataTransfer.getData(
+      WORKFLOW_EXPRESSION_OUTPUT_TYPE_DRAG_TYPE,
+    )
     if (outputType) {
       const compat = validateParameterMapping(outputType, fieldType)
       setLastDropCompatibility(compat)

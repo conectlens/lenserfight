@@ -55,7 +55,10 @@ if [[ -z "${SKIP_DB:-}" ]]; then
   # before proceeding — a 502 here means PostgREST hasn't come back up yet.
   echo "    waiting for Supabase REST API after container restart..."
   WAIT_ATTEMPTS=0
-  until curl -sf http://127.0.0.1:54321/health >/dev/null 2>&1; do
+  # Kong's /health route 404s on some Supabase CLI versions, so probe
+  # /rest/v1/ (PostgREST) directly with the local anon key instead.
+  SUPABASE_ANON_KEY="$(supabase status -o env 2>/dev/null | grep -oE '^ANON_KEY="[^"]*"' | cut -d'"' -f2)"
+  until curl -sf http://127.0.0.1:54321/rest/v1/ -H "apikey: ${SUPABASE_ANON_KEY}" >/dev/null 2>&1; do
     WAIT_ATTEMPTS=$((WAIT_ATTEMPTS+1))
     if [[ $WAIT_ATTEMPTS -ge 60 ]]; then
       echo "    ERROR: Supabase did not become healthy within 120s after db reset"

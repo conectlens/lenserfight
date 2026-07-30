@@ -1,7 +1,32 @@
 import { describe, expect, it } from 'vitest'
 
-import { hasWorkflowExpression, parseWorkflowExpression, resolveWorkflowExpression } from './workflow-expression'
-import type { UpstreamResultSnapshot } from './workflow-expression'
+import {
+  formatWorkflowExpression,
+  hasWorkflowExpression,
+  isCanonicalWorkflowExpression,
+  parseWorkflowExpression,
+  resolveWorkflowExpression,
+  type UpstreamResultSnapshot,
+} from './workflow-expression'
+
+describe('formatWorkflowExpression', () => {
+  it('builds the runtime expression format', () => {
+    expect(formatWorkflowExpression('node-abc', 'data.summary')).toBe(
+      '[[node-abc.data.summary]]',
+    )
+  })
+})
+
+describe('isCanonicalWorkflowExpression', () => {
+  it('accepts one standalone runtime expression', () => {
+    expect(isCanonicalWorkflowExpression('[[node-abc.data.summary]]')).toBe(true)
+  })
+
+  it('rejects surrounding content and incomplete references', () => {
+    expect(isCanonicalWorkflowExpression('Use [[node-abc.text]]')).toBe(false)
+    expect(isCanonicalWorkflowExpression('[[node-abc]]')).toBe(false)
+  })
+})
 
 // ── parseWorkflowExpression ──────────────────────────────────────────────────
 

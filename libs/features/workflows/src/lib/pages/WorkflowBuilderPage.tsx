@@ -1104,6 +1104,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                         : undefined
                     }
                     nodeConfigOverrides={nodeConfigs}
+                    currentUserId={user?.id}
                   />
                   {/* Recovery banner — shown when the run terminated with failure */}
                   {runId &&

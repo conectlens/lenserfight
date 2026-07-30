@@ -78,6 +78,34 @@ describe('applyRedactionPolicy', () => {
     )
   })
 
+  it('strips workflow key references for every visibility', () => {
+    const payload = {
+      nodes: [
+        {
+          config: {
+            key_ref_id: 'cloud-key-ref',
+            local_key_id: 'local-key-ref',
+            byok_key_ref_id: 'legacy-key-ref',
+            model_id: 'gemini-2.5-flash',
+          },
+        },
+      ],
+    }
+
+    for (const context of [owner, authed, anon]) {
+      const result = applyRedactionPolicy(payload, context)
+      const config = result.data.nodes[0].config
+      expect(config).toEqual({ model_id: 'gemini-2.5-flash' })
+      expect(result.redactions).toEqual(
+        expect.arrayContaining([
+          'nodes[0].config.key_ref_id',
+          'nodes[0].config.local_key_id',
+          'nodes[0].config.byok_key_ref_id',
+        ]),
+      )
+    }
+  })
+
   it('reports anonymous viewer as "public" visibility', () => {
     const result = applyRedactionPolicy({}, anon)
     expect(result.visibility).toBe('public')

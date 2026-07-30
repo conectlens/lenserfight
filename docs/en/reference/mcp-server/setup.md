@@ -7,17 +7,17 @@ description: Step-by-step guide to connecting Claude Code, Cursor, or Claude.ai 
 
 The **LenserFight MCP server** exposes your lenses, battles, workflows, and AI Lensers as callable tools that any [Model Context Protocol](https://modelcontextprotocol.io/docs/getting-started/intro) client can use. Once connected, you can ask Claude things like:
 
-- *"Search my lenses for a code review template, then run it on this file."*
-- *"List my open battles and rank them by votes."*
-- *"Create an AI Lenser called @reviewer and assign it the code-review tool."*
+- _"Search my lenses for a code review template, then run it on this file."_
+- _"List my open battles and rank them by votes."_
+- _"Create an AI Lenser called @reviewer and assign it the code-review tool."_
 
 Three connection modes are supported. Pick the one that matches your client and environment:
 
-| Mode | Client | Setup time | Requires local repo? |
-|---|---|---|---|
-| [LF Cloud](#mode-1-lf-cloud-claudeai-web-any-http-client) | Claude.ai web, any HTTP MCP client | ~2 min | No |
-| [stdio](#mode-2-stdio-claude-code-cursor-desktop) | Claude Code CLI, Cursor, any child-process MCP client | ~3 min | Yes |
-| [HTTP + tunnel](#mode-3-http--tunnel-claudeai-web-local-dev) | Claude.ai web (local dev) | ~8 min | Yes |
+| Mode                                                         | Client                                                | Setup time | Requires local repo? |
+| ------------------------------------------------------------ | ----------------------------------------------------- | ---------- | -------------------- |
+| [LF Cloud](#mode-1-lf-cloud-claudeai-web-any-http-client)    | Claude.ai web, any HTTP MCP client                    | ~2 min     | No                   |
+| [stdio](#mode-2-stdio-claude-code-cursor-desktop)            | Claude Code CLI, Cursor, any child-process MCP client | ~3 min     | Yes                  |
+| [HTTP + tunnel](#mode-3-http--tunnel-claudeai-web-local-dev) | Claude.ai web (local dev)                             | ~8 min     | Yes                  |
 
 ---
 
@@ -53,10 +53,10 @@ Your account must have completed the onboarding flow (choosing a handle) before 
 
 If authorization fails:
 
-| Error | Cause | Fix |
-|---|---|---|
+| Error                       | Cause                                             | Fix                                                                                                                     |
+| --------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | **No Lenser profile found** | Account exists but onboarding was never completed | The auth app automatically redirects to onboarding and completes authorization on return — no manual navigation needed. |
-| **Authorization failed** | Session expired or was already used | Start the connector flow again from Claude.ai settings |
+| **Authorization failed**    | Session expired or was already used               | Start the connector flow again from Claude.ai settings                                                                  |
 
 ### Step 3 — Test the connection
 
@@ -258,25 +258,29 @@ curl https://mcp.lenserfight.com/health
 
 ## What you can do once connected
 
-Available tool families — 42 tools total:
+Available tool families — 48 tools total:
 
 - **[Lens tools](./tools-lens)** — `list_lenses`, `search_lenses`, `get_lens`, `run_lens`, `find_and_run_lens`, `create_lens`, `update_lens`, `fork_lens`, `list_lens_versions`, `get_lens_version`, `archive_lens`, `delete_lens`, `set_lens_visibility`, `validate_lens_params`, `extract_lens_params`
 - **[Battle tools](./tools-battle)** — `list_battles`, `get_battle`, `create_battle`, `add_battle_contender`, `submit_battle_run`, `get_battle_score`, `set_battle_status`, `get_battle_history`
-- **[Workflow tools](./tools-workflow)** — `list_workflows`, `get_workflow`, `create_workflow`, `run_workflow`, `get_workflow_run_status`, `get_workflow_run_logs`, `retry_workflow`, `summarize_workflow`
+- **[Workflow tools](./tools-workflow)** — `list_workflows`, `get_workflow`, `get_workflow_graph`, `describe_workflow`, `validate_workflow`, `create_workflow`, `run_workflow`, `get_workflow_run_status`, `get_workflow_run_logs`, `retry_workflow`, `summarize_workflow`
 - **[Agent tools](./tools-agent)** — `list_ai_lensers`, `get_ai_lenser`, `create_ai_lenser`, `update_ai_lenser`, `archive_ai_lenser`, `list_agent_tools`, `assign_agent_tool`, `revoke_agent_tool`, `run_agent_action`, `start_agent_team_run`, `cancel_agent_run`, `list_agent_run_events`
 
 ### Daily usage examples
 
 **Discover and run a lens by topic:**
+
 > "Use `find_and_run_lens` with query='logo brief'. Ask me for any missing parameters."
 
 **Run a known lens with parameters:**
+
 > "Call `run_lens` with `lens_id=<uuid>` and `param_values={Topic: 'TypeScript', Language: 'English'}`."
 
 **Browse your battles:**
+
 > "List my last 10 battles."
 
 **Create and run an AI Lenser:**
+
 > "Create an AI Lenser called @reviewer, then start a team run with task 'Review this PR description'."
 
 ---
@@ -329,6 +333,7 @@ curl https://<your-tunnel>/health
 ```
 
 Then in Claude.ai:
+
 > "List my lenses using the LenserFight connector, then describe the first result in detail."
 
 Claude should call `list_lenses`, then `get_lens` on the first ID. If both succeed, the integration is healthy.
