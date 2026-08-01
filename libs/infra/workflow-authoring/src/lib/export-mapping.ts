@@ -209,7 +209,7 @@ function buildLensRef(seed: string, taken: ReadonlyMap<string, string>): string 
   const base =
     seed
       .normalize('NFKD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')

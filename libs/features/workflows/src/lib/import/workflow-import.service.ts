@@ -177,18 +177,22 @@ export async function importWorkflow(
   format?: WorkflowDocumentFormat,
 ): Promise<WorkflowImportResult> {
   // ── Phase 1: validate everything before writing anything ──────────────────
-  const preview = previewWorkflowImport(text, format)
-  if (!preview.ok || !preview.document) {
-    return failed(preview.issues)
+  const read = readWorkflowDocument(text, format ? { format } : {})
+  if (!read.ok || !read.value) {
+    return failed(read.issues)
   }
 
-  const document = preview.document
+  const document = read.value
   const semantics = validateWorkflowSemantics(document)
   if (!semantics.ok || !semantics.resolvedSteps) {
-    return failed(semantics.issues)
+    return failed([...read.issues, ...semantics.issues])
   }
 
-  const carriedIssues = preview.issues.filter((issue) => issue.severity === 'warning')
+  // Warnings are informative, not blocking — carry them into the result so the
+  // user still sees what was adjusted on their behalf.
+  const carriedIssues = [...read.issues, ...semantics.issues].filter(
+    (issue) => issue.severity === 'warning',
+  )
 
   // ── Phase 2: write, tracking everything we create ─────────────────────────
   const createdLensIds: string[] = []

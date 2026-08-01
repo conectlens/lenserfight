@@ -73,6 +73,17 @@ export function useWorkflowImport({ lenserId }: UseWorkflowImportOptions) {
         const imported = await importWorkflow(
           text,
           {
+            /**
+             * Parameter labels are deliberately not fetched here. Getting them
+             * means one version query per candidate lens — an N+1 that would
+             * cost 100 round-trips to *maybe* save one insert.
+             *
+             * The consequence is a conservative reuse policy: a definition that
+             * declares parameters will not match a candidate, so it creates a
+             * new lens. That errs toward duplication rather than toward binding
+             * a workflow to a lens whose parameters do not fit, which is the
+             * safer failure.
+             */
             listOwnedLenses: async () => {
               if (!lenserId) return []
               const owned = await lensesService.getMyLenses(0, 100)

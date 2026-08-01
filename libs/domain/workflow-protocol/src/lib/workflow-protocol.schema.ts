@@ -173,7 +173,7 @@ export const workflowDocumentSchema = z
      * Absent on legacy documents; `normalizeWorkflowDocument` stamps it before
      * validation, so by the time we get here it is always present.
      */
-    protocol: z.literal(SUPPORTED_WORKFLOW_PROTOCOL_IDS),
+    protocol: z.literal(WORKFLOW_PROTOCOL_ID),
     title: z
       .string()
       .trim()
