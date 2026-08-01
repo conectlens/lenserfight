@@ -9,10 +9,9 @@ vi.mock('@lenserfight/utils/text', () => ({
   copyTextToClipboard,
 }))
 
-import {
-  WORKFLOW_CREATION_INSTRUCTIONS,
-  WorkflowInstructionsButton,
-} from './WorkflowInstructionsButton'
+import { buildWorkflowInstructionsText } from '../utils/workflow-instructions'
+
+import { WorkflowInstructionsButton } from './WorkflowInstructionsButton'
 
 describe('WorkflowInstructionsButton', () => {
   beforeEach(() => {
@@ -20,7 +19,7 @@ describe('WorkflowInstructionsButton', () => {
     copyTextToClipboard.mockResolvedValue(undefined)
   })
 
-  it('copies the workflow planning contract and confirms success', async () => {
+  it('copies the generated instructions and confirms success', async () => {
     render(<WorkflowInstructionsButton />)
 
     const button = screen.getByRole('button', { name: 'Workflow Instructions' })
@@ -29,9 +28,19 @@ describe('WorkflowInstructionsButton', () => {
     fireEvent.click(button)
 
     await waitFor(() => {
-      expect(copyTextToClipboard).toHaveBeenCalledWith(WORKFLOW_CREATION_INSTRUCTIONS)
+      expect(copyTextToClipboard).toHaveBeenCalledWith(buildWorkflowInstructionsText('json'))
     })
     expect(screen.getByText('Instructions copied')).toBeTruthy()
+  })
+
+  it('copies the YAML variant when asked', async () => {
+    render(<WorkflowInstructionsButton format="yaml" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow Instructions' }))
+
+    await waitFor(() => {
+      expect(copyTextToClipboard).toHaveBeenCalledWith(buildWorkflowInstructionsText('yaml'))
+    })
   })
 
   it('keeps the original accessible label when clipboard access fails', async () => {
@@ -44,14 +53,5 @@ describe('WorkflowInstructionsButton', () => {
       expect(copyTextToClipboard).toHaveBeenCalled()
     })
     expect(screen.getByRole('button', { name: 'Workflow Instructions' })).toBeTruthy()
-  })
-
-  it('constrains AI suggestions to usable workflow building blocks', () => {
-    expect(WORKFLOW_CREATION_INSTRUCTIONS).toContain('exactly one trigger')
-    expect(WORKFLOW_CREATION_INSTRUCTIONS).toContain('Use a Lens for AI reasoning')
-    expect(WORKFLOW_CREATION_INSTRUCTIONS).toContain('Use a tool node for deterministic work')
-    expect(WORKFLOW_CREATION_INSTRUCTIONS).toContain('current workflow palette')
-    expect(WORKFLOW_CREATION_INSTRUCTIONS).toContain('Do not invent Lens IDs')
-    expect(WORKFLOW_CREATION_INSTRUCTIONS).toContain('"kind": "trigger | lens | tool"')
   })
 })

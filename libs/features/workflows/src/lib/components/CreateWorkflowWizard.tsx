@@ -13,7 +13,7 @@ import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/
 import { DialogFooterContext, DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { CalendarClock, Check, GitBranch, GitFork, KeyRound, Layers, Sparkles } from 'lucide-react'
+import { CalendarClock, Check, GitBranch, GitFork, KeyRound, Layers, Sparkles, Upload } from 'lucide-react'
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -22,6 +22,7 @@ import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
 import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
 
 import { WorkflowCronPanel } from './WorkflowCronPanel'
+import { WorkflowImportDialog } from './WorkflowImportDialog'
 import { WorkflowInstructionsButton } from './WorkflowInstructionsButton'
 
 import type { WorkflowCronPanelRef } from './WorkflowCronPanel'
@@ -263,6 +264,7 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
 export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel, editMode, initialWorkflow, initialTemplateId }) => {
   const navigate = useNavigate()
   const [showTemplatePicker, setShowTemplatePicker] = useState(!editMode)
+  const [showImportDialog, setShowImportDialog] = useState(false)
   const { data: templates = [], isLoading: templatesLoading } = useTemplateWorkflows(12)
   const { mutate: forkTemplate, isPending: isForking } = useMutation({
     mutationFn: (templateId: string) => workflowsService.forkWorkflow(templateId),
@@ -528,10 +530,19 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     >
       {step === 0 && (
         <div className="space-y-4">
-          {/* Generate with AI — compact spark icon (popover: funding accordion + prompt) */}
+          {/* Instructions → external AI → paste back, alongside in-app generation. */}
           {user?.id && !editMode && (
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <WorkflowInstructionsButton />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowImportDialog(true)}
+                className="flex items-center gap-1.5"
+              >
+                <Upload size={12} /> Import JSON / YAML
+              </Button>
               <GenerateWithAIButton
                 profileId={user.id}
                 generationType="workflow"
@@ -656,6 +667,20 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
       {step === 1 && editMode && initialWorkflow && (
         <WorkflowCronPanel workflowId={initialWorkflow.id} isOwner={true} />
       )}
+
+      {/* An imported document already describes the whole workflow, so a
+          successful import skips the remaining steps and opens the canvas. */}
+      <WorkflowImportDialog
+        open={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImported={(workflowId) => {
+          reset()
+          onCreated(workflowId)
+          navigate(`/workflows/${workflowId}`)
+        }}
+        lenserId={user?.id}
+        visibility={visibility}
+      />
     </StepWizard>
   )
 }

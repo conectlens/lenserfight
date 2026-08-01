@@ -39,6 +39,14 @@ export * from './lib/components/WorkflowTaskCard'
 export * from './lib/components/MediaOutputCard'
 export * from './lib/components/MultimodalRunResult'
 
+// Workflow document import (protocol-driven)
+export * from './lib/components/WorkflowImportDialog'
+export * from './lib/components/WorkflowInstructionsButton'
+export * from './lib/import/workflow-import.service'
+export * from './lib/import/lens-resolution'
+export * from './lib/import/useWorkflowImport'
+export * from './lib/utils/workflow-instructions'
+
 // CD: Workflow automation v2 components
 export * from './lib/components/WorkflowTriggerEditor'
 export * from './lib/components/WorkflowRunChain'
