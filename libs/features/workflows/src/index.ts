@@ -42,6 +42,7 @@ export * from './lib/components/MultimodalRunResult'
 // Workflow document import (protocol-driven)
 export * from './lib/components/WorkflowImportDialog'
 export * from './lib/components/WorkflowInstructionsButton'
+export * from './lib/components/WorkflowDocumentCopyButton'
 export * from './lib/import/workflow-import.service'
 export * from './lib/import/lens-resolution'
 export * from './lib/import/useWorkflowImport'
