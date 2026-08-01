@@ -22,6 +22,7 @@ import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
 import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
 
 import { WorkflowCronPanel } from './WorkflowCronPanel'
+import { WorkflowInstructionsButton } from './WorkflowInstructionsButton'
 
 import type { WorkflowCronPanelRef } from './WorkflowCronPanel'
 import type { AICreationOutput } from '@lenserfight/infra/ai-creation'
@@ -529,7 +530,8 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
         <div className="space-y-4">
           {/* Generate with AI — compact spark icon (popover: funding accordion + prompt) */}
           {user?.id && !editMode && (
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end gap-2">
+              <WorkflowInstructionsButton />
               <GenerateWithAIButton
                 profileId={user.id}
                 generationType="workflow"
