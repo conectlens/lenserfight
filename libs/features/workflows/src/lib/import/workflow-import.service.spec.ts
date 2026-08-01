@@ -35,6 +35,7 @@ const validText = JSON.stringify(VALID)
 function makeDeps(overrides: Partial<WorkflowImportDeps> = {}): WorkflowImportDeps {
   return {
     listOwnedLenses: vi.fn().mockResolvedValue([]),
+    getLensParameterLabels: vi.fn().mockResolvedValue([]),
     createLens: vi.fn().mockResolvedValue({ id: 'lens-new', title: 'Weekly Digest' }),
     textToolId: 'tool-text',
     createWorkflow: vi.fn().mockResolvedValue({ id: 'wf-1', title: 'Digest workflow' }),
@@ -111,14 +112,16 @@ describe('importWorkflow', () => {
     )
   })
 
-  it('reuses a compatible lens the user already owns', async () => {
+  it('reuses a lens whose published parameters cover the definition', async () => {
     const deps = makeDeps({
-      listOwnedLenses: vi.fn().mockResolvedValue([
-        { id: 'lens-existing', title: 'Weekly Digest', parameterLabels: ['Topic', 'Tone'] },
-      ]),
+      listOwnedLenses: vi
+        .fn()
+        .mockResolvedValue([{ id: 'lens-existing', title: 'Weekly Digest' }]),
+      getLensParameterLabels: vi.fn().mockResolvedValue(['Topic', 'Tone']),
     })
     const result = await importWorkflow(validText, deps)
 
+    expect(deps.getLensParameterLabels).toHaveBeenCalledWith('lens-existing')
     expect(deps.createLens).not.toHaveBeenCalled()
     expect(result.lenses[0]).toMatchObject({ lensId: 'lens-existing', action: 'reused' })
   })
@@ -127,15 +130,42 @@ describe('importWorkflow', () => {
     const deps = makeDeps({
       listOwnedLenses: vi
         .fn()
-        .mockResolvedValue([
-          { id: 'lens-existing', title: 'Weekly Digest', parameterLabels: ['SomethingElse'] },
-        ]),
+        .mockResolvedValue([{ id: 'lens-existing', title: 'Weekly Digest' }]),
+      getLensParameterLabels: vi.fn().mockResolvedValue(['SomethingElse']),
     })
     const result = await importWorkflow(validText, deps)
 
     expect(deps.createLens).toHaveBeenCalledTimes(1)
     expect(result.lenses[0]).toMatchObject({ action: 'created' })
     expect(result.warnings.some((warning) => warning.includes('not modified'))).toBe(true)
+  })
+
+  it('looks up parameters only for lenses whose title a definition asks for', async () => {
+    const deps = makeDeps({
+      listOwnedLenses: vi.fn().mockResolvedValue([
+        { id: 'lens-other', title: 'Unrelated Lens' },
+        { id: 'lens-existing', title: '  weekly   digest ' },
+      ]),
+      getLensParameterLabels: vi.fn().mockResolvedValue(['Topic', 'Tone']),
+    })
+    const result = await importWorkflow(validText, deps)
+
+    expect(deps.getLensParameterLabels).toHaveBeenCalledTimes(1)
+    expect(deps.getLensParameterLabels).toHaveBeenCalledWith('lens-existing')
+    expect(result.lenses[0]).toMatchObject({ action: 'reused' })
+  })
+
+  it('creates a new lens when the parameter lookup fails', async () => {
+    const deps = makeDeps({
+      listOwnedLenses: vi
+        .fn()
+        .mockResolvedValue([{ id: 'lens-existing', title: 'Weekly Digest' }]),
+      getLensParameterLabels: vi.fn().mockRejectedValue(new Error('rpc down')),
+    })
+    const result = await importWorkflow(validText, deps)
+
+    expect(result.ok).toBe(true)
+    expect(result.lenses[0]).toMatchObject({ action: 'created' })
   })
 
   it('rolls back the workflow and created lenses when node creation fails', async () => {
@@ -153,9 +183,10 @@ describe('importWorkflow', () => {
 
   it('does not delete a reused lens during rollback', async () => {
     const deps = makeDeps({
-      listOwnedLenses: vi.fn().mockResolvedValue([
-        { id: 'lens-existing', title: 'Weekly Digest', parameterLabels: ['Topic', 'Tone'] },
-      ]),
+      listOwnedLenses: vi
+        .fn()
+        .mockResolvedValue([{ id: 'lens-existing', title: 'Weekly Digest' }]),
+      getLensParameterLabels: vi.fn().mockResolvedValue(['Topic', 'Tone']),
       upsertNodes: vi.fn().mockRejectedValue(new Error('boom')),
     })
     await importWorkflow(validText, deps)

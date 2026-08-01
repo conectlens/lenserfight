@@ -16,6 +16,15 @@ import type { CreateLensDTO, LensRecord } from '@lenserfight/types'
 /** Minimum content length enforced by `lensesService.createLens`. */
 const MIN_LENS_CONTENT_LENGTH = 50
 
+/**
+ * Ceiling on parameter lookups for one import.
+ *
+ * Title matches are normally 0–2, so this only bites when a user owns a pile of
+ * same-titled lenses. Beyond the cap the extra candidates are treated as having
+ * no parameters, which costs a duplicate lens rather than an unbounded fan-out.
+ */
+const MAX_PARAMETER_LOOKUPS = 10
+
 export type LensResolutionAction = 'reused' | 'created'
 
 export interface LensResolutionEntry {
@@ -34,9 +43,12 @@ export interface LensResolutionOutcome {
 
 export interface LensResolverDeps {
   /** Candidate lenses the current user already owns. */
-  listOwnedLenses: () => Promise<
-    { id: string; title: string; parameterLabels?: string[] }[]
-  >
+  listOwnedLenses: () => Promise<{ id: string; title: string }[]>
+  /**
+   * Parameter labels of the lens version a workflow node would bind to at run
+   * time. Called only for title matches — see `loadParameterLabels`.
+   */
+  getLensParameterLabels: (lensId: string) => Promise<string[]>
   createLens: (input: CreateLensDTO) => Promise<LensRecord>
   /**
    * Tool id used for imported lens parameters. Every version param needs one,
@@ -68,6 +80,46 @@ export function isLensCompatible(
 
 function normalizeTitle(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+/**
+ * Resolves parameter labels for the handful of owned lenses that could plausibly
+ * match, keyed by lens id.
+ *
+ * Fetching labels for every owned lens is an N+1 — one version query each — so
+ * the list is pre-filtered by title first. The filter uses the same
+ * normalization as `isLensCompatible`, so it can never drop a lens that would
+ * have matched, and definitions without parameters are skipped entirely because
+ * title alone already decides them.
+ *
+ * A lookup that fails yields no labels, which downgrades that candidate to
+ * "create a new lens" instead of failing the import.
+ */
+async function loadParameterLabels(
+  definitions: readonly LensDefinition[],
+  owned: readonly { id: string; title: string }[],
+  deps: LensResolverDeps,
+): Promise<Map<string, string[]>> {
+  const wanted = new Set(
+    definitions
+      .filter((definition) => definition.parameters?.length)
+      .map((definition) => normalizeTitle(definition.title)),
+  )
+  if (wanted.size === 0) return new Map()
+
+  const candidates = owned
+    .filter((lens) => wanted.has(normalizeTitle(lens.title)))
+    .slice(0, MAX_PARAMETER_LOOKUPS)
+
+  const labels = await Promise.all(
+    candidates.map((lens) =>
+      deps.getLensParameterLabels(lens.id).catch((): string[] => []),
+    ),
+  )
+
+  return new Map(
+    candidates.map((lens, index): [string, string[]] => [lens.id, labels[index] ?? []]),
+  )
 }
 
 /**
@@ -118,6 +170,11 @@ export async function resolveLensDefinitions(
   }
 
   const owned = await deps.listOwnedLenses()
+  const labelsByLensId = await loadParameterLabels(definitions, owned, deps)
+  const candidates = owned.map((lens) => ({
+    ...lens,
+    parameterLabels: labelsByLensId.get(lens.id),
+  }))
 
   if (!deps.textToolId && definitions.some((definition) => definition.parameters?.length)) {
     warnings.push(
@@ -126,7 +183,7 @@ export async function resolveLensDefinitions(
   }
 
   for (const definition of definitions) {
-    const match = owned.find((candidate) => isLensCompatible(definition, candidate))
+    const match = candidates.find((candidate) => isLensCompatible(definition, candidate))
 
     if (match) {
       entries.push({
@@ -138,7 +195,7 @@ export async function resolveLensDefinitions(
       continue
     }
 
-    const sameTitle = owned.find(
+    const sameTitle = candidates.find(
       (candidate) => normalizeTitle(candidate.title) === normalizeTitle(definition.title),
     )
     if (sameTitle) {
