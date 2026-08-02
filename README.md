@@ -534,6 +534,14 @@ _Founder of Chainabit & LenserFight_
   </table>
 </p>
 
+**Special thanks**
+
+<p align="center">
+  <a target="_blank" href="https://github.com/samansarmasik-alt">
+    <img src="https://github.com/samansarmasik-alt.png" width="64" height="64" style="border-radius:50%;" alt="@samansarmasik-alt" />
+  </a>
+</p>
+
 ---
 
 ## 💖 Sponsor the Development
