@@ -105,6 +105,18 @@ vi.mock('../components/FormatSelector', () => ({
   ),
 }))
 
+vi.mock('../components/KindSelector', () => ({
+  KindSelector: ({ value, onChange, options }: any) => (
+    <div data-testid="kind-selector" data-value={value}>
+      {options.map((o: any) => (
+        <Button key={o.kind} type="button" onClick={() => onChange(o.kind)}>
+          {o.label}
+        </Button>
+      ))}
+    </div>
+  ),
+}))
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 const defaultProps = {
@@ -161,6 +173,65 @@ describe('ExportModal', () => {
     expect(screen.getByTestId('dialog-description').textContent).not.toContain(
       '670db934-a77b-4262-a7a0-7d2e0228517d',
     )
+  })
+
+  describe('alternateKinds — exporting one entity as another shape (issue #322)', () => {
+    const lensProps = {
+      ...defaultProps,
+      kind: 'lens' as const,
+      kindLabel: 'Lens',
+      slug: 'lens-1',
+      fetchPayload: vi.fn().mockResolvedValue({ id: 'lens-1' }),
+    }
+    const skillPayload = vi.fn().mockResolvedValue({ name: 'Lens', description: 'd' })
+    const alternateKinds = [
+      { kind: 'skill' as const, label: 'Skill', fetchPayload: skillPayload },
+    ]
+
+    it('hides the kind selector when no alternates are offered', () => {
+      render(<ExportModal {...lensProps} />)
+      expect(screen.queryByTestId('kind-selector')).toBeNull()
+    })
+
+    it('offers the default kind alongside each alternate', () => {
+      render(<ExportModal {...lensProps} alternateKinds={alternateKinds} />)
+
+      const selector = screen.getByTestId('kind-selector')
+      expect(selector.getAttribute('data-value')).toBe('lens')
+      expect(screen.getByRole('button', { name: 'Lens' })).toBeTruthy()
+      expect(screen.getByRole('button', { name: 'Skill' })).toBeTruthy()
+    })
+
+    it('switches the active export kind when an alternate is picked', () => {
+      render(<ExportModal {...lensProps} alternateKinds={alternateKinds} />)
+
+      expect(screen.getByTestId('dialog-description').textContent).toContain('Kind: lens')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Skill' }))
+
+      expect(screen.getByTestId('kind-selector').getAttribute('data-value')).toBe('skill')
+      expect(screen.getByTestId('dialog-description').textContent).toContain('Kind: skill')
+    })
+
+    it('returns to the default kind when the parent swaps the kind prop', () => {
+      const { rerender } = render(
+        <ExportModal {...lensProps} alternateKinds={alternateKinds} />,
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Skill' }))
+      expect(screen.getByTestId('kind-selector').getAttribute('data-value')).toBe('skill')
+
+      // A stale selection must not survive the parent pointing at a new entity.
+      rerender(
+        <ExportModal
+          {...lensProps}
+          kind="battle"
+          slug="battle-9"
+          alternateKinds={alternateKinds}
+        />,
+      )
+
+      expect(screen.getByTestId('kind-selector').getAttribute('data-value')).toBe('battle')
+    })
   })
 
   it('pins the workflow guide to Markdown when the modal instance changes kind', async () => {
