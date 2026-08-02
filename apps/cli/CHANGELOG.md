@@ -1,3 +1,15 @@
+## 1.1.3 (2026-08-02)
+
+### 🩹 Fixes
+
+- **cli:** report why lf update failed and detect Windows install paths ([599df87c0](https://github.com/conectlens/lenserfight/commit/599df87c0))
+- **cli:** launch assist for flag-only invocations such as `lf --force` ([68b085ce9](https://github.com/conectlens/lenserfight/commit/68b085ce9))
+- **cli:** stop lf assist failing when opencode.json already exists ([4cf0d1c1d](https://github.com/conectlens/lenserfight/commit/4cf0d1c1d))
+
+### ❤️ Thank You
+
+- Lensers
+
 ## 1.1.2 (2026-08-02)
 
 ### 🩹 Fixes
