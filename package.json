@@ -62,7 +62,7 @@
     "@aws-sdk/client-s3": "^3",
     "@aws-sdk/s3-request-presigner": "^3",
     "@dicebear/collection": "^9.4.2",
-    "@dicebear/core": "^9.4.2",
+    "@dicebear/core": "^9.4.3",
     "@expo/metro-config": "~54.0.14",
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.1.1",
