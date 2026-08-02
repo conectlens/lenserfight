@@ -1,12 +1,12 @@
-import { sha256OfString } from '@lenserfight/domain/exports'
+import {
+  sha256OfString,
+  type DeliveredArtifact,
+  type ExportResult,
+  type ExportTransport,
+  type TransportCapabilities,
+} from '@lenserfight/domain/exports'
 
 import { triggerBrowserDownload } from './browserDownload'
-import type {
-  DeliveredArtifact,
-  ExportResult,
-  ExportTransport,
-  TransportCapabilities,
-} from './ExportTransport'
 
 /**
  * LocalDownloadTransport — triggers a browser <a download> save without

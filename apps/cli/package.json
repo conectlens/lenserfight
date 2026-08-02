@@ -11,6 +11,7 @@
   },
   "files": [
     "main.js",
+    "lf-plugin.js",
     "README.md",
     "LICENSE"
   ],

@@ -12,11 +12,13 @@ import { registerWorkflowRunStatus } from './workflow-run-status.js'
 import { registerWorkflowRun } from './workflow-run.js'
 import { registerWorkflowSummarize } from './workflow-summarize.js'
 import { registerWorkflowValidate } from './workflow-validate.js'
+import { registerWorkflowExport } from './workflow-export.js'
 
 export function registerWorkflowTools(
   server: McpServer,
   sb: SupabaseClient,
-  lenserId?: string
+  lenserId?: string,
+  userId?: string
 ): void {
   registerWorkflowList(server, sb)
   registerWorkflowGet(server, sb)
@@ -29,4 +31,5 @@ export function registerWorkflowTools(
   registerWorkflowRetry(server, sb)
   registerWorkflowSummarize(server, sb)
   registerWorkflowValidate(server, sb)
+  registerWorkflowExport(server, sb, userId)
 }
