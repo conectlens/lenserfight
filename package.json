@@ -67,7 +67,7 @@
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.1.1",
     "@fal-ai/client": "^1.9.5",
-    "@google/genai": "^1.46.0",
+    "@google/genai": "^2.14.0",
     "@juristr/nx-tailwind-sync": "^0.0.9",
     "@marsidev/react-turnstile": "^1.4.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
