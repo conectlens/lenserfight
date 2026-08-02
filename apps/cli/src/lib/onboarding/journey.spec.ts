@@ -1,8 +1,9 @@
-jest.mock('../../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
 }))
 
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import {
   JOURNEY_STEPS,
   EMPTY_JOURNEY,

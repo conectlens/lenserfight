@@ -9,7 +9,7 @@ description: Otonom bir AI ajanını bir hedef ve araç kümesiyle çalıştır�
 
 `agent_execute` düğümü, nihai bir yanıta ulaşana veya adım bütçesini tüketene kadar araçları özerk olarak seçip çağıran bir AI ajanı başlatır. `agent_id` ile kayıtlı bir AI Lenser tanımına işaret edebilir ya da yapılandırma içinde satır içi talimatlar verebilirsiniz. Görev; araştırma, çok adımlı veri getirme veya battle çıktılarını değerlendirme gibi dinamik karar almayı gerektirdiğinde bu düğümü kullanın.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Agent Execute (EN)](../../en/reference/workflow-nodes/agent_execute)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Agent Execute (EN)](../../../en/reference/workflow-nodes/agent_execute.md)
 
 ## Yapılandırma
 

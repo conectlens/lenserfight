@@ -5,8 +5,8 @@ import {
   getOnboardingState,
   loadConfig,
   resolveConfig,
-} from '../config/project-config'
-import { isAuthenticated } from '../utils/auth'
+} from '@lenserfight/cli-client'
+import { isAuthenticated } from '@lenserfight/cli-client'
 import {
   fetchJourneyState,
   JOURNEY_STEPS,
@@ -19,7 +19,7 @@ import {
   detectDocker,
 } from '../lib/onboarding/detect'
 import { printJson, printWarn } from '../utils/output'
-import { A, c, sym } from '../utils/ansi'
+import { A, c, sym } from '@lenserfight/cli-client'
 
 export default defineCommand({
   meta: {

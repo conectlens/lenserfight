@@ -2,11 +2,12 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   getUserPreferencesPath: jest.fn(),
 }))
 
-import { getUserPreferencesPath } from '../config/project-config'
+import { getUserPreferencesPath } from '@lenserfight/cli-client'
 import {
   clearAgentWorkspaceContext,
   getAgentWorkspaceContext,

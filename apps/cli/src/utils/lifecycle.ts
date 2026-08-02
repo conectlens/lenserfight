@@ -1,7 +1,7 @@
 import consola from 'consola'
 import { defineCommand } from 'citty'
 
-import { callRpc, handleError } from './api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable } from './output'
 
 export type CliArtifactType = 'lens' | 'workflow' | 'battle' | 'agent'

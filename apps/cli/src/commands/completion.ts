@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { handleError } from '../utils/api'
+import { handleError } from '@lenserfight/cli-client'
 
 // ─── Top-level subcommand list ───────────────────────────────────────────────
 //

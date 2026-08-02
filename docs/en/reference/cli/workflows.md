@@ -7,8 +7,6 @@ description: Workflow hub — list, create, schedule, run history, and local fil
 
 Cloud workflow hub for listing, lifecycle management, schedules, triggers, and run history. Delegates to `lf workflow`, `lf schedule`, and `lf execution` where appropriate.
 
-Press **`w`** in the TUI dashboard for key bindings.
-
 ## Subcommands
 
 | Subcommand | Description |

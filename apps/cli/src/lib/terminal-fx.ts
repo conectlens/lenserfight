@@ -3,7 +3,7 @@
  * Pure helpers are testable without a TTY.
  */
 
-import { A } from '../utils/ansi'
+import { A } from '@lenserfight/cli-client'
 
 const GLITCH_CHARS = '█▓▒░╔╗╚╝║═@#$%&*01'
 

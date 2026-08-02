@@ -14,7 +14,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/providers"],
       "options": {
-        "jestConfig": "libs/providers/jest.config.cts",
+        "jestConfig": "libs/providers/jest.config.cjs",
         "passWithNoTests": false
       }
     }

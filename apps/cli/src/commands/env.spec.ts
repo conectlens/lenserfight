@@ -9,7 +9,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }))
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   configExists: jest.fn().mockReturnValue(true),
   loadConfig: jest.fn().mockReturnValue({ mode: 'cloud' }),
   resolveConfig: jest.fn().mockReturnValue({
@@ -21,14 +22,12 @@ jest.mock('../config/project-config', () => ({
     ollamaBaseUrl: undefined,
   }),
   getEffectiveMode: jest.fn().mockReturnValue({ mode: 'cloud', source: 'default' }),
+  c: { bold: (s: string) => s, success: (s: string) => s, muted: (s: string) => s, warn: (s: string) => s },
+  sym: { pass: 'v', warn: '!', dot: '.' },
 }))
 jest.mock('../utils/output', () => ({
   printJson: jest.fn(),
   printTable: jest.fn(),
-}))
-jest.mock('../utils/ansi', () => ({
-  c: { bold: (s: string) => s, success: (s: string) => s, muted: (s: string) => s, warn: (s: string) => s },
-  sym: { pass: 'v', warn: '!', dot: '.' },
 }))
 jest.mock('@lenserfight/providers', () => ({
   byokKeyResolver: {

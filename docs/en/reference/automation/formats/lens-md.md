@@ -94,6 +94,6 @@ Describe the expected output shape and quality bar.
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [ConectLens Agent Skills Ruleset](../ConectLens-agent-skills)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [ConectLens Agent Skills Ruleset](../connectlens-agent-skills.md)
 - Implementation: [automation-objects.ts](../../../../../../apps/cli/src/utils/automation-objects.ts)

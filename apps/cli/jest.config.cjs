@@ -12,6 +12,7 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     'src/commands/spec\\.ts$',
+    '\\.spec\\.tsx$',
   ],
   moduleFileExtensions: ['ts', 'js', 'html', 'mjs'],
   coverageDirectory: '../../coverage/apps/cli',

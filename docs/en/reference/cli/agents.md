@@ -13,8 +13,6 @@ lf agents context
 lf agents ops          # re-print workspace operations menu
 ```
 
-Press **`g`** in the TUI dashboard for key bindings when an agent is selected.
-
 ## Workspace selection
 
 | Subcommand | Description |

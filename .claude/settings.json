@@ -34,41 +34,15 @@
       "Read(./.env.production.local)",
       "Read(**/.env.production.local)",
       "Read(**/secrets/**)",
-      "Bash(npm run build)",
-      "Bash(node *)",
-      "Bash(npx *)",
       "Bash(env)",
       "Bash(printenv)",
       "Bash(export *)",
       "Bash(set)",
       "Bash(cat .env*)",
-      "Bash(curl *)",
-      "Bash(wget *)",
       "Bash(nc *)",
-      "Bash(netcat *)",
       "Bash(ssh *)",
       "Bash(scp *)"
-    ],
-    "disableBypassPermissionsMode": "disable"
-  },
-  "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": false,
-    "allowUnsandboxedCommands": false,
-    "filesystem": {
-      "denyRead": [
-        ".env",
-        ".env.*",
-        "**/.env",
-        "**/.env.*",
-        "**/secrets/**"
-      ],
-      "allowRead": [
-        ".env.example",
-        "./.env.example",
-        "**/.env.example"
-      ]
-    }
+    ]
   },
   "extraKnownMarketplaces": {
     "nx-claude-plugins": {
@@ -79,8 +53,5 @@
     }
   },
   "enabledPlugins": {}, 
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
  "teammateMode": "in-process"
 }

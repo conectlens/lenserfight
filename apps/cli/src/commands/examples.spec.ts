@@ -12,7 +12,8 @@ jest.mock('consola', () => ({
 jest.mock('../utils/output', () => ({
   printJson: jest.fn(),
 }))
-jest.mock('../utils/ansi', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   A: { brightCyan: '', bold: '', reset: '', green: '' },
   c: { bold: (s: string) => s, muted: (s: string) => s },
   sym: { fight: '*' },

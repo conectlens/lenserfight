@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
-import { isAuthenticated } from '../utils/auth'
-import { callRpc } from '../utils/api'
+import { isAuthenticated } from '@lenserfight/cli-client'
+import { callRpc } from '@lenserfight/cli-client'
 import { printJson } from '../utils/output'
 import setupCommand from './setup'
 

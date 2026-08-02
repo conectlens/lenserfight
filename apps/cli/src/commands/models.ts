@@ -11,8 +11,8 @@ import {
   type Provider,
 } from '@lenserfight/providers';
 
-import { resolveConfig } from '../config/project-config';
-import { callRpc, handleError } from '../utils/api';
+import { resolveConfig } from '@lenserfight/cli-client';
+import { callRpc, handleError } from '@lenserfight/cli-client';
 import { printJson, printTable } from '../utils/output';
 
 type TextProvider = Exclude<Provider, 'fal'>;

@@ -1,9 +1,10 @@
-jest.mock('../../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   getOnboardingState: jest.fn(),
   saveOnboardingState: jest.fn((state: unknown) => state),
 }))
 
-import { getOnboardingState, saveOnboardingState } from '../../config/project-config'
+import { getOnboardingState, saveOnboardingState } from '@lenserfight/cli-client'
 import {
   loadOnboardingSnapshot,
   markOnboardingStarted,

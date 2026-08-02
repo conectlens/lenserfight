@@ -2,7 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, handleError } from '@lenserfight/cli-client';
 import { printTable, printJson, truncate } from '../utils/output';
 import { parseAutomationDocument } from '../utils/automation-objects';
 

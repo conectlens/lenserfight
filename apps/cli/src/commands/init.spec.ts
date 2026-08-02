@@ -10,7 +10,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }))
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   configExists: jest.fn(),
   projectConfigExists: jest.fn(),
   loadConfig: jest.fn(),
@@ -33,7 +34,7 @@ import {
   ensureUserConfigDir,
   loadEnvConfig,
   getUserPreferencesPath,
-} from '../config/project-config'
+} from '@lenserfight/cli-client'
 
 const mockConfigExists = configExists as jest.MockedFunction<typeof configExists>
 const mockUserPreferencesExist = userPreferencesExist as jest.MockedFunction<typeof userPreferencesExist>

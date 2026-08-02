@@ -2,7 +2,7 @@
 
 The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding, lens authoring, runners, battles, invites, and platform operations.
 
-> **Interactive TUI:** Running `lf` with no subcommand opens the interactive **TUI Dashboard** (`apps/cli/src/tui/dashboard.ts`). It is the recommended starting point for exploration. Pass `--help` to skip the TUI and print top-level help instead.
+> **Assist:** Running `lf` with no subcommand launches an interactive agent session (`lf assist`) with every command available to it as a tool. It is the recommended starting point for exploration. Pass `--help` to skip it and print top-level help instead.
 
 ## System requirements
 
@@ -57,7 +57,7 @@ See [global flags](global-flags.md) for full details on precedence and environme
 | `lf reset` | Reset local config, auth tokens, and database (typed confirmation or `--force`) |
 | `lf config validate/export/import` | Validate or move safe config state |
 
-See [lf setup](setup.md), [lf status](status.md), [Development Commands](dev.md).
+See [lf setup](setup.md), [lf status](status.md), [Development Commands](db.md#lf-db-dev).
 
 ### Runtime observability
 

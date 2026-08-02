@@ -11,7 +11,8 @@ jest.mock('consola', () => ({
     box: jest.fn(),
   },
 }))
-jest.mock('../utils/auth', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   loginWithIdentifier: jest.fn(),
   loginWithEmail: jest.fn(),
   clearAuthTokens: jest.fn(),
@@ -50,7 +51,7 @@ import {
   buildAuthAppUrl,
   openBrowser,
   waitForSessionLogin,
-} from '../utils/auth'
+} from '@lenserfight/cli-client'
 
 const mockIsAuthenticated = isAuthenticated as jest.MockedFunction<typeof isAuthenticated>
 const mockLoginWithIdentifier = loginWithIdentifier as jest.MockedFunction<typeof loginWithIdentifier>

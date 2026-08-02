@@ -45,7 +45,7 @@ Every time `saveConfig` writes a project config, it also registers the workspace
 }
 ```
 
-This lets the TUI dashboard (`lf`) discover all projects on the device without scanning the filesystem.
+This lets `lf` discover all projects on the device without scanning the filesystem.
 
 ## Markdown and JSON automation objects
 
@@ -59,10 +59,10 @@ Automation objects (`SKILL.md`, `SKILL.md`, `SKILL.md`, `SKILL.md`, `SKILL.md`, 
 
 ## Choose your platform
 
-- [Windows](./windows) — PowerShell paths, `%APPDATA%`, winget / npm install
-- [Linux](./linux) — XDG config, bash/zsh, apt / npm install
-- [macOS](./macos) — `~/Library/Application Support`, brew / npm install
-- [Pardus](./pardus) — TÜBİTAK Linux, apt-based, same XDG paths as Linux
+- [Windows](./windows.md) — PowerShell paths, `%APPDATA%`, winget / npm install
+- [Linux](./linux.md) — XDG config, bash/zsh, apt / npm install
+- [macOS](./macos.md) — `~/Library/Application Support`, brew / npm install
+- [Pardus](./pardus.md) — TÜBİTAK Linux, apt-based, same XDG paths as Linux
 
 ## Related
 

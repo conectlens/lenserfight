@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Phase P automation — applies the Phase O staging gate sign-off rows to
- * docs/how-to/battles/battle-integrity-checklist.md from a passing
+ * docs/en/how-to/battles/battle-integrity-checklist.md from a passing
  * integrity-report.json.
  *
  * Idempotent: if the file already has filled sign-off rows for the same
@@ -20,7 +20,7 @@ function arg(name) {
 }
 
 const reportPath = arg('--report') ?? 'integrity-report.json'
-const checklistPath = 'docs/how-to/battles/battle-integrity-checklist.md'
+const checklistPath = 'docs/en/how-to/battles/battle-integrity-checklist.md'
 
 const report = JSON.parse(readFileSync(reportPath, 'utf-8'))
 if (!report.overall_ok) {

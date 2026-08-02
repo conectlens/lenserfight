@@ -52,6 +52,3 @@ lf configure env
 
 Shows resolved Supabase URL, mode, and key sources for the current directory.
 
-## Dashboard
-
-Press **`k`** on the main TUI (`lf`) to open the Configure sub-dashboard.

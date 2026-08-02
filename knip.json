@@ -1,0 +1,27 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [
+    "**/*.config.{js,cjs,mjs,ts,mts}",
+    "apps/mobile/**",
+    "supabase/**",
+    "examples/**",
+    "templates/**"
+  ],
+  "ignoreDependencies": [
+    "@expo/metro-config",
+    "@expo/vector-icons",
+    "@react-native-community/netinfo",
+    "@tailwindcss/vite",
+    "@uiw/react-md-editor",
+    "expo-apple-authentication",
+    "expo-clipboard",
+    "expo-splash-screen",
+    "expo-status-bar",
+    "expo-system-ui",
+    "i18next-browser-languagedetector",
+    "posthog-react-native",
+    "react-native-svg",
+    "react-native-svg-transformer",
+    "tslib"
+  ]
+}

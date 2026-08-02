@@ -7,7 +7,7 @@ description: "Tüm workflow düğüm türleri için eksiksiz referans."
 
 LenserFight workflow'ları, yönlendirilmiş asiklik bir çizgede (DAG) birbirine bağlanan **düğümlerden** oluşur. Her düğümün sabit bir `type` tanımlayıcısı, tiplendirilmiş bir `config` bloğu ve standartlaştırılmış `inputs`/`outputs` bağlantı noktaları bulunur.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Workflow Nodes Reference (EN)](../../en/reference/workflow-nodes/index)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Workflow Nodes Reference (EN)](../../../en/reference/workflow-nodes/index.md)
 
 ## El ile Yazılmış Referans Sayfaları
 

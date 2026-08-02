@@ -11,7 +11,7 @@ import { keychain } from '@lenserfight/utils/keychain'
 import { generateEd25519Keypair } from '@lenserfight/utils/signing'
 import { detectTailscaleInterfaces } from '@lenserfight/infra/gateway'
 
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable } from '../utils/output'
 
 type CatalogModel = {

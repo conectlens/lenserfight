@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRest, callRpc, handleError } from '../utils/api'
+import { callRest, callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable, truncate } from '../utils/output'
 
 // ---------------------------------------------------------------------------

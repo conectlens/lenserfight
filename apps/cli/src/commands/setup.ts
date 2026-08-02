@@ -21,10 +21,10 @@ import {
   nextRequiredStep,
   type JourneyState,
 } from '../lib/onboarding/journey'
-import { isAuthenticated } from '../utils/auth'
-import { resolveConfig, configExists } from '../config/project-config'
+import { isAuthenticated } from '@lenserfight/cli-client'
+import { resolveConfig, configExists } from '@lenserfight/cli-client'
 import { printInfo, printJson, printSuccess, printWarn, printError } from '../utils/output'
-import { A, c, sym } from '../utils/ansi'
+import { A, c, sym } from '@lenserfight/cli-client'
 
 // ── MESSAGES ─────────────────────────────────────────────────────────────────
 
@@ -233,7 +233,7 @@ async function runJourneyInteractive(state: JourneyState): Promise<void> {
   console.log(`  ${M.orRun(step.command)}`)
   console.log('')
 
-  const { openBrowser } = await import('../utils/auth')
+  const { openBrowser } = await import('@lenserfight/cli-client')
   openBrowser(webUrl)
 }
 
@@ -265,7 +265,7 @@ async function runJourneySetup(interactive: boolean, json: boolean): Promise<voi
     return
   }
 
-  const { loadUserConfig } = await import('../config/project-config')
+  const { loadUserConfig } = await import('@lenserfight/cli-client')
   const userCfg = loadUserConfig() as Record<string, unknown>
   const handle = typeof userCfg['handle'] === 'string' ? userCfg['handle'] : null
 

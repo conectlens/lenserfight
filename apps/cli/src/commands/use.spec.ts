@@ -10,7 +10,8 @@ jest.mock('consola', () => ({
     start: jest.fn(),
   },
 }))
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   projectConfigExists: jest.fn(),
   findConfigPath: jest.fn(() => '/project/.lenserfight/lenserfight.json'),
   getUserPreferencesPath: jest.fn(() => '/home/user/.config/lenserfight/lenserfight.json'),
@@ -18,8 +19,6 @@ jest.mock('../config/project-config', () => ({
   saveConfig: jest.fn(),
   saveUserPreferences: jest.fn(),
   getEffectiveMode: jest.fn(),
-}))
-jest.mock('../utils/ansi', () => ({
   c: {
     localhost: (s: string) => s,
     cloud: (s: string) => s,
@@ -40,7 +39,7 @@ import {
   getEffectiveMode,
   saveConfig,
   saveUserPreferences,
-} from '../config/project-config'
+} from '@lenserfight/cli-client'
 
 const mockProjectConfigExists = projectConfigExists as jest.MockedFunction<typeof projectConfigExists>
 const mockGetEffectiveMode = getEffectiveMode as jest.MockedFunction<typeof getEffectiveMode>

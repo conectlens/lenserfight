@@ -9,7 +9,7 @@ description: Korumalı bir çalışma zamanında kullanıcı tarafından sağlan
 
 `code` düğümü, korumalı bir V8 izolesi içinde isteğe bağlı JavaScript çalıştırır; böylece workflow'lara hiçbir yerleşik düğümün karşılamadığı veri dönüştürme, değer hesaplama veya mantık yürütme imkânı verir. Betik, yukarı akış `input` nesnesini `input` olarak alır ve sonucu `output`'a atayarak iletmelidir.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Code (EN)](../../en/reference/workflow-nodes/code)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Code (EN)](../../../en/reference/workflow-nodes/code.md)
 
 ## Yapılandırma
 

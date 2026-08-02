@@ -1,0 +1,25 @@
+{
+  "name": "adapters-opencode",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/adapters/opencode/src",
+  "projectType": "library",
+  "tags": ["layer:infra", "scope:shared", "license:shared"],
+  "// targets": "to see all targets run: nx show project adapters-opencode --web",
+  "targets": {
+    "bundle-plugin": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/libs/adapters/opencode-plugin",
+        "outputFileName": "lf-plugin.js",
+        "format": ["esm"],
+        "bundle": true,
+        "main": "libs/adapters/opencode/src/lib/lf-plugin.ts",
+        "tsConfig": "libs/adapters/opencode/tsconfig.lib.json",
+        "generatePackageJson": false,
+        "thirdParty": true
+      }
+    }
+  }
+}

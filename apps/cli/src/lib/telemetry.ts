@@ -21,8 +21,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import consola from 'consola'
-import { getEffectiveMode } from '../config/project-config'
-import { getExecContext } from './exec-context'
+import { getEffectiveMode } from '@lenserfight/cli-client'
+import { getExecContext } from '@lenserfight/cli-client'
 
 export type TelemetryEvent = {
   command: string

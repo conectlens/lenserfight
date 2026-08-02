@@ -9,7 +9,7 @@ description: Yapılandırılmış bir gömme modeli kullanarak metin değeri iç
 
 Embedding düğümü, bir gömme modeli API'sini çağırarak metin dizesini sabit boyutlu bir kayan noktalı vektöre dönüştürür. Elde edilen vektör, `output_field` altında workflow veri nesnesine eklenir; böylece aşağı akış düğümleri — en yaygın olarak `vector_search` veya özel `code` düğümü — ikinci bir API çağrısı yapmadan tüketebilir.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Embedding (EN)](../../en/reference/workflow-nodes/embedding)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Embedding (EN)](../../../en/reference/workflow-nodes/embedding.md)
 
 ## Yapılandırma
 

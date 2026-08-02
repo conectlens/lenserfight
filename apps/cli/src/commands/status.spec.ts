@@ -9,14 +9,13 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }))
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   configExists: jest.fn(),
   loadConfig: jest.fn(),
   resolveConfig: jest.fn(),
   getEffectiveMode: jest.fn().mockReturnValue({ mode: 'cloud', source: 'default' }),
   getOnboardingState: jest.fn(),
-}))
-jest.mock('../utils/auth', () => ({
   isAuthenticated: jest.fn(),
 }))
 jest.mock('../lib/onboarding/journey', () => ({
@@ -42,8 +41,8 @@ import {
   getEffectiveMode,
   getOnboardingState,
   loadConfig,
-} from '../config/project-config'
-import { isAuthenticated } from '../utils/auth'
+} from '@lenserfight/cli-client'
+import { isAuthenticated } from '@lenserfight/cli-client'
 import { fetchJourneyState } from '../lib/onboarding/journey'
 import { printJson } from '../utils/output'
 

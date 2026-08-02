@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { resolveConfig } from '../../config/project-config'
+import { resolveConfig } from '@lenserfight/cli-client'
 
 export interface ToolCheckResult {
   ok: boolean

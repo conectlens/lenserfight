@@ -16,7 +16,6 @@
         "bundle": true,
         "main": "apps/cli/src/main.ts",
         "tsConfig": "apps/cli/tsconfig.app.json",
-        "excludeFromExternal": ["ink", "react"],
         "assets": [
           "apps/cli/src/assets",
           {

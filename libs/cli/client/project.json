@@ -1,0 +1,18 @@
+{
+  "name": "cli-client",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cli/client/src",
+  "projectType": "library",
+  "tags": ["layer:infra", "scope:shared", "license:shared"],
+  "// targets": "to see all targets run: nx show project cli-client --web",
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/cli/client"],
+      "options": {
+        "jestConfig": "libs/cli/client/jest.config.cjs",
+        "passWithNoTests": false
+      }
+    }
+  }
+}

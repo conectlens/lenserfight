@@ -3,11 +3,12 @@ jest.mock('consola', () => ({
   __esModule: true,
   default: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), success: jest.fn(), log: jest.fn() },
 }))
-jest.mock('../utils/api', () => ({ callRpc: jest.fn(), handleError: jest.fn() }))
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'), callRpc: jest.fn(), handleError: jest.fn() }))
 jest.mock('node:fs', () => ({ writeFileSync: jest.fn() }))
 
 import consola from 'consola'
-import { callRpc } from '../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { writeFileSync } from 'node:fs'
 
 const consolaError = (consola as unknown as { error: jest.Mock }).error

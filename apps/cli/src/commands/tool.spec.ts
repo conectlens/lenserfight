@@ -9,7 +9,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }))
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   handleError: jest.fn(),
 }))
@@ -22,7 +23,7 @@ jest.mock('../utils/output', () => ({
   truncate: (s: string, n: number) => (s.length > n ? s.slice(0, n) + '…' : s),
 }))
 
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { parseAutomationDocument } from '../utils/automation-objects'
 import { printJson } from '../utils/output'
 

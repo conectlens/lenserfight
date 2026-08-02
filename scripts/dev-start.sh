@@ -50,9 +50,9 @@ fi
 # ---------------------------------------------------------------------------
 # 2. .env.development.local — copy example if absent
 # ---------------------------------------------------------------------------
-if [ ! -f .env.development.local ] && [ -f .env.development.example ]; then
-  cp .env.development.example .env.development.local
-  log_ok "Created .env.development.local from example"
+if [ ! -f .env.development.local ] && [ -f .env.example ]; then
+  cp .env.example .env.development.local
+  log_ok "Created .env.development.local from .env.example"
 fi
 
 # ---------------------------------------------------------------------------

@@ -9,7 +9,7 @@ description: Bir dizi üzerinde yineler ve bağlı alt workflow'u her öğe içi
 
 `loop_map` düğümü, gelen veriden bir dizi çıkarır, her öğe için bir alt workflow yürütmesi başlatır ve sonuçları girdi sırasıyla bir çıktı dizisinde toplar. `Array.prototype.map`'in workflow eşdeğeridir: her öğe bağımsız olarak işlenir ve düğüm yayılmadan önce tüm yinelemelerin tamamlanmasını bekler.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Loop Map (EN)](../../en/reference/workflow-nodes/loop_map)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Loop Map (EN)](../../../en/reference/workflow-nodes/loop_map.md)
 
 ## Yapılandırma
 

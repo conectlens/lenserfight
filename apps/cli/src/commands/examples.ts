@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { A, c, sym } from '../utils/ansi'
+import { A, c, sym } from '@lenserfight/cli-client'
 import { printJson } from '../utils/output'
 
 interface Example {

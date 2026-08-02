@@ -5,7 +5,7 @@ import {
   getMyExecutionActivityFeed,
   listWorkflowRuns,
 } from '../../lib/data-services/executions'
-import { handleError } from '../../utils/api'
+import { handleError } from '@lenserfight/cli-client'
 import { printJson, printTable, truncate } from '../../utils/output'
 
 function shortId(id: string | null | undefined): string {

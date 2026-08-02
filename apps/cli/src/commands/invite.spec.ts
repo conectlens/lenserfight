@@ -3,12 +3,13 @@ jest.mock('consola', () => ({
   __esModule: true,
   default: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), success: jest.fn(), log: jest.fn() },
 }))
-jest.mock('../utils/api', () => ({ callRpc: jest.fn(), handleError: jest.fn() }))
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'), callRpc: jest.fn(), handleError: jest.fn() }))
 jest.mock('../utils/output', () => ({ printTable: jest.fn(), printJson: jest.fn(), truncate: (s: string) => s }))
 jest.mock('../lib/onboarding/journey', () => ({ markJourneyStep: jest.fn() }))
 
 import consola from 'consola'
-import { callRpc } from '../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { printJson } from '../utils/output'
 
 const consolaError = (consola as unknown as { error: jest.Mock }).error

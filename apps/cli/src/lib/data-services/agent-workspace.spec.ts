@@ -1,4 +1,5 @@
-jest.mock('../../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
 }))
 
@@ -6,7 +7,7 @@ jest.mock('./lenser', () => ({
   getActiveLenserProfileId: jest.fn(),
 }))
 
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { getActiveLenserProfileId } from './lenser'
 import { getHumanActivityFeed } from './agent-workspace'
 

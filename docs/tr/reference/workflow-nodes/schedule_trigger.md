@@ -9,7 +9,7 @@ description: Yinelenen bir cron zamanlamasında workflow'u otomatik olarak tetik
 
 Schedule Trigger düğümü, standart beş bölümlü bir cron ifadesiyle tanımlanan sabit aralıklarda bir workflow başlatır. LenserFight, ifadeyi yapılandırılan saat diliminde değerlendirir ve zamanlama her tetiklendiğinde bir çalışma kuyruğa alır. Zamanlanmış bir çalışma devam ediyorken bir sonraki tik geldiğinde platform, yeni çalışmayı atlayıp atlamayacağına ya da sıraya alıp almayacağına karar vermek için `max_concurrent_runs`'a uyar. Bu düğüm her zaman çizgedeki ilk düğümdür.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Schedule Trigger (EN)](../../en/reference/workflow-nodes/schedule_trigger)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Schedule Trigger (EN)](../../../en/reference/workflow-nodes/schedule_trigger.md)
 
 ## Yapılandırma
 

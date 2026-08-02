@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, handleError } from '@lenserfight/cli-client';
 import { printTable, printJson, truncate } from '../utils/output';
 
 async function fetchBattle(id: string): Promise<Record<string, unknown> | null> {

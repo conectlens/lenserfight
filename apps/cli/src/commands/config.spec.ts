@@ -4,21 +4,22 @@ jest.mock('../utils/output', () => ({
   printSuccess: jest.fn(),
   printWarn: jest.fn(),
 }))
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   loadConfig: jest.fn(),
   loadUserConfig: jest.fn(),
   saveConfig: jest.fn(),
   saveUserConfig: jest.fn(),
+  handleError: jest.fn(),
 }))
 // sub-command imports also use defineCommand
 jest.mock('./config-local-battle-key', () => ({ default: { meta: { name: 'local-battle-key' } } }))
 jest.mock('./config-webhook-secret', () => ({ default: { meta: { name: 'webhook-secret' } } }))
 jest.mock('node:fs', () => ({ readFileSync: jest.fn(), writeFileSync: jest.fn() }))
-jest.mock('../utils/api', () => ({ handleError: jest.fn() }))
 
-import { loadConfig } from '../config/project-config'
+import { loadConfig } from '@lenserfight/cli-client'
 import { printJson, printSuccess, printWarn } from '../utils/output'
-import { handleError } from '../utils/api'
+import { handleError } from '@lenserfight/cli-client'
 
 const mockLoadConfig = loadConfig as jest.MockedFunction<typeof loadConfig>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>

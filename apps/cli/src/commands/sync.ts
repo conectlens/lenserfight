@@ -9,7 +9,7 @@ import {
 } from '../lib/workspace-sync'
 import { findAutomationFiles, registerAutomationFiles } from '../utils/automation-objects'
 import { printJson, printTable } from '../utils/output'
-import { handleError } from '../utils/api'
+import { handleError } from '@lenserfight/cli-client'
 
 const statusCmd = defineCommand({
   meta: {

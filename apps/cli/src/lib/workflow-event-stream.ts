@@ -2,10 +2,10 @@
  * Poll workflow_run_events and render new rows with terminal FX (SSE-style tail).
  */
 
-import { callRpc } from '../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { printJson } from '../utils/output'
 import { glitchLine, startSpinner, streamTokenLine } from './terminal-fx'
-import { A } from '../utils/ansi'
+import { A } from '@lenserfight/cli-client'
 
 export interface WorkflowRunEventRow {
   event_id: number

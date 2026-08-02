@@ -47,7 +47,20 @@ function mermaidFencePlugin(md: any) {
 }
 
 const REPO_BLOB_BASE = 'https://github.com/conectlens/lenserfight/blob/main'
-const CROSS_TREE_TOP_DIRS = ['libs', 'supabase', 'apps', 'tools', 'docs', 'examples']
+const CROSS_TREE_TOP_DIRS = [
+  'libs',
+  'supabase',
+  'apps',
+  'tools',
+  'docs',
+  'examples',
+  'templates',
+  '.github',
+  'eslint.config.js',
+  'LICENSE',
+  'CODEOWNERS',
+  'MAINTAINERS.md',
+]
 
 /**
  * Rewrites markdown links that walk out of the docs srcDir (e.g. `../../libs/...`,
@@ -2463,7 +2476,6 @@ export default defineConfig({
           text: 'Operations',
           items: [
             { text: 'Running the Worker', link: '/en/how-to/operations/running-the-worker' },
-            { text: 'CLI TUI Dashboard', link: '/en/how-to/operations/cli-dashboard' },
             { text: 'Dark Launch', link: '/en/how-to/dark-launch' },
             { text: 'Kill Switch', link: '/en/how-to/kill-switch' },
           ],

@@ -2,7 +2,8 @@ jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }))
 jest.mock('node:fs', () => ({
   readFileSync: jest.fn(() => 'support_level developer_summary'),
 }))
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   handleError: jest.fn(),
 }))
@@ -13,7 +14,7 @@ jest.mock('../utils/output', () => ({
   printWarn: jest.fn(),
 }))
 
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printSuccess, printWarn } from '../utils/output'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>

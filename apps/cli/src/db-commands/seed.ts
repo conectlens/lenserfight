@@ -3,7 +3,7 @@ import consola from 'consola';
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { getEffectiveMode } from '../config/project-config';
+import { getEffectiveMode } from '@lenserfight/cli-client';
 import { runCombineSeedsIfPresent } from '../lib/combine-seeds';
 
 export default defineCommand({

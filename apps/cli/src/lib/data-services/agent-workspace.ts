@@ -3,7 +3,7 @@
  * Uses public RPCs instead of direct reads on the non-exposed `agents` schema.
  */
 import type { CrossAgentFeedItem } from '@lenserfight/types'
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { getActiveLenserProfileId } from './lenser'
 
 /** Owner-scoped cross-agent activity feed (`fn_get_human_activity_feed`). */
