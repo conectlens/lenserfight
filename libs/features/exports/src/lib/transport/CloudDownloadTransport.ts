@@ -1,14 +1,14 @@
-import { sha256OfString } from '@lenserfight/domain/exports'
-import type { ExportRequest } from '@lenserfight/domain/exports'
+import {
+  sha256OfString,
+  type DeliveredArtifact,
+  type ExportRequest,
+  type ExportResult,
+  type ExportTransport,
+  type TransportCapabilities,
+} from '@lenserfight/domain/exports'
 import type { ExportsRepositoryPort } from '@lenserfight/data/exports'
 
 import { triggerBrowserDownload } from './browserDownload'
-import type {
-  DeliveredArtifact,
-  ExportResult,
-  ExportTransport,
-  TransportCapabilities,
-} from './ExportTransport'
 
 /**
  * CloudDownloadTransport — saves the export to the user's device.

@@ -17,4 +17,7 @@ export const p = {
   confirm: z
     .boolean()
     .describe('Must be true for destructive or irreversible operations; prevents accidental calls.'),
+  export_format: z
+    .enum(['json', 'yaml', 'markdown'])
+    .describe('Output format for the exported file content.'),
 } as const;

@@ -11,6 +11,8 @@ import { ADAPTER_TYPES, USERNAME_RE, normalizeUsername, resolveAiLenserIdFromIde
 import { assertSafe } from '../../lib/safety'
 import { callRpc, handleError } from '@lenserfight/cli-client'
 import { A, sym } from '@lenserfight/cli-client'
+import { composeAgentPayload } from '@lenserfight/api/export-payloads'
+import { cliRpcCaller, runCliExport, writeExportOutput } from '../../utils/export-runtime'
 import { printJson, printTable, slugify, truncate } from '../../utils/output'
 import { printAgentWorkspaceOperations } from './workspace-ops'
 
@@ -162,6 +164,41 @@ const get = defineCommand({
         'view',
       )
       await viewCmd?.run?.({ args: { id: identifier, json: args.json }, cmd: {}, rawArgs: [] })
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const exportAgent = defineCommand({
+  meta: {
+    name: 'export',
+    description: 'Export an agent definition (identity, model/tool policy) as json, yaml, or markdown.',
+  },
+  args: {
+    id: { type: 'positional', description: 'Agent handle or UUID', required: false },
+    format: {
+      type: 'string',
+      description: 'Output format: json, yaml, or markdown',
+      default: 'markdown',
+    },
+    out: {
+      type: 'string',
+      description: 'Write output to this file instead of stdout',
+    },
+  },
+  async run({ args }) {
+    try {
+      const aiLenserId = await resolveRequiredAgent(args.id)
+      const payload = await composeAgentPayload(cliRpcCaller, aiLenserId)
+      const { content } = await runCliExport(
+        'agent',
+        payload.id ?? aiLenserId,
+        payload.display_name ?? payload.handle,
+        payload,
+        args.format as 'json' | 'yaml' | 'markdown'
+      )
+      writeExportOutput(content, args.out || undefined)
     } catch (err) {
       handleError(err)
     }
@@ -679,6 +716,7 @@ export default defineCommand({
     ops,
     list,
     get,
+    export: exportAgent,
     create,
     stop,
     resume,

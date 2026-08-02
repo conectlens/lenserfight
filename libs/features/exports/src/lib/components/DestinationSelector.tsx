@@ -3,7 +3,7 @@ import React from 'react'
 import { SegmentedControl } from '@lenserfight/ui/components'
 
 import type { RuntimeMode } from '../runtime/detectRuntime'
-import type { TransportId } from '../transport/ExportTransport'
+import type { TransportId } from '@lenserfight/domain/exports'
 
 /**
  * Renders only the destinations the current runtime supports.

@@ -15,6 +15,8 @@ jest.mock('@lenserfight/cli-client', () => ({
   callRpc: jest.fn(),
   callRest: jest.fn(),
   handleError: jest.fn(),
+  isAuthenticated: jest.fn(() => false),
+  getUserInfo: jest.fn(),
 }))
 jest.mock('../utils/workflow-ref', () => ({
   resolveWorkflowId: jest.fn((id: string) => Promise.resolve(id)),
@@ -44,11 +46,12 @@ jest.mock('../lib/data-services/ai-generate', () => ({
   normalizeFunding: (v: string) => v,
 }))
 
+import { callRpc } from '@lenserfight/cli-client'
 import consola from 'consola'
+
+import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 import { parseAutomationDocument } from '../utils/automation-objects'
 import { printJson, printTable } from '../utils/output'
-import { callRpc } from '@lenserfight/cli-client'
-import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 
 const mockParseAutomationDocument = parseAutomationDocument as jest.MockedFunction<typeof parseAutomationDocument>
 const mockPrintJson = printJson as jest.MockedFunction<typeof printJson>
@@ -73,6 +76,38 @@ beforeAll(async () => {
 beforeEach(() => {
   jest.clearAllMocks()
   process.exitCode = 0
+})
+
+describe('workflow export', () => {
+  let exportCmd: AnyCmd
+
+  beforeAll(() => {
+    exportCmd = workflowCmd.subCommands?.export as AnyCmd
+  })
+
+  it('renders the fetched workflow as YAML and writes it to stdout', async () => {
+    mockCallRpc.mockResolvedValueOnce([
+      {
+        workflow: {
+          id: 'wf-1',
+          title: 'Research pipeline',
+          description: 'Two-step flow',
+          visibility: 'private',
+        },
+        nodes: [],
+        edges: [],
+      },
+    ] as never)
+
+    const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
+    await exportCmd.run?.({ args: { id: 'wf-1', format: 'yaml', out: '' } })
+    const written = stdoutSpy.mock.calls.map((c) => c[0]).join('')
+    stdoutSpy.mockRestore()
+
+    expect(mockCallRpc).toHaveBeenCalledWith('fn_get_workflow_bootstrap', { p_workflow_id: 'wf-1' }, expect.objectContaining({ requireAuth: true }))
+    expect(written).toContain('kind: "workflow"')
+    expect(written).toContain('id: "wf-1"')
+  })
 })
 
 describe('workflow run', () => {

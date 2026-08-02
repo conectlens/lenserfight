@@ -10,7 +10,9 @@
  * available.
  */
 
-export type RuntimeMode = 'cloud' | 'localhost-browser' | 'localhost-desktop'
+import type { RuntimeMode } from '@lenserfight/domain/exports'
+
+export type { RuntimeMode } from '@lenserfight/domain/exports'
 
 interface DesktopBridge {
   writeAtomic(relPath: string, bytes: Uint8Array): Promise<void>
