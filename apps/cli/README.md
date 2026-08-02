@@ -363,7 +363,7 @@ pnpm nx run cli:test --testFile=apps/cli/src/commands/battle.spec.ts
 
 ## Related
 
-- [CLI reference docs](../../docs/reference/cli/) — full command documentation
+- [CLI reference docs](../../docs/en/reference/cli/index.md) — full command documentation
 - [CLI release guide](../../docs/en/how-to/contributors/cli-release.md) — maintainer publishing, rollback, and provenance workflow
 - [Root README](../../README.md) — repository overview, architecture, and Quick Start
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) — contribution guidelines
