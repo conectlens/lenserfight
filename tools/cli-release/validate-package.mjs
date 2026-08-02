@@ -144,9 +144,13 @@ try {
   const pack = JSON.parse(packOutput)[0];
   const files = pack.files.map((file) => normalizeTarballPath(file.path)).sort();
   assertCleanPackageFiles(files);
+  // Thresholds sized for the bundled lf-assist runtime binary (a standalone Bun
+  // compile of the assist runtime plus its AI SDK provider dependencies —
+  // observed ~50MB packed / ~100MB unpacked, not the few-hundred-KB JS bundle
+  // this package shipped before vendor/opencode existed).
   assert(pack.size > 0, 'Package tarball must not be empty', { size: pack.size });
-  assert(pack.size < 5_000_000, 'Package tarball is unexpectedly large', { size: pack.size });
-  assert(pack.unpackedSize < 20_000_000, 'Package unpacked size is unexpectedly large', {
+  assert(pack.size < 150_000_000, 'Package tarball is unexpectedly large', { size: pack.size });
+  assert(pack.unpackedSize < 250_000_000, 'Package unpacked size is unexpectedly large', {
     unpackedSize: pack.unpackedSize,
   });
 

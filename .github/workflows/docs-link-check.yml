@@ -35,6 +35,7 @@ jobs:
           use-quiet-mode: 'yes'
           use-verbose-mode: 'yes'
           config-file: '.markdown-link-check.json'
+          folder-path: 'docs'
           file-path: ${{ steps.changed.outputs.all_changed_files }}
           base-branch: ${{ github.base_ref }}
           check-modified-files-only: 'yes'
