@@ -89,7 +89,7 @@
     "core-js": "3.49.0",
     "expo": "~54.0.35",
     "expo-apple-authentication": "~8.0.8",
-    "expo-clipboard": "^56.0.3",
+    "expo-clipboard": "^57.0.1",
     "expo-constants": "~18.0.13",
     "expo-linking": "~8.0.12",
     "expo-router": "~6.0.23",
