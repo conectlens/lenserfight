@@ -15,7 +15,7 @@
 
 ## Overview
 
-`lf` is the CLI for LenserFight. Running `lf` with no arguments opens an interactive TUI dashboard. Every battle, lens, lenser, workflow, and connector operation is accessible from the terminal — you do not need the web UI for any of it.
+`lf` is the CLI for LenserFight. Running `lf` with no arguments launches an interactive assist session with every `lf` command available to it as a tool. Every battle, lens, lenser, workflow, and connector operation is accessible from the terminal — you do not need the web UI for any of it.
 
 Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com/unjs/consola). Distributed as a single CJS bundle (`dist/apps/cli/main.js`) compiled by esbuild.
 
@@ -287,12 +287,6 @@ lf init --mode local  # initialize in local mode
 | `lf kill-switch` | Platform kill switches |
 | `lf dark-launch` | Dark-launch flag control |
 
-### Experimental
-
-| Command | Description |
-|---------|-------------|
-| `lf opencode` | **[experimental]** Spawn [OpenCode](https://github.com/anomalyco/opencode) pre-wired with a LenserFight plugin (`lf_lens_run`, `lf_battle_create`) plus this project's `.mcp.json`, if present. Generates `.opencode/opencode.json` in the current directory; pass `--force` to regenerate it. Requires `opencode` on `PATH` or falls back to `npx opencode-ai`. |
-
 ### Utilities
 
 | Command | Description |
@@ -315,15 +309,23 @@ lf init --mode local  # initialize in local mode
 
 ---
 
-## TUI Dashboard
+## Assist
 
-Running `lf` with no arguments opens the interactive TUI dashboard. The dashboard shows:
+Running `lf` with no arguments — or explicitly `lf assist` — launches an interactive agent
+session with every `lf` command available to it as a tool, including `lens run` and
+`battle create` (backed directly by their RPCs) and one generic tool per other command
+(shelled out to the real `lf` binary, so every command keeps its own `--confirm`/safety gate
+exactly as it behaves from a terminal). It also picks up this project's `.mcp.json` server
+config when one is present.
 
-- **Health status** — local Supabase, Docker, auth, and API connectivity at a glance
-- **Recent action log** — last N battle events, run results, and workflow executions
-- **Key bindings** — context-sensitive shortcuts for navigating panels
+```bash
+lf              # same as `lf assist`
+lf assist --force  # regenerate .opencode/opencode.json from a previous run
+```
 
-The TUI is useful for monitoring local Supabase health during active development without switching to the Supabase Studio UI. Press `?` inside the dashboard for the full keybinding reference.
+Destructive commands (`kill-switch`, `dark-launch`, `db reset`, etc.) are available to the
+agent like everything else — review what it does before trusting it with those. See
+[CLI: Getting Started](../../docs/en/tutorials/getting-started/cli-getting-started.md) for more.
 
 ---
 

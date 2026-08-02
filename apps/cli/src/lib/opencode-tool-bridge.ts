@@ -20,11 +20,11 @@ export interface CliToolManifestEntry {
 /**
  * Commands that cannot be represented as a single request/response tool call
  * (long-running daemons, interactive wizards) or that would be redundant/
- * nonsensical as an OpenCode tool (deprecated aliases, `opencode` itself).
- * This is a best-effort denylist based on known behavior, not an exhaustive
+ * nonsensical as a tool (deprecated aliases, `assist` itself). This is a
+ * best-effort denylist based on known behavior, not an exhaustive
  * per-command audit — createCliBridgeAdapter's execute() also enforces a
  * hard timeout so anything missed here fails safely instead of hanging the
- * OpenCode host process.
+ * agent runtime process.
  */
 export const CLI_TOOL_DENYLIST = new Set<string>([
   'gateway serve',
@@ -32,7 +32,7 @@ export const CLI_TOOL_DENYLIST = new Set<string>([
   'setup',
   'runner', // deprecated alias for `lenser`
   'agent', // deprecated alias for `agents`
-  'opencode', // avoid a tool that re-invokes this same bridge
+  'assist', // avoid a tool that re-invokes this same bridge
 ])
 
 async function resolve<T>(value: Resolvable<T> | undefined): Promise<T | undefined> {

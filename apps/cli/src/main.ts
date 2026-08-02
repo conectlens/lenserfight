@@ -27,16 +27,16 @@ const agentDeprecatedCommand = () =>
     return m.default
   })
 
-// Default action: `lf` with no subcommand opens the interactive TUI dashboard.
+// Default action: `lf` with no subcommand launches the assist agent session.
 // citty parses --help before run() fires, so `lf --help` still prints help.
 async function defaultRun(ctx: { rawArgs?: string[] }) {
   const raw = ctx.rawArgs ?? []
   if (raw.length > 0) return // citty will hand off to a subcommand
-  const { runDashboard } = await import('./tui/dashboard')
-  await runDashboard()
+  const { runAssist } = await import('./commands/assist')
+  await runAssist()
 }
 
-// Exported (not just invoked below) so `opencode.ts` can import the already-
+// Exported (not just invoked below) so `assist.ts` can import the already-
 // evaluated command tree in-process for introspection — ES modules only
 // evaluate once per process, so this re-import never re-triggers runMain().
 export const main = defineCommand({
@@ -141,7 +141,7 @@ export const main = defineCommand({
     configure: () => import('./commands/configure').then((m) => m.default),
     'kill-switch': () => import('./commands/kill-switch').then((m) => m.default),
     'dark-launch': () => import('./commands/dark-launch').then((m) => m.default),
-    opencode: () => import('./commands/opencode').then((m) => m.default),
+    assist: () => import('./commands/assist').then((m) => m.default),
     budget: () => import('./commands/budget').then((m) => m.default),
     platform: () => import('./commands/platform').then((m) => m.default),
     policy: () => import('./commands/policy').then((m) => m.default),

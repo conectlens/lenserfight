@@ -75,7 +75,7 @@ Private runtime artifacts such as local battle state, workflow simulation runs, 
 
 ### Workspace registry (sync)
 
-Each time a project config is saved, the CLI writes a `workspaces` entry to the device config so the TUI dashboard can discover all known projects without a filesystem scan:
+Each time a project config is saved, the CLI writes a `workspaces` entry to the device config so `lf` can discover all known projects without a filesystem scan:
 
 ```json
 {

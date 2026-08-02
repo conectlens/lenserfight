@@ -70,6 +70,6 @@ describe('buildCliToolManifest', () => {
     expect(CLI_TOOL_DENYLIST.has('gateway serve')).toBe(true)
     expect(CLI_TOOL_DENYLIST.has('runner')).toBe(true)
     expect(CLI_TOOL_DENYLIST.has('agent')).toBe(true)
-    expect(CLI_TOOL_DENYLIST.has('opencode')).toBe(true)
+    expect(CLI_TOOL_DENYLIST.has('assist')).toBe(true)
   })
 })
