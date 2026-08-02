@@ -1,6 +1,4 @@
-import type { ExportEnvelope, ExportRequest } from '@lenserfight/domain/exports'
-
-import type { RuntimeMode } from '../runtime/detectRuntime'
+import type { ExportEnvelope, ExportRequest } from '../types'
 
 /**
  * ExportTransport — Polymorphism + Low Coupling (GRASP).
@@ -9,6 +7,14 @@ import type { RuntimeMode } from '../runtime/detectRuntime'
  * in via the TransportRegistry below; adding a new destination (e.g.,
  * S3, git-commit) never touches the orchestrator or UI.
  */
+
+/**
+ * Where an export transport is allowed to run. Owned here (not in
+ * libs/features/exports) because it's part of ExportTransport's contract,
+ * not a UI concern — libs/features/exports's detectRuntime.ts re-exports
+ * this for its DOM-specific detection logic.
+ */
+export type RuntimeMode = 'cloud' | 'localhost-browser' | 'localhost-desktop'
 
 export type TransportId = 'cloud-download' | 'local-download' | 'local-workspace'
 

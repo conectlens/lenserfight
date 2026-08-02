@@ -4,15 +4,14 @@ import {
   bootstrapSerializers,
   getDefaultRegistry,
 } from '@lenserfight/shared/serializers'
-import type {
-  ExportContext,
-  ExportFormat,
-  ExportKind,
-  ExportRequest,
+import {
+  ExportOrchestrator,
+  type ExportContext,
+  type ExportFormat,
+  type ExportKind,
+  type ExportRequest,
+  type ExportTransport,
 } from '@lenserfight/domain/exports'
-
-import { ExportOrchestrator } from '../orchestrator/ExportOrchestrator'
-import type { ExportTransport } from '../transport/ExportTransport'
 
 /**
  * Wires the orchestrator with the default serializer registry. Caller

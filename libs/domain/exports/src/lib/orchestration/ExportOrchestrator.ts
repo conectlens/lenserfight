@@ -1,14 +1,42 @@
-import {
-  buildExportFilename,
-  ExportEnvelopeFactory,
-  ExportValidationError,
-  type ExportContext,
-  type ExportEnvelope,
-  type ExportRequest,
-} from '@lenserfight/domain/exports'
-import type { SerializerRegistry } from '@lenserfight/shared/serializers'
+import { buildExportFilename } from '../slug'
+import { ExportEnvelopeFactory } from '../envelope'
+import { ExportValidationError } from '../errors'
+import type {
+  ExportContext,
+  ExportEnvelope,
+  ExportFormat,
+  ExportKind,
+  ExportRequest,
+  ExportVisibility,
+  ValidationResult,
+} from '../types'
 
-import type { ExportResult, ExportTransport } from '../transport/ExportTransport'
+import type { ExportResult, ExportTransport } from './ExportTransport'
+
+/**
+ * SerializerPort / SerializerRegistryPort — Dependency Inversion (GRASP:
+ * Indirection + Protected Variations).
+ *
+ * The orchestrator lives in the domain layer and must not import the
+ * concrete `SerializerRegistry`/`Serializer` types from
+ * `@lenserfight/shared/serializers` — that package's adapters already
+ * import envelope types from here, so a concrete import back would form
+ * a circular dependency. These structural ports capture exactly the
+ * shape the orchestrator needs; `SerializerRegistry` satisfies
+ * `SerializerRegistryPort` automatically (TypeScript structural typing),
+ * no explicit `implements` or import required on either side.
+ */
+export interface SerializerPort {
+  serialize(
+    envelope: ExportEnvelope<unknown>,
+    ctx: { visibility: ExportVisibility; locale?: string },
+  ): Promise<string>
+  validate(output: string): Promise<ValidationResult>
+}
+
+export interface SerializerRegistryPort {
+  resolve(kind: ExportKind, format: ExportFormat): SerializerPort
+}
 
 /**
  * ExportOrchestrator — Controller (GRASP).
@@ -24,7 +52,7 @@ import type { ExportResult, ExportTransport } from '../transport/ExportTransport
  */
 export class ExportOrchestrator {
   constructor(
-    private readonly registry: SerializerRegistry,
+    private readonly registry: SerializerRegistryPort,
     private readonly envelopeFactory: ExportEnvelopeFactory = new ExportEnvelopeFactory(),
   ) {}
 
