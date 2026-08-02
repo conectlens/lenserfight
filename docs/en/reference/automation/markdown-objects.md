@@ -34,21 +34,21 @@ tags: []
 
 | Format | Purpose | Required fields | Validation |
 |---|---|---|---|
-| [`SKILL.md`](./formats/lens-md) | Native ConectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
-| [`SKILL.md`](./formats/lenser-md-native) | Native ConectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
-| [`SKILL.md`](./formats/colens-md-native) | Native ConectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
-| [`SKILL.md`](./formats/battle-md) | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
-| [`TEAM.MD`](./formats/team-md) | Native LENSER team definition | `name`, `description` | frontmatter + disclosure checks |
-| [`LENS.md`](./formats/lens-md-legacy) | Legacy portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
-| [`SKILL.md`](./formats/lenser-md-legacy) | Legacy compatibility alias for a portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
-| [`AGENT_TEAM.md`](./formats/agent-team-md) | Portable team definition | members, purpose, collaboration rules | frontmatter + section checks |
-| [`TOOL.md`](./formats/tool-md) | Portable tool contract | input/output schema, auth, risk | frontmatter + section checks |
-| [`SKILL.md`](./formats/colens-md-legacy) | Legacy compatibility alias for a portable workflow | triggers, inputs, steps, outputs | frontmatter + section checks |
-| [`PRIVATE_BATTLE.md`](./formats/private-battle-md) | Portable comparison spec | participants, evaluation, report | frontmatter + section checks |
-| [`SKILL.md`](./formats/skill-md) | Portable reusable capability | purpose, when to use, workflow | frontmatter + section checks |
-| [`MEMORY_POLICY.md`](./formats/memory-policy-md) | Portable memory rules | scope, retention, promotion | frontmatter + section checks |
-| [`EVALUATION.md`](./formats/evaluation-md) | Portable eval suite | rubric, dataset, metrics, judging | frontmatter + section checks |
-| [`RUN_REPORT.md`](./formats/run-report-md) | Portable execution report | summary, inputs, results | frontmatter + section checks |
+| [`SKILL.md`](./formats/lens-md.md) | Native ConectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
+| [`SKILL.md`](./formats/lenser-md-native.md) | Native ConectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
+| [`SKILL.md`](./formats/colens-md-native.md) | Native ConectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
+| [`SKILL.md`](./formats/battle-md.md) | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
+| [`TEAM.MD`](./formats/team-md.md) | Native LENSER team definition | `name`, `description` | frontmatter + disclosure checks |
+| [`LENS.md`](./formats/lens-md-legacy.md) | Legacy portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
+| [`SKILL.md`](./formats/lenser-md-legacy.md) | Legacy compatibility alias for a portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
+| [`AGENT_TEAM.md`](./formats/agent-team-md.md) | Portable team definition | members, purpose, collaboration rules | frontmatter + section checks |
+| [`TOOL.md`](./formats/tool-md.md) | Portable tool contract | input/output schema, auth, risk | frontmatter + section checks |
+| [`SKILL.md`](./formats/colens-md-legacy.md) | Legacy compatibility alias for a portable workflow | triggers, inputs, steps, outputs | frontmatter + section checks |
+| [`PRIVATE_BATTLE.md`](./formats/private-battle-md.md) | Portable comparison spec | participants, evaluation, report | frontmatter + section checks |
+| [`SKILL.md`](./formats/skill-md.md) | Portable reusable capability | purpose, when to use, workflow | frontmatter + section checks |
+| [`MEMORY_POLICY.md`](./formats/memory-policy-md.md) | Portable memory rules | scope, retention, promotion | frontmatter + section checks |
+| [`EVALUATION.md`](./formats/evaluation-md.md) | Portable eval suite | rubric, dataset, metrics, judging | frontmatter + section checks |
+| [`RUN_REPORT.md`](./formats/run-report-md.md) | Portable execution report | summary, inputs, results | frontmatter + section checks |
 
 ## CLI support
 
