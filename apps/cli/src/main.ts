@@ -138,6 +138,7 @@ const main = defineCommand({
     configure: () => import('./commands/configure').then((m) => m.default),
     'kill-switch': () => import('./commands/kill-switch').then((m) => m.default),
     'dark-launch': () => import('./commands/dark-launch').then((m) => m.default),
+    opencode: () => import('./commands/opencode').then((m) => m.default),
     budget: () => import('./commands/budget').then((m) => m.default),
     platform: () => import('./commands/platform').then((m) => m.default),
     policy: () => import('./commands/policy').then((m) => m.default),

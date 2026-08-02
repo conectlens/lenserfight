@@ -1,0 +1,13 @@
+export type { OpencodeToolAdapter, OpencodeToolAdapterV1, OpencodeToolMetadata } from './lib/opencode-tool-adapter'
+
+export {
+  registerOpencodeToolAdapter,
+  unregisterOpencodeToolAdapter,
+  getOpencodeToolAdapter,
+  listOpencodeToolAdapters,
+  __resetOpencodeRegistryForTests,
+} from './lib/opencode.registry'
+
+export { LenserFightPlugin } from './lib/lf-plugin'
+export { createLensRunAdapter } from './lib/lens-adapter'
+export { createBattleCreateAdapter } from './lib/battle-adapter'

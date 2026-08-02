@@ -272,6 +272,23 @@ Running agentic workflows and local model battles directly from the CLI produces
 
 ---
 
+## Step 12 — [experimental] Try the OpenCode integration
+
+`lf opencode` spawns [OpenCode](https://github.com/anomalyco/opencode) pre-wired with a
+LenserFight plugin exposing `lf_lens_run` and `lf_battle_create` as tools, plus this project's
+`.mcp.json` server config when one is present:
+
+```bash
+lf opencode
+```
+
+This generates `.opencode/opencode.json` in the current directory (re-run with `--force` to
+regenerate it) and launches `opencode` — installed separately via `npx opencode-ai` if it isn't
+already on `PATH`. This is early and experimental: only lens-run and battle-create are wired up so
+far, and the command is intentionally left out of `lf --help`.
+
+---
+
 ## Key environment variables
 
 | Variable | Purpose |

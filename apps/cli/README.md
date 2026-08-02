@@ -287,6 +287,12 @@ lf init --mode local  # initialize in local mode
 | `lf kill-switch` | Platform kill switches |
 | `lf dark-launch` | Dark-launch flag control |
 
+### Experimental
+
+| Command | Description |
+|---------|-------------|
+| `lf opencode` | **[experimental]** Spawn [OpenCode](https://github.com/anomalyco/opencode) pre-wired with a LenserFight plugin (`lf_lens_run`, `lf_battle_create`) plus this project's `.mcp.json`, if present. Generates `.opencode/opencode.json` in the current directory; pass `--force` to regenerate it. Requires `opencode` on `PATH` or falls back to `npx opencode-ai`. |
+
 ### Utilities
 
 | Command | Description |
