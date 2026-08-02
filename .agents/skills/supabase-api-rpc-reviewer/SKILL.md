@@ -1,6 +1,7 @@
 ---
 name: supabase-api-rpc-reviewer
 description: Review Supabase SQL functions, RPC exposure, return contracts, and API-facing database surfaces. Use for public API design, function hardening, response stability, and deciding between direct table access and RPC.
+disable-model-invocation: true
 ---
 
 # Supabase API RPC Reviewer
@@ -14,6 +15,7 @@ description: Review Supabase SQL functions, RPC exposure, return contracts, and 
 1. Inspect the API-facing database surface.
 2. Flag unstable contracts, privilege problems, and unnecessary RPC complexity.
 3. Return the safest interface shape and exact adjustments.
+4. Run 'npx supabase migration up --local' to ensure the created migrations applied successfully.
 
 ## Load only when needed
 - [RPC review guide](references/REFERENCE.md)
