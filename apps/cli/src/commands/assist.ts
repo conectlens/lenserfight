@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url'
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
+import { c } from '@lenserfight/cli-client'
+
 import { buildCliToolManifest } from '../lib/opencode-tool-bridge'
 
 // `lf assist` (also the default when `lf`/`lenserfight` is run with no
@@ -32,8 +34,8 @@ function findPluginBundle(): string | null {
     // Nx workspace dev layout, resolved from cwd.
     resolve(process.cwd(), 'dist/libs/adapters/opencode-plugin/lf-plugin.js'),
   ]
-  for (const c of candidates) {
-    if (existsSync(c)) return c
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate
   }
   return null
 }
@@ -110,9 +112,10 @@ export async function runAssist(opts: RunAssistOptions = {}): Promise<void> {
     ) + '\n',
   )
   consola.info(
-    `Ready — lens run, battle create, and ${tools.length} other lf command(s) available as tools` +
-      `${mcp ? ', mcp: ' + Object.keys(mcp).join(', ') : ''}. Destructive commands (kill-switch, ` +
-      'dark-launch, db reset, etc) keep their existing --confirm gate — review what the agent does before trusting it.',
+    `${c.brandGold('LenserFight')} assist ready — lens run, battle create, and ${tools.length} other lf ` +
+      `command(s) available as tools${mcp ? ', mcp: ' + Object.keys(mcp).join(', ') : ''}. Destructive ` +
+      'commands (kill-switch, dark-launch, db reset, etc) keep their existing --confirm gate — review ' +
+      'what the agent does before trusting it.',
   )
 
   const { command, args: prefixArgs } = resolveAssistBinary()
