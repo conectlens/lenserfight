@@ -149,7 +149,8 @@
       "@lenserfight/ui/media": ["libs/ui/media/src/index.ts"],
       "@lenserfight/features/chat": ["libs/features/chat/src/index.ts"],
       "@lenserfight/features/connectors": ["libs/features/connectors/src/index.ts"],
-      "@lenserfight/cli-client": ["libs/cli/client/src/index.ts"]
+      "@lenserfight/cli-client": ["libs/cli/client/src/index.ts"],
+      "@lenserfight/adapters-opencode": ["libs/adapters/opencode/src/index.ts"]
     }
   }
 }

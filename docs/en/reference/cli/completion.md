@@ -7,7 +7,7 @@ description: CLI reference for installing shell completion for lf — bash, zsh,
 
 Generate or install shell completion scripts for the `lf` (and `lenserfight`) command. Completion covers the top-level subcommand list (`agent`, `battle`, `schedule`, …); per-flag completion is not in scope for the current milestone.
 
-See also: [`lf profile`](./profile.md) for managing CLI profiles, and [Operate LenserFight from the TUI dashboard](/en/how-to/operations/cli-dashboard).
+See also: [`lf profile`](./profile.md) for managing CLI profiles.
 
 ## Supported shells
 

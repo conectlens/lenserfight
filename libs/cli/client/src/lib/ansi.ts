@@ -28,6 +28,15 @@ export function ansi(seq: string, text: string): string {
   return isPlainText() ? text : `${seq}${text}${A.reset}`
 }
 
+/** True-color (24-bit) foreground escape for an exact hex value, e.g. `rgb('#ffde59')`. */
+export function rgb(hex: string): string {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.slice(0, 2), 16)
+  const g = parseInt(clean.slice(2, 4), 16)
+  const b = parseInt(clean.slice(4, 6), 16)
+  return `\x1b[38;2;${r};${g};${b}m`
+}
+
 export const A = {
   reset: '\x1b[0m',
   bold: '\x1b[1m',
@@ -89,6 +98,8 @@ export function hyperlink(url: string, label: string): string {
 export const c = {
   // Brand / navigation
   brand:       (s: string) => isPlainText() ? s : `${A.brightMagenta}${A.bold}${s}${A.reset}`,
+  /** LenserFight gold (#ffde59) — the literal "LenserFight" name in CLI output. */
+  brandGold:   (s: string) => isPlainText() ? s : `${rgb('#ffde59')}${A.bold}${s}${A.reset}`,
   accent:      (s: string) => ansi(A.brightCyan, s),
 
   // Status

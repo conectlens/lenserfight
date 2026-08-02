@@ -110,8 +110,4 @@ lf execute team dispatch …
 lf execute team list
 ```
 
-## Dashboard
-
-From `lf` (TUI): press **`e`** for the Execute sub-dashboard, **`k`** for Configure (BYOK / Ollama / providers).
-
-See also [lf configure](./configure.md) and [CLI dashboard](/en/how-to/operations/cli-dashboard.md).
+See also [lf configure](./configure.md).

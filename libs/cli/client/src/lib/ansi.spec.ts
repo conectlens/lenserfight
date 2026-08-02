@@ -10,7 +10,7 @@
  * - sym.*         — symbols must be defined and non-empty
  */
 
-import { isPlainText, stripAnsi, ansi, hyperlink, A, c, sym } from './ansi'
+import { isPlainText, stripAnsi, ansi, hyperlink, rgb, A, c, sym } from './ansi'
 
 // ─── Environment helpers ──────────────────────────────────────────────────────
 
@@ -140,6 +140,16 @@ describe('ansi', () => {
   })
 })
 
+describe('rgb', () => {
+  it('converts a hex color to a 24-bit true-color escape sequence', () => {
+    expect(rgb('#ffde59')).toBe('\x1b[38;2;255;222;89m')
+  })
+
+  it('accepts hex without a leading #', () => {
+    expect(rgb('ffde59')).toBe('\x1b[38;2;255;222;89m')
+  })
+})
+
 // ─── hyperlink — OSC 8 terminal rendering ────────────────────────────────────
 //
 // This is the "remaining risk" surface: OSC 8 hyperlinks must emit the correct
@@ -246,6 +256,7 @@ describe('c.* semantic wrappers in plain-text mode', () => {
   // Verify every wrapper returns plain text without ANSI escapes in NO_COLOR mode
   const wrappers: Array<[string, (s: string) => string]> = [
     ['brand',        (s) => c.brand(s)],
+    ['brandGold',    (s) => c.brandGold(s)],
     ['accent',       (s) => c.accent(s)],
     ['success',      (s) => c.success(s)],
     ['warn',         (s) => c.warn(s)],

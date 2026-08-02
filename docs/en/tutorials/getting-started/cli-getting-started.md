@@ -272,6 +272,26 @@ Running agentic workflows and local model battles directly from the CLI produces
 
 ---
 
+## Step 12 — Launch assist
+
+Running `lf` with no arguments — or explicitly `lf assist` — launches an interactive agent
+session with every `lf` command available to it as a tool: `lens run` and `battle create` are
+backed directly by their RPCs, and every other command (including destructive ones like
+`kill-switch`, `dark-launch`, and `db reset`) is available too, each keeping its own
+`--confirm`/safety gate exactly as it behaves from a terminal. It also picks up this project's
+`.mcp.json` server config when one is present:
+
+```bash
+lf
+# or, explicitly:
+lf assist
+```
+
+This generates `.opencode/opencode.json` in the current directory (re-run with `--force` to
+regenerate it). Review what the agent does before trusting it with destructive commands.
+
+---
+
 ## Key environment variables
 
 | Variable | Purpose |

@@ -2476,7 +2476,6 @@ export default defineConfig({
           text: 'Operations',
           items: [
             { text: 'Running the Worker', link: '/en/how-to/operations/running-the-worker' },
-            { text: 'CLI TUI Dashboard', link: '/en/how-to/operations/cli-dashboard' },
             { text: 'Dark Launch', link: '/en/how-to/dark-launch' },
             { text: 'Kill Switch', link: '/en/how-to/kill-switch' },
           ],
