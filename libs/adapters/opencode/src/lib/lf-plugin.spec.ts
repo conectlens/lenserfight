@@ -20,7 +20,7 @@ const readFileSyncMock = vi.fn()
 vi.mock('node:fs', () => ({ readFileSync: (...args: unknown[]) => readFileSyncMock(...args) }))
 
 afterEach(() => {
-  delete process.env['LF_OPENCODE_MANIFEST_PATH']
+  delete process.env['LF_ASSIST_MANIFEST_PATH']
   vi.resetModules()
 })
 
@@ -32,8 +32,8 @@ describe('LenserFightPlugin', () => {
     await expect(hooks.tool?.['lf_lens_run']?.execute({}, {} as never)).resolves.toBe('lens-result')
   })
 
-  it('also registers cli-bridge tools from LF_OPENCODE_MANIFEST_PATH when set', async () => {
-    process.env['LF_OPENCODE_MANIFEST_PATH'] = '/fake/manifest.json'
+  it('also registers cli-bridge tools from LF_ASSIST_MANIFEST_PATH when set', async () => {
+    process.env['LF_ASSIST_MANIFEST_PATH'] = '/fake/manifest.json'
     readFileSyncMock.mockReturnValue(
       JSON.stringify({
         cliBinaryPath: '/bin/lf-main.js',
@@ -47,7 +47,7 @@ describe('LenserFightPlugin', () => {
   })
 
   it('falls back to the static adapters when the manifest is unreadable', async () => {
-    process.env['LF_OPENCODE_MANIFEST_PATH'] = '/missing/manifest.json'
+    process.env['LF_ASSIST_MANIFEST_PATH'] = '/missing/manifest.json'
     readFileSyncMock.mockImplementation(() => {
       throw new Error('ENOENT')
     })

@@ -14,7 +14,7 @@ const execFileAsync = promisify(execFile)
 /** Hard ceiling so a command this bridge misclassified as request/response
  * (a daemon, an interactive prompt) fails safely instead of hanging the
  * OpenCode host process forever. See CLI_TOOL_DENYLIST in apps/cli's
- * opencode-tool-bridge.ts for the primary (best-effort) exclusion. */
+ * cli-tool-bridge.ts for the primary (best-effort) exclusion. */
 const EXECUTE_TIMEOUT_MS = 60_000
 const MAX_BUFFER_BYTES = 5 * 1024 * 1024
 
@@ -71,7 +71,7 @@ function buildArgv(entry: CliToolManifestEntry, rawArgs: Record<string, unknown>
 
 /**
  * Generic bridge: wraps one CLI command (any leaf in apps/cli's citty
- * command tree — see apps/cli/src/lib/opencode-tool-bridge.ts) as an
+ * command tree — see apps/cli/src/lib/cli-tool-bridge.ts) as an
  * OpenCode tool by shelling out to the real `lf` binary via `execFile`
  * (never in-process). This is deliberate, not just convenient — several
  * command handlers call `process.exit()` on error, which would kill the

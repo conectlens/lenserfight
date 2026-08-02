@@ -1,57 +1,13 @@
-import { buildLfConfig, isLfOnlyConfig, isPluginEntry, mergeLfConfig } from './opencode-config'
-
-const PLUGIN = '/usr/local/lib/node_modules/@lenserfight/cli/lf-plugin.js'
-
-describe('isPluginEntry', () => {
-  it('matches our bundle under both path separators', () => {
-    expect(isPluginEntry(PLUGIN)).toBe(true)
-    expect(
-      isPluginEntry('C:\\Users\\x\\AppData\\Roaming\\npm\\node_modules\\@lenserfight\\cli\\lf-plugin.js'),
-    ).toBe(true)
-  })
-
-  it('ignores unrelated plugins and non-strings', () => {
-    expect(isPluginEntry('./my-plugin.js')).toBe(false)
-    expect(isPluginEntry('lf-plugin.js.bak')).toBe(false)
-    expect(isPluginEntry(undefined)).toBe(false)
-    expect(isPluginEntry({ path: PLUGIN })).toBe(false)
-  })
-})
-
-describe('isLfOnlyConfig', () => {
-  it('recognises a config we wrote, even with a stale plugin path', () => {
-    expect(isLfOnlyConfig(buildLfConfig(PLUGIN, null))).toBe(true)
-    expect(isLfOnlyConfig(buildLfConfig(PLUGIN, { lf: { type: 'local' } }))).toBe(true)
-    expect(isLfOnlyConfig({ plugin: ['/old/version/lf-plugin.js'] })).toBe(true)
-  })
-
-  it('treats hand-authored configs as foreign', () => {
-    expect(isLfOnlyConfig({ plugin: ['./custom.js'], model: 'x' })).toBe(false)
-    expect(isLfOnlyConfig({ theme: 'dark' })).toBe(false)
-    expect(isLfOnlyConfig({ plugin: 'not-an-array' })).toBe(false)
-    expect(isLfOnlyConfig({})).toBe(false)
-  })
-
-  it('keeps treating a config we merged into as foreign, so a re-run never wipes it', () => {
-    // Regression: classifying on "references our plugin" made the second run
-    // rewrite the file wholesale and drop the user's own settings.
-    const merged = mergeLfConfig({ model: 'anthropic/x', plugin: ['./a.js'] }, PLUGIN, null)
-    expect(isLfOnlyConfig(merged)).toBe(false)
-    expect(mergeLfConfig(merged, PLUGIN, null)).toEqual(merged)
-  })
-})
+import { buildLfConfig, mergeLfConfig } from './lf-assist-config'
 
 describe('buildLfConfig', () => {
-  it('omits mcp when the project has no .mcp.json', () => {
-    expect(buildLfConfig(PLUGIN, null)).toEqual({
-      $schema: 'https://opencode.ai/config.json',
-      plugin: [PLUGIN],
-    })
+  it('returns null when the project has no .mcp.json', () => {
+    expect(buildLfConfig(null)).toBeNull()
   })
 
   it('includes mcp servers when present', () => {
     const mcp = { lf: { type: 'local', command: ['lf', 'mcp'] } }
-    expect(buildLfConfig(PLUGIN, mcp).mcp).toEqual(mcp)
+    expect(buildLfConfig(mcp)).toEqual({ mcp })
   })
 })
 
@@ -62,25 +18,13 @@ describe('mergeLfConfig', () => {
       model: 'anthropic/x',
       theme: 'dark',
     }
-    const merged = mergeLfConfig(existing, PLUGIN, null)
-    expect(merged.model).toBe('anthropic/x')
-    expect(merged.theme).toBe('dark')
-    expect(merged.plugin).toEqual([PLUGIN])
-  })
-
-  it('keeps the user plugins and appends ours exactly once', () => {
-    const merged = mergeLfConfig({ plugin: ['./a.js', './b.js'] }, PLUGIN, null)
-    expect(merged.plugin).toEqual(['./a.js', './b.js', PLUGIN])
-  })
-
-  it('replaces a stale lf plugin path rather than accumulating duplicates', () => {
-    const merged = mergeLfConfig({ plugin: ['/old/lf-plugin.js', './a.js'] }, PLUGIN, null)
-    expect(merged.plugin).toEqual(['./a.js', PLUGIN])
+    const merged = mergeLfConfig(existing, null)
+    expect(merged).toEqual(existing)
   })
 
   it('lets the user mcp entries win on key collision', () => {
     const existing = { mcp: { shared: { type: 'remote' }, mine: { type: 'local' } } }
-    const merged = mergeLfConfig(existing, PLUGIN, {
+    const merged = mergeLfConfig(existing, {
       shared: { type: 'local' },
       ours: { type: 'local' },
     })
@@ -91,7 +35,12 @@ describe('mergeLfConfig', () => {
     })
   })
 
+  it('adds mcp to a config that had none', () => {
+    const mcp = { lf: { type: 'local' } }
+    expect(mergeLfConfig({ theme: 'dark' }, mcp)).toEqual({ theme: 'dark', mcp })
+  })
+
   it('leaves mcp absent when neither side defines any', () => {
-    expect(mergeLfConfig({ theme: 'dark' }, PLUGIN, null)).not.toHaveProperty('mcp')
+    expect(mergeLfConfig({ theme: 'dark' }, null)).not.toHaveProperty('mcp')
   })
 })

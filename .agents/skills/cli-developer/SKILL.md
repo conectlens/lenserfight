@@ -12,7 +12,7 @@ Work on the LenserFight CLI (`lf`).
 - Utilities: `apps/cli/src/utils/` (api, output, auth, auth-recovery, ansi, error-reporter, profiles, supabase-client, automation-objects, battle-stream-broadcaster, local-battle-engine, local-battle-paths, local-battle-storage)
 - Libraries: `apps/cli/src/lib/` (exec-context, safety, telemetry, redact, onboarding, combine-seeds)
 - TUI: `apps/cli/src/tui/` (runtime-telemetry — shared with `lf top`)
-- Assist bridge: `apps/cli/src/commands/assist.ts`, `apps/cli/src/lib/opencode-tool-bridge.ts`, `libs/adapters/opencode/` (default `lf` behavior — every command exposed as a tool to an interactive agent session)
+- Assist bridge: `apps/cli/src/commands/assist.ts`, `apps/cli/src/lib/cli-tool-bridge.ts`, `apps/cli/src/lib/lf-assist-config.ts`, `libs/adapters/opencode/`, `vendor/opencode/` (default `lf` behavior — every command exposed as a tool to an interactive agent session backed by the LenserFight-branded assist runtime)
 - Adapters: `apps/cli/src/adapters/`
 
 ## CLI Structure

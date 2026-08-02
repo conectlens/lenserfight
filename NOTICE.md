@@ -19,8 +19,13 @@ transitive package; run `pnpm licenses list` for the full dependency tree.
 | [Supabase](https://github.com/supabase/supabase) (`@supabase/supabase-js`) | MIT / Apache-2.0 | Database, auth, storage, edge functions |
 | [Zod](https://github.com/colinhacks/zod) | MIT | Schema validation |
 | [Model Context Protocol SDK](https://github.com/modelcontextprotocol/typescript-sdk) | MIT | `apps/mcp-server` |
-| [OpenCode](https://github.com/sst/opencode) (`@opencode-ai/plugin`) | MIT | Plugin bridge exposing `lf` commands to OpenCode (`libs/adapters/opencode`, `apps/cli`) |
 | [ESLint](https://github.com/eslint/eslint), [Prettier](https://github.com/prettier/prettier), [Jest](https://github.com/jestjs/jest), [Vitest](https://github.com/vitest-dev/vitest) | MIT | Lint, format, test |
+
+## Forked projects
+
+| Project | License | Used for |
+|---|---|---|
+| [OpenCode](https://github.com/anomalyco/opencode) | MIT | `lf assist`'s runtime is a rebranded fork, vendored at `vendor/opencode` (see [`vendor/opencode/SOURCE.md`](vendor/opencode/SOURCE.md) for the pinned commit and re-sync notes) with `lf`'s commands built in natively. OpenCode's own hosted auth/billing provider (console.opencode.ai) was removed; the session is gated on LenserFight's own auth instead. `libs/adapters/opencode` still uses OpenCode's own `@opencode-ai/plugin` SDK to build that integration. |
 
 ## Trademarks
 

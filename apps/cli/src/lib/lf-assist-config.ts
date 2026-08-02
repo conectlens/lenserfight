@@ -1,73 +1,33 @@
 /**
- * Read/merge rules for the `.opencode/opencode.json` that `lf assist` generates.
+ * Read/merge rules for the `.lenserfight/lenserfight.json` that `lf assist`
+ * generates.
  *
- * The config is a generated artifact, so an existing one must never block the
- * session. A config we wrote is refreshed in place (its plugin path is absolute
- * and install-specific, so an upgraded or relocated CLI leaves it dangling); a
- * config someone else wrote is merged into, never clobbered.
+ * `lf`'s own commands ship natively inside the assist runtime (see
+ * vendor/opencode/packages/opencode/src/plugin/index.ts's `internalPlugins`),
+ * so this file's only job is carrying over this project's `mcp` server config
+ * — there's no plugin path to keep fresh. The config is a generated artifact,
+ * so an existing one must never block the session: we only ever add/refresh
+ * our `mcp` key, additively, so a hand-authored config is always safe to
+ * merge into rather than needing a "did we write this file" distinction.
  */
 
-export const PLUGIN_BASENAME = 'lf-plugin.js'
-
-export interface OpencodeConfig {
+export interface AssistConfig {
   $schema?: string
-  plugin?: unknown
   mcp?: Record<string, unknown>
   [key: string]: unknown
 }
 
-/** Basename comparison that tolerates both separators — configs travel across OSes. */
-export function isPluginEntry(entry: unknown): boolean {
-  return typeof entry === 'string' && entry.split(/[\\/]/).pop() === PLUGIN_BASENAME
+export function buildLfConfig(mcp: Record<string, unknown> | null): AssistConfig | null {
+  if (!mcp) return null
+  return { mcp }
 }
 
-/** The only keys `lf assist` ever writes when it authors a config from scratch. */
-const LF_KEYS = new Set(['$schema', 'plugin', 'mcp'])
-
-/**
- * True when the config holds nothing but what `lf` itself writes — i.e. we
- * authored the whole file and may safely rewrite it (which is how a stale,
- * install-specific plugin path gets refreshed).
- *
- * Deliberately stricter than "references our plugin": once we have merged into
- * someone else's config it also references our plugin, and rewriting *that*
- * would throw away their settings.
- */
-export function isLfOnlyConfig(config: OpencodeConfig): boolean {
-  if (!Object.keys(config).every((k) => LF_KEYS.has(k))) return false
-  const { plugin } = config
-  return Array.isArray(plugin) && plugin.length > 0 && plugin.every(isPluginEntry)
-}
-
-export function buildLfConfig(
-  pluginPath: string,
-  mcp: Record<string, unknown> | null,
-): OpencodeConfig {
-  return {
-    $schema: 'https://opencode.ai/config.json',
-    plugin: [pluginPath],
-    ...(mcp ? { mcp } : {}),
-  }
-}
-
-/**
- * Additively wire our plugin into a config we did not write (a hand-authored
- * OpenCode setup, or one left by another tool). Everything the user configured
- * is preserved and their `mcp` entries win on key collision.
- */
+/** Additively merges this project's `mcp` config into whatever's already there — the user's own entries win on key collision. */
 export function mergeLfConfig(
-  existing: OpencodeConfig,
-  pluginPath: string,
+  existing: AssistConfig,
   mcp: Record<string, unknown> | null,
-): OpencodeConfig {
-  const plugin = (Array.isArray(existing.plugin) ? existing.plugin : []).filter(
-    (p) => !isPluginEntry(p),
-  )
-  plugin.push(pluginPath)
-  const mergedMcp = { ...(mcp ?? {}), ...(existing.mcp ?? {}) }
-  return {
-    ...existing,
-    plugin,
-    ...(Object.keys(mergedMcp).length > 0 ? { mcp: mergedMcp } : {}),
-  }
+): AssistConfig {
+  if (!mcp) return existing
+  const mergedMcp = { ...mcp, ...(existing.mcp ?? {}) }
+  return { ...existing, mcp: mergedMcp }
 }

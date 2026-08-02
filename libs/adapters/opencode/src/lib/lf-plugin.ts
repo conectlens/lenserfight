@@ -15,18 +15,17 @@ registerOpencodeToolAdapter('lf_lens_run', createLensRunAdapter)
 registerOpencodeToolAdapter('lf_battle_create', createBattleCreateAdapter)
 
 /** Registers one generic cli-bridge tool per manifest entry (see
- * apps/cli/src/lib/opencode-tool-bridge.ts) — read lazily, at plugin-load
- * time, since the manifest is generated per-project by `lf opencode`, not
+ * apps/cli/src/lib/cli-tool-bridge.ts) — read lazily, at plugin-load
+ * time, since the manifest is generated per-project by `lf assist`, not
  * known when this plugin bundle itself was built.
  *
- * Manifest path travels via LF_OPENCODE_MANIFEST_PATH (set by `lf opencode`
- * on the spawned opencode process's env), not `opencode.json`'s `[path,
- * PluginOptions]` tuple form — that mechanism didn't reliably reach this
- * function when loaded by the real (Bun-based) opencode binary, despite
- * working under plain Node, so env var is the one battle-tested transport
- * both ends of this bridge fully control. */
+ * Manifest path travels via LF_ASSIST_MANIFEST_PATH (set by `lf assist`
+ * on the spawned assist runtime's env) — a plain env var, not config-file
+ * plumbing, since this plugin is baked into the assist runtime natively
+ * (see vendor/opencode/packages/opencode/src/plugin/index.ts's
+ * `internalPlugins`) rather than loaded from a `plugin:` config array. */
 function registerCliBridgeTools(): void {
-  const manifestPath = process.env['LF_OPENCODE_MANIFEST_PATH']
+  const manifestPath = process.env['LF_ASSIST_MANIFEST_PATH']
   if (!manifestPath) return
 
   let manifest: CliToolManifest
@@ -41,11 +40,12 @@ function registerCliBridgeTools(): void {
 }
 
 /**
- * The OpenCode plugin entrypoint — referenced by path from `opencode.json`'s
- * `plugin` array (see `lf opencode`, `apps/cli/src/commands/opencode.ts`).
- * Walks the adapter registry and exposes each registered adapter as an
- * OpenCode tool. Deliberately avoids `PluginInput.$` (Bun's injected shell)
- * so this file stays testable under this repo's normal Vitest/Node setup.
+ * The assist runtime's built-in LenserFight plugin — registered natively in
+ * `internalPlugins()` (see vendor/opencode/packages/opencode/src/plugin/index.ts),
+ * not loaded from a config file. Walks the adapter registry and exposes each
+ * registered adapter as a tool. Deliberately avoids `PluginInput.$` (Bun's
+ * injected shell) so this file stays testable under this repo's normal
+ * Vitest/Node setup.
  */
 export const LenserFightPlugin: Plugin = async () => {
   registerCliBridgeTools()

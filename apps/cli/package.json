@@ -11,7 +11,7 @@
   },
   "files": [
     "main.js",
-    "lf-plugin.js",
+    "lf-assist",
     "README.md",
     "LICENSE"
   ],

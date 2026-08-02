@@ -64,7 +64,7 @@ export const main = defineCommand({
     },
     force: {
       type: 'boolean',
-      description: 'For the default assist session: replace .opencode/opencode.json instead of updating it',
+      description: 'For the default assist session: replace .lenserfight/lenserfight.json instead of updating it',
       default: false,
     },
   },

@@ -51,7 +51,7 @@ function normalizeTarballPath(path) {
 }
 
 function assertCleanPackageFiles(files) {
-  const allowed = new Set(['package.json', 'main.js', 'lf-plugin.js', 'README.md', 'LICENSE']);
+  const allowed = new Set(['package.json', 'main.js', 'lf-assist', 'README.md', 'LICENSE']);
   const forbiddenPatterns = [
     /(^|\/)\.env($|[./])/i,
     /(^|\/)\.npmrc$/i,
@@ -104,9 +104,9 @@ try {
   assert(existsSync(packageJsonPath), 'Built package.json is missing');
   assert(existsSync(mainPath), 'Built main.js is missing');
   assert(
-    existsSync(resolve(packageDir, 'lf-plugin.js')),
-    'Built lf-plugin.js is missing — `lf assist` (the default command) would fail for every installed user. ' +
-      'Run `pnpm nx run cli:copy-plugin` before packaging.',
+    existsSync(resolve(packageDir, 'lf-assist')),
+    'Built lf-assist runtime binary is missing — `lf assist` (the default command) would fail for every ' +
+      'installed user. Run `pnpm nx run cli:build` before packaging.',
   );
 
   const pkg = readJson(packageJsonPath);

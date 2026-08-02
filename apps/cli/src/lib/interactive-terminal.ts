@@ -1,5 +1,5 @@
 /**
- * OpenCode's TUI (launched by `lf assist`) performs a terminal handshake
+ * The assist runtime's TUI (launched by `lf assist`) performs a terminal handshake
  * (cursor position, color, and capability queries) before it renders
  * anything, then switches to the alternate screen buffer. Without a real
  * terminal emulator to answer those queries — a script, CI job, or an AI

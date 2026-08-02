@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -6,22 +6,18 @@ import { fileURLToPath } from 'node:url'
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
-import { c } from '@lenserfight/cli-client'
+import { c, resolveConfig } from '@lenserfight/cli-client'
 
 import { isInteractiveTerminal } from '../lib/interactive-terminal'
-import {
-  buildLfConfig,
-  isLfOnlyConfig,
-  mergeLfConfig,
-  type OpencodeConfig,
-} from '../lib/opencode-config'
-import { buildCliToolManifest } from '../lib/opencode-tool-bridge'
+import { buildLfConfig, mergeLfConfig, type AssistConfig } from '../lib/lf-assist-config'
+import { buildCliToolManifest } from '../lib/cli-tool-bridge'
 
 // `lf assist` (also the default when `lf`/`lenserfight` is run with no
 // subcommand) — an interactive agent session pre-wired with every lf
 // command as a tool, plus this project's MCP server config, when present.
-// Built on the OpenCode runtime (https://github.com/anomalyco/opencode,
-// MIT) — see NOTICE.md for attribution. See
+// Built on a LenserFight fork of the OpenCode runtime
+// (https://github.com/anomalyco/opencode, MIT) — see NOTICE.md for
+// attribution and vendor/opencode/SOURCE.md for fork details. See
 // docs/en/tutorials/getting-started/cli-getting-started.md for details.
 
 interface McpServerConfig {
@@ -34,16 +30,17 @@ function cliBinaryPath(): string {
   return fileURLToPath(import.meta.url)
 }
 
-function findPluginBundle(): string | null {
+/** Locates the bundled, LenserFight-branded assist runtime (a fork of
+ * OpenCode with `lf`'s commands baked in natively — see
+ * vendor/opencode/SOURCE.md) rather than any publicly installed `opencode`. */
+function findAssistBinary(): string | null {
   const candidates = [
-    // Published/installed layout (npm, npx, global install): lf-plugin.js
-    // ships as a sibling of main.js — see apps/cli/project.json's
-    // `copy-plugin` target and package.json's `files` array.
-    resolve(dirname(cliBinaryPath()), 'lf-plugin.js'),
-    // Monorepo dist layout: dist/apps/cli/main.js -> dist/libs/adapters/opencode-plugin/
-    resolve(dirname(cliBinaryPath()), '../../libs/adapters/opencode-plugin/lf-plugin.js'),
+    // Published/installed layout (npm, npx, global install): lf-assist
+    // ships as a sibling of main.js — see apps/cli/project.json's `build`
+    // target and package.json's `files` array.
+    resolve(dirname(cliBinaryPath()), 'lf-assist'),
     // Nx workspace dev layout, resolved from cwd.
-    resolve(process.cwd(), 'dist/libs/adapters/opencode-plugin/lf-plugin.js'),
+    resolve(process.cwd(), 'dist/apps/cli/lf-assist'),
   ]
   for (const candidate of candidates) {
     if (existsSync(candidate)) return candidate
@@ -74,19 +71,6 @@ function readMcpConfig(projectDir: string): Record<string, unknown> | null {
   }
 }
 
-// On Windows, `opencode`/`npx` resolve to `.cmd` shims on PATH — spawn/spawnSync
-// without shell:true issue a raw CreateProcess call that can't find them and
-// fails with ENOENT. shell:true routes through cmd.exe (Node quotes args safely).
-const isWindows = process.platform === 'win32'
-
-function resolveAssistBinary(): { command: string; args: string[] } {
-  // With shell:true a missing binary is cmd.exe's "not recognized" exit code, not
-  // a spawn `error` — check the status too or Windows always picks `opencode`.
-  const check = spawnSync('opencode', ['--version'], { stdio: 'ignore', shell: isWindows })
-  if (!check.error && check.status === 0) return { command: 'opencode', args: [] }
-  return { command: 'npx', args: ['--yes', 'opencode-ai'] }
-}
-
 export interface RunAssistOptions {
   force?: boolean
   passthroughArgs?: string[]
@@ -95,7 +79,7 @@ export interface RunAssistOptions {
 export async function runAssist(opts: RunAssistOptions = {}): Promise<void> {
   if (!isInteractiveTerminal()) {
     consola.error(
-      'lf assist needs a real interactive terminal — it launches an OpenCode chat session that reads ' +
+      'lf assist needs a real interactive terminal — it launches an agent chat session that reads ' +
         "keyboard input and renders a live UI. It can't run inside a script, CI job, or an AI agent's " +
         'built-in command-execution terminal (it will hang on a blank screen instead of failing loudly).\n' +
         "Run it directly in Terminal.app, iTerm2, Warp, or another terminal you're typing into yourself.\n" +
@@ -105,58 +89,54 @@ export async function runAssist(opts: RunAssistOptions = {}): Promise<void> {
     process.exit(6)
   }
 
-  const pluginPath = findPluginBundle()
-  if (!pluginPath) {
-    consola.error(
-      'Assist runtime not built yet. Build it first:\n' + '  pnpm nx run adapters-opencode:bundle-plugin',
-    )
+  // The fork no longer offers OpenCode's own hosted "opencode" provider
+  // (console.opencode.ai OAuth + billing) — LenserFight's own auth gates
+  // the session instead, same as every other authenticated lf command.
+  const lfConfig = resolveConfig()
+  if (!lfConfig.apiKey && !lfConfig.developerToken && !lfConfig.authToken) {
+    consola.error('Authentication required. Run `lf auth login` or set LENSERFIGHT_API_KEY.')
+    process.exit(8)
+  }
+
+  const assistBinary = findAssistBinary()
+  if (!assistBinary) {
+    consola.error('Assist runtime not built yet. Build it first:\n' + '  pnpm nx run cli:build')
     process.exit(4)
   }
 
   const projectDir = process.cwd()
-  const opencodeDir = resolve(projectDir, '.opencode')
-  const configPath = resolve(opencodeDir, 'opencode.json')
-  const manifestPath = resolve(opencodeDir, 'lf-cli-tools-manifest.json')
+  const lenserfightDir = resolve(projectDir, '.lenserfight')
+  const configPath = resolve(lenserfightDir, 'lenserfight.json')
+  const manifestPath = resolve(lenserfightDir, 'lf-cli-tools-manifest.json')
 
   // The config is a generated artifact, so an existing one must never block the
   // session — that made `lf` unusable from any directory it had already run in.
-  // Ours is refreshed in place; anyone else's is merged into, never clobbered.
-  let existing: OpencodeConfig | null = null
+  let existing: AssistConfig | null = null
   if (existsSync(configPath) && !opts.force) {
     try {
       const parsed = JSON.parse(readFileSync(configPath, 'utf8')) as unknown
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object')
-      existing = parsed as OpencodeConfig
+      existing = parsed as AssistConfig
     } catch {
       consola.error(
-        `${configPath} is not a valid OpenCode config (unreadable JSON). Fix or delete it, or re-run ` +
+        `${configPath} is not a valid config (unreadable JSON). Fix or delete it, or re-run ` +
           'with --force to regenerate it from scratch.',
       )
       process.exit(5)
     }
   }
 
-  mkdirSync(opencodeDir, { recursive: true })
+  mkdirSync(lenserfightDir, { recursive: true })
 
   const tools = await buildCliToolManifest()
   writeFileSync(manifestPath, JSON.stringify({ cliBinaryPath: cliBinaryPath(), tools }, null, 2) + '\n')
 
+  // lf's own commands ship natively inside the assist runtime — this config
+  // only ever carries this project's mcp server config, merged additively
+  // into whatever's already there (the user's own entries win on collision).
   const mcp = readMcpConfig(projectDir)
-  const foreign = existing && !isLfOnlyConfig(existing) ? existing : null
-  if (foreign) {
-    // Keep one copy of what they had before we first touched it, and say so once —
-    // every later run is steady state and should stay quiet.
-    const backupPath = `${configPath}.lf-backup`
-    if (!existsSync(backupPath)) {
-      writeFileSync(backupPath, readFileSync(configPath, 'utf8'))
-      consola.warn(
-        `${configPath} was not generated by lf — adding the LenserFight plugin to it and leaving the ` +
-          `rest intact (original saved to ${backupPath}). Use --force to replace it entirely.`,
-      )
-    }
-  }
-  const config = foreign ? mergeLfConfig(foreign, pluginPath, mcp) : buildLfConfig(pluginPath, mcp)
-  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n')
+  const config = existing ? mergeLfConfig(existing, mcp) : buildLfConfig(mcp)
+  if (config) writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n')
   consola.info(
     `${c.brandGold('LenserFight')} assist ready — lens run, battle create, and ${tools.length} other lf ` +
       `command(s) available as tools${mcp ? ', mcp: ' + Object.keys(mcp).join(', ') : ''}. Destructive ` +
@@ -164,20 +144,18 @@ export async function runAssist(opts: RunAssistOptions = {}): Promise<void> {
       'what the agent does before trusting it.',
   )
 
-  const { command, args: prefixArgs } = resolveAssistBinary()
-  const child = spawn(command, [...prefixArgs, ...(opts.passthroughArgs ?? [])], {
+  const child = spawn(assistBinary, opts.passthroughArgs ?? [], {
     stdio: 'inherit',
     cwd: projectDir,
-    env: { ...process.env, LF_OPENCODE_MANIFEST_PATH: manifestPath },
-    shell: isWindows,
+    env: { ...process.env, LF_ASSIST_MANIFEST_PATH: manifestPath },
   })
   await new Promise<void>((resolvePromise) => {
-    // A spawn failure (runtime missing, npx unavailable) emits 'error' and never
-    // 'exit' — without this handler the CLI waits on that promise forever.
+    // A spawn failure emits 'error' and never 'exit' — without this handler
+    // the CLI waits on that promise forever.
     child.on('error', (err) => {
       consola.error(
-        `Could not launch the assist runtime via '${command}': ${err.message}\n` +
-          'Install it once with `npm install -g opencode-ai`, then re-run `lf assist`.',
+        `Could not launch the bundled assist runtime: ${err.message}\n` +
+          'Try reinstalling @lenserfight/cli, or rebuild it with `pnpm nx run cli:build`.',
       )
       process.exitCode = 7
       resolvePromise()
@@ -198,7 +176,7 @@ export default defineCommand({
     force: {
       type: 'boolean',
       default: false,
-      description: 'Replace .opencode/opencode.json entirely instead of updating it in place.',
+      description: 'Replace .lenserfight/lenserfight.json entirely instead of updating it in place.',
     },
   },
   async run({ args, rawArgs }) {

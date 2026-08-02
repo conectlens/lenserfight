@@ -316,11 +316,12 @@ session with every `lf` command available to it as a tool, including `lens run` 
 `battle create` (backed directly by their RPCs) and one generic tool per other command
 (shelled out to the real `lf` binary, so every command keeps its own `--confirm`/safety gate
 exactly as it behaves from a terminal). It also picks up this project's `.mcp.json` server
-config when one is present.
+config when one is present. Requires you to be logged in (`lf auth login`, or
+`LENSERFIGHT_API_KEY` set) — same as every other authenticated `lf` command.
 
 ```bash
 lf              # same as `lf assist`
-lf assist --force  # regenerate .opencode/opencode.json from a previous run
+lf assist --force  # regenerate .lenserfight/lenserfight.json from a previous run
 ```
 
 Destructive commands (`kill-switch`, `dark-launch`, `db reset`, etc.) are available to the

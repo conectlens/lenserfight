@@ -26,7 +26,7 @@ export interface OpencodeToolAdapterV1 {
 }
 
 export interface OpencodeToolMetadata {
-  /** Short human-readable description surfaced to the LLM and in `lf opencode` listings. */
+  /** Short human-readable description surfaced to the LLM and in `lf assist` listings. */
   description: string
   /** Name of the LenserFight MCP tool this adapter mirrors, for traceability. */
   mirrorsMcpTool: string

@@ -279,7 +279,8 @@ session with every `lf` command available to it as a tool: `lens run` and `battl
 backed directly by their RPCs, and every other command (including destructive ones like
 `kill-switch`, `dark-launch`, and `db reset`) is available too, each keeping its own
 `--confirm`/safety gate exactly as it behaves from a terminal. It also picks up this project's
-`.mcp.json` server config when one is present:
+`.mcp.json` server config when one is present. Like every other authenticated `lf` command, it
+requires you to be logged in first (`lf auth login`, or `LENSERFIGHT_API_KEY` set):
 
 ```bash
 lf
@@ -287,10 +288,10 @@ lf
 lf assist
 ```
 
-This generates `.opencode/opencode.json` in the current directory. Re-running is safe: a config
-`lf` generated is refreshed in place, and a config you wrote yourself is merged into — your
-settings are kept, the LenserFight plugin is added, and the original is saved alongside it as
-`opencode.json.lf-backup`. Pass `--force` to replace the file outright instead. Review what the
+`lf`'s commands are built into the assist runtime natively — no plugin file or config entry is
+needed for them. If this project has an `.mcp.json`, its servers are written into
+`.lenserfight/lenserfight.json`, merged additively with anything already there (your own settings
+always win on collision). Pass `--force` to replace that file outright instead. Review what the
 agent does before trusting it with destructive commands.
 
 ---

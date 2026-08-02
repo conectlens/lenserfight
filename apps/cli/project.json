@@ -64,20 +64,20 @@
     "build": {
       "executor": "nx:run-commands",
       "cache": true,
-      "dependsOn": [{ "target": "bundle-plugin", "projects": ["adapters-opencode"] }],
+      "dependsOn": [{ "target": "build", "projects": ["vendor-opencode"] }],
       "outputs": ["{workspaceRoot}/dist/apps/cli"],
       "options": {
         "parallel": false,
         "commands": [
           "pnpm nx run cli:build-app:production",
-          "node tools/cli-release/copy-plugin.mjs"
+          "node tools/cli-release/copy-assist-runtime.mjs"
         ]
       },
       "configurations": {
         "development": {
           "commands": [
             "pnpm nx run cli:build-app:development",
-            "node tools/cli-release/copy-plugin.mjs"
+            "node tools/cli-release/copy-assist-runtime.mjs"
           ]
         },
         "production": {}

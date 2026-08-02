@@ -39,7 +39,7 @@ jest.mock('../main', () => ({
   },
 }))
 
-import { buildCliToolManifest, CLI_TOOL_DENYLIST } from './opencode-tool-bridge'
+import { buildCliToolManifest, CLI_TOOL_DENYLIST } from './cli-tool-bridge'
 
 describe('buildCliToolManifest', () => {
   it('produces one entry per leaf command, including a parent that also has its own run()', async () => {

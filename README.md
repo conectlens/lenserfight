@@ -129,10 +129,15 @@ LenserFight from Claude, Cursor, or another MCP-capable assistant, and the
 │  └─ utils/       Low-level utilities
 ├─ docs/           Documentation content (tutorials, how-to, reference, explanation)
 ├─ examples/       Reference connectors and integration examples
+├─ vendor/         Vendored third-party forks (see each subdirectory's SOURCE.md)
 └─ supabase/       Database schema, migrations, RLS policies, SQL functions, seeds
 ```
 
 Import direction: `apps` → `features` → `data` → `domain`; `features` → `ui`; never reverse.
+
+Building `vendor/opencode` (the `lf assist` runtime) additionally requires
+[Bun](https://bun.sh) — see [`vendor/opencode/SOURCE.md`](vendor/opencode/SOURCE.md). It
+is not needed for any other app in this repo.
 
 ## Documentation
 
