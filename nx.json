@@ -23,12 +23,14 @@
   "plugins": [
     {
       "plugin": "@nx/eslint/plugin",
+      "exclude": ["vendor/**"],
       "options": {
         "targetName": "eslint:lint"
       }
     },
     {
       "plugin": "@nx/vite/plugin",
+      "exclude": ["vendor/**"],
       "options": {
         "buildTargetName": "vite:build",
         "testTargetName": "vite:test",
@@ -43,6 +45,7 @@
     },
     {
       "plugin": "@nx/vitest",
+      "exclude": ["vendor/**"],
       "options": {
         "testTargetName": "test",
         "ciTargetName": "test-ci",
@@ -51,12 +54,14 @@
     },
     {
       "plugin": "@nx/jest/plugin",
+      "exclude": ["vendor/**"],
       "options": {
         "targetName": "test"
       }
     },
     {
       "plugin": "@nx/expo/plugin",
+      "exclude": ["vendor/**"],
       "options": {
         "startTargetName": "start",
         "buildTargetName": "build",

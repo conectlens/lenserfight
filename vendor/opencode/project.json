@@ -1,0 +1,53 @@
+{
+  "name": "vendor-opencode",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "vendor/opencode",
+  "projectType": "application",
+  "tags": ["layer:infra", "scope:shared", "license:shared"],
+  "// note": "Vendored fork of https://github.com/anomalyco/opencode (MIT) — see SOURCE.md and NOTICE.md. Built with Bun, not pnpm/Nx-native — targets shell out to bun.",
+  "targets": {
+    "install": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/package.json", "{projectRoot}/bun.lock"],
+      "outputs": ["{projectRoot}/node_modules"],
+      "options": {
+        "command": "bun install",
+        "cwd": "vendor/opencode"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["install"],
+      "options": {
+        "command": "bun run --cwd packages/opencode typecheck",
+        "cwd": "vendor/opencode"
+      }
+    },
+    "sync-lf-plugin": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": [{ "target": "bundle-plugin", "projects": ["adapters-opencode"] }],
+      "inputs": ["{workspaceRoot}/dist/libs/adapters/opencode-plugin/lf-plugin.js"],
+      "outputs": ["{projectRoot}/packages/opencode/src/plugin/lenserfight/lf-plugin.generated.js"],
+      "options": {
+        "command": "cp dist/libs/adapters/opencode-plugin/lf-plugin.js vendor/opencode/packages/opencode/src/plugin/lenserfight/lf-plugin.generated.js"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["install", "sync-lf-plugin"],
+      "outputs": ["{projectRoot}/packages/opencode/dist"],
+      "options": {
+        "command": "bun run --cwd packages/opencode script/build.ts --single --skip-embed-web-ui",
+        "cwd": "vendor/opencode"
+      },
+      "configurations": {
+        "release": {
+          "command": "bun run --cwd packages/opencode script/build.ts --skip-embed-web-ui"
+        }
+      }
+    }
+  }
+}

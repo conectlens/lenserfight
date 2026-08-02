@@ -18,7 +18,8 @@
         "main": "libs/adapters/opencode/src/lib/lf-plugin.ts",
         "tsConfig": "libs/adapters/opencode/tsconfig.lib.json",
         "generatePackageJson": false,
-        "thirdParty": true
+        "thirdParty": true,
+        "external": ["@opencode-ai/plugin"]
       }
     }
   }
