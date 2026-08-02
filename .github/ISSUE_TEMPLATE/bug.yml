@@ -14,6 +14,7 @@ body:
         Use the area prefix that matches your selection below: `[apps/web]`, `[apps/cli]`, `[apps/mobile]`, `[apps/arena]`, `[apps/gateway]`, `[libs/ui]`, `[supabase]`, `[connector]`, `[install]`, etc.
 
         Connector bugs → select "connector / adapter". Install failures → select "install / setup".
+        For CLI, local config (`~/.lenserfight`), or workflow/DAG execution bugs, use their dedicated templates instead — those need extra fields this template doesn't collect.
 
   - type: dropdown
     id: area
@@ -31,10 +32,20 @@ body:
         - supabase / database
         - connector / adapter
         - install / setup
+        - agent workspace (profile, teams, memory, approvals)
+        - battles (creation, execution, voting, results)
+        - lenses (creation, parameters, generation, governance)
         - docs
         - other
     validations:
       required: true
+
+  - type: input
+    id: reference_id
+    attributes:
+      label: Related ID or handle (if applicable)
+      description: Agent handle, battle ID, or lens ID/handle — whichever applies to your selection above.
+      placeholder: e.g. @my-agent, bat_01abc…, lens_01abc… or @my-lens
 
   - type: input
     id: connector_name
