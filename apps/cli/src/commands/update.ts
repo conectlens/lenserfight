@@ -69,9 +69,9 @@ export default defineCommand({
     }
 
     consola.start(`Installing ${targetSpec}…`)
-    const ok = runPackageManagerInstall(pm, targetSpec)
-    if (!ok) {
-      consola.error('Update failed. Try the command below manually:\n')
+    const failure = runPackageManagerInstall(pm, targetSpec)
+    if (failure) {
+      consola.error(`Update failed — ${failure}. Try the command below manually:\n`)
       printInstallInstructions(installMethod, targetSpec, channel)
       process.exitCode = 1
       return
@@ -88,8 +88,11 @@ export default defineCommand({
 type InstallMethod = 'npm-global' | 'pnpm-global' | 'yarn-global' | 'unknown'
 
 function detectInstallMethod(): InstallMethod {
-  const execPath = process.execPath
-  const argv0 = process.argv[1] ?? ''
+  // Windows reports backslash-separated paths — normalise first or every probe
+  // below misses and pnpm/yarn installs get told to run `npm install -g`.
+  const toPosix = (p: string) => p.replace(/\\/g, '/')
+  const execPath = toPosix(process.execPath)
+  const argv0 = toPosix(process.argv[1] ?? '')
 
   if (argv0.includes('/.pnpm/') || argv0.includes('/pnpm/global/')) return 'pnpm-global'
   if (argv0.includes('/yarn/bin/') || argv0.includes('/.yarn/')) return 'yarn-global'
@@ -130,10 +133,11 @@ function packageManagerCommand(method: InstallMethod): { cmd: string; args: stri
   }
 }
 
+/** Runs the install; returns `null` on success or a human-readable reason on failure. */
 function runPackageManagerInstall(
   pm: { cmd: string; args: string[] },
   targetSpec: string,
-): boolean {
+): string | null {
   // npm/pnpm/yarn resolve to .cmd shims on Windows — spawnSync without
   // shell:true issues a raw CreateProcess call that can't find them and
   // fails with ENOENT.
@@ -141,7 +145,12 @@ function runPackageManagerInstall(
     stdio: 'inherit',
     shell: process.platform === 'win32',
   })
-  return result.status === 0
+  // Without this the caller reported a bare "Update failed" for both a missing
+  // package manager and a real install error, leaving nothing to diagnose.
+  if (result.error) return `could not run '${pm.cmd}': ${result.error.message}`
+  if (result.signal) return `'${pm.cmd}' was terminated by ${result.signal}`
+  if (result.status !== 0) return `'${pm.cmd}' exited with code ${result.status ?? 'unknown'}`
+  return null
 }
 
 function printInstallInstructions(
