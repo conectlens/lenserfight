@@ -7,9 +7,11 @@ import { formatCount } from '@lenserfight/utils/number'
 interface TagHeaderProps {
   tag: TagUsage
   totalItems: number // Items currently visible/fetched
+  /** Rendered to the right of the ray title. */
+  actions?: React.ReactNode
 }
 
-export const TagHeader: React.FC<TagHeaderProps> = ({ tag, totalItems }) => {
+export const TagHeader: React.FC<TagHeaderProps> = ({ tag, totalItems, actions }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 mb-6 shadow-sm relative overflow-hidden transition-colors">
       {/* Decorative Background Element */}
@@ -21,13 +23,14 @@ export const TagHeader: React.FC<TagHeaderProps> = ({ tag, totalItems }) => {
         </div>
 
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex flex-wrap items-center gap-3 mb-2">
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white capitalize tracking-tight">
               {tag.name}
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold uppercase tracking-wider">
               Topic
             </span>
+            {actions && <div className="ml-auto">{actions}</div>}
           </div>
 
           <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl leading-relaxed mb-4">

@@ -15,9 +15,15 @@ import { LensCard } from '@lenserfight/features/lenses'
 interface TagContentGridProps {
   items: TaggedContentItem[]
   loading: boolean
+  /** Call to action shown when the ray has no content yet. */
+  emptyStateActions?: React.ReactNode
 }
 
-export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }) => {
+export const TagContentGrid: React.FC<TagContentGridProps> = ({
+  items,
+  loading,
+  emptyStateActions,
+}) => {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -33,8 +39,9 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
       <div className="text-center py-20 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50">
         <p className="text-gray-500 dark:text-gray-400 font-medium text-lg">No results found.</p>
         <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-          Try adjusting your filters or check back later.
+          Try adjusting your filters, or start this ray off yourself.
         </p>
+        {emptyStateActions && <div className="mt-6">{emptyStateActions}</div>}
       </div>
     )
   }

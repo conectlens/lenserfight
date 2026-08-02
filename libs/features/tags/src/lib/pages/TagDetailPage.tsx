@@ -1,9 +1,12 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
+import { CreateLensModal, useCreateLens } from '@lenserfight/features/lenses'
+import { CreateThreadModal } from '@lenserfight/features/threads'
 import { HelpButton, SEOHead } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
 import { TagContentGrid } from '../components/TagContentGrid'
+import { TagCreateActions } from '../components/TagCreateActions'
 import { TagFilterBar } from '../components/TagFilterBar'
 import { TagHeader } from '../components/TagHeader'
 import { useTagDetailController } from '../hooks/useTagDetailController'
@@ -15,6 +18,33 @@ export const TagDetailPage: React.FC = () => {
 
   const { tag, items, loading, hasNextPage, fetchNextPage, filter, setFilter, sort, setSort, availableFilters } =
     useTagDetailController(slug)
+
+  const [isThreadOpen, setThreadOpen] = React.useState(false)
+  const {
+    isOpen: isLensOpen,
+    openModal: openLensModal,
+    closeModal: closeLensModal,
+    form: lensForm,
+    isSubmitting: isLensSubmitting,
+    error: lensError,
+    submit: submitLens,
+  } = useCreateLens()
+
+  // Both entry points (empty state and ray title) drive the same modals, so
+  // the two placements can never fall out of sync.
+  const createActions = (placement: 'header' | 'empty') => (
+    <TagCreateActions
+      placement={placement}
+      onCreateThread={() => setThreadOpen(true)}
+      onCreateLens={() => openLensModal()}
+    />
+  )
+
+  const handleCreated = useCallback(() => {
+    setThreadOpen(false)
+    // The controller owns fetching; re-running it surfaces the new item.
+    fetchNextPage()
+  }, [fetchNextPage])
 
   useEffect(() => {
     if (tag) {
@@ -45,7 +75,11 @@ export const TagDetailPage: React.FC = () => {
 
       {/* Header Block */}
       {tag ? (
-        <TagHeader tag={tag} totalItems={items.length} />
+        <TagHeader
+          tag={tag}
+          totalItems={items.length}
+          actions={!loading && items.length > 0 ? createActions('header') : undefined}
+        />
       ) : (
         <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse mb-8"></div>
       )}
@@ -64,7 +98,11 @@ export const TagDetailPage: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <TagContentGrid items={items} loading={loading} />
+      <TagContentGrid
+        items={items}
+        loading={loading}
+        emptyStateActions={createActions('empty')}
+      />
 
       {/* Load More */}
       {!loading && items.length > 0 && (
@@ -83,6 +121,21 @@ export const TagDetailPage: React.FC = () => {
           )}
         </div>
       )}
+
+      <CreateThreadModal
+        isOpen={isThreadOpen}
+        onClose={() => setThreadOpen(false)}
+        onSuccess={handleCreated}
+      />
+
+      <CreateLensModal
+        isOpen={isLensOpen}
+        onClose={closeLensModal}
+        onSubmit={submitLens}
+        form={lensForm}
+        isSubmitting={isLensSubmitting}
+        error={lensError}
+      />
     </div>
   )
 }
