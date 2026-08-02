@@ -4,7 +4,7 @@ import {
   SUPABASE_EDGE_FUNCTIONS_SUFFIX,
   type EffectiveApiMode,
   type LenserfightConfig,
-} from '../config/project-config'
+} from '@lenserfight/cli-client'
 
 /** URLs to probe for the TUI header / service panel. */
 export function getHealthProbeUrls(

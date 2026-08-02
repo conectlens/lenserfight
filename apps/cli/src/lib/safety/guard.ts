@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline'
-import { A, c, sym } from '../../utils/ansi'
-import { isCI, isInteractiveTTY, detectEnvLabel, isProduction } from './env-inspector'
+import { A, c, sym } from '@lenserfight/cli-client'
+import { isCI, isInteractiveTTY, detectEnvLabel, isProduction } from '@lenserfight/cli-client'
 import { writeAuditEntry } from './audit'
 import type { SafetyGateOptions, RiskLevel } from './types'
 

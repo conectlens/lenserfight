@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process'
-import { A, sym } from '../utils/ansi'
+import { A, sym } from '@lenserfight/cli-client'
 import { detectOllama, detectDocker } from '../lib/onboarding/detect'
 import { fetchJourneyState } from '../lib/onboarding/journey'
-import { isAuthenticated } from '../utils/auth'
+import { isAuthenticated } from '@lenserfight/cli-client'
 import { getSuggestions, validateSubcommand } from './dashboard'
 import {
   ROOMS,

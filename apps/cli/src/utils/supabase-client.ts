@@ -1,4 +1,4 @@
-import { resolveConfig as loadConfig } from '../config/project-config';
+import { resolveConfig as loadConfig } from '@lenserfight/cli-client';
 
 let clientModule: typeof import('@supabase/supabase-js') | null = null;
 

@@ -21,7 +21,7 @@ import {
   saveDeveloperToken,
   waitForDeveloperToken,
   waitForSessionLogin,
-} from '../utils/auth';
+} from '@lenserfight/cli-client';
 
 const login = defineCommand({
   meta: {

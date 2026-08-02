@@ -1,8 +1,8 @@
 import { defaultPassphraseProvider, LocalKeyStore } from '@lenserfight/data/local-keys'
 import { AICreationService } from '@lenserfight/infra/ai-creation/sublayer'
 
-import { callEdgeFunction } from '../../utils/api'
-import { getUserInfo } from '../../utils/auth'
+import { callEdgeFunction } from '@lenserfight/cli-client'
+import { getUserInfo } from '@lenserfight/cli-client'
 
 import type {
   AICreationError,

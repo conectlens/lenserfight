@@ -58,6 +58,28 @@ function cfgFromEnv(env: Env): McpServerConfig {
   };
 }
 
+// Mirrors the Node-path fail-fast check in config.ts's getConfig() — a missing
+// Cloudflare secret/var should surface as one clear error, not a generic
+// downstream Supabase client failure on first RPC call.
+const REQUIRED_ENV_KEYS = [
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_ANON_KEY',
+  'SUPABASE_JWT_SECRET',
+] as const;
+
+function validateEnv(env: Env): Response | null {
+  const missing = REQUIRED_ENV_KEYS.filter((key) => !env[key]);
+  if (missing.length === 0) return null;
+  return json(
+    {
+      error: 'server_misconfigured',
+      message: `Missing required env vars: ${missing.join(', ')}`,
+    },
+    500
+  );
+}
+
 // ---------------------------------------------------------------------------
 // CORS
 // ---------------------------------------------------------------------------
@@ -561,11 +583,15 @@ async function handleMcp(req: Request, env: Env, cfg: McpServerConfig): Promise<
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
-    const cfg = cfgFromEnv(env);
 
     if (req.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS });
     }
+
+    const envError = validateEnv(env);
+    if (envError) return withCors(envError);
+
+    const cfg = cfgFromEnv(env);
 
     // Well-known endpoints
     if (url.pathname === '/.well-known/oauth-authorization-server') {

@@ -10,7 +10,8 @@ jest.mock('consola', () => ({
     box: jest.fn(),
   },
 }))
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   callRest: jest.fn(),
   handleError: jest.fn(),
@@ -46,7 +47,7 @@ jest.mock('../lib/data-services/ai-generate', () => ({
 import consola from 'consola'
 import { parseAutomationDocument } from '../utils/automation-objects'
 import { printJson, printTable } from '../utils/output'
-import { callRpc } from '../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 
 const mockParseAutomationDocument = parseAutomationDocument as jest.MockedFunction<typeof parseAutomationDocument>

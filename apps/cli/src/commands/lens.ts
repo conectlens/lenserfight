@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, handleError } from '@lenserfight/cli-client';
 import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate';
 import { markJourneyStep } from '../lib/onboarding/journey';
 import { printTable, printJson, truncate } from '../utils/output';
@@ -431,7 +431,7 @@ const resourceAttach = defineCommand({
 
     try {
       // Create resource row via REST
-      const config = (await import('../config/project-config')).resolveConfig();
+      const config = (await import('@lenserfight/cli-client')).resolveConfig();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         apikey: config.supabaseAnonKey ?? '',
@@ -549,7 +549,7 @@ const lensImport = defineCommand({
       return;
     }
 
-    const { resolveConfig } = await import('../config/project-config');
+    const { resolveConfig } = await import('@lenserfight/cli-client');
     const config = resolveConfig();
 
     const authHeader = config.apiKey

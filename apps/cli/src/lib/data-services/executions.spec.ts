@@ -1,4 +1,5 @@
-jest.mock('../../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   callRest: jest.fn(),
 }))
@@ -7,7 +8,7 @@ jest.mock('./agent-workspace', () => ({
   getHumanActivityFeed: jest.fn(),
 }))
 
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { getHumanActivityFeed } from './agent-workspace'
 import {
   getExecutionPlatformStatus,

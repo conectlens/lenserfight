@@ -4,7 +4,7 @@ import {
   getExecutionPlatformStatus,
   listRecentWorkflowRuns,
 } from '../lib/data-services/executions'
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable, truncate } from '../utils/output'
 import { assertSafe } from '../lib/safety'
 

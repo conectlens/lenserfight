@@ -1,8 +1,9 @@
-jest.mock('../../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
 }))
 
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { getPersonalContentFeed, isContentFeedType } from './content-feed'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>

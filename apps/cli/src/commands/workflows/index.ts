@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
 import { listRecentWorkflowRuns, listWorkflowRuns } from '../../lib/data-services/executions'
-import { handleError } from '../../utils/api'
+import { handleError } from '@lenserfight/cli-client'
 import { printJson, printTable } from '../../utils/output'
 import { makeLifecycleCommand } from '../../utils/lifecycle'
 

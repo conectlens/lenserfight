@@ -1,8 +1,9 @@
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   getEffectiveMode: jest.fn(),
 }))
 
-import { getEffectiveMode } from '../config/project-config'
+import { getEffectiveMode } from '@lenserfight/cli-client'
 import { assertSupabaseLocalForSync } from '../lib/workspace-sync'
 
 const mockGetEffectiveMode = getEffectiveMode as jest.MockedFunction<typeof getEffectiveMode>

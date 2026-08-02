@@ -7,7 +7,7 @@ import {
   loadConfig,
   resolveConfig,
   userPreferencesExist,
-} from '../config/project-config'
+} from '@lenserfight/cli-client'
 import {
   detectCloudApi,
   detectDocker,
@@ -17,8 +17,8 @@ import {
 } from '../lib/onboarding/detect'
 import { byokKeyResolver } from '@lenserfight/providers'
 import { formatCheck, printJson, printSuccess, printWarn, printError } from '../utils/output'
-import { isAuthenticated, getUserInfo } from '../utils/auth'
-import { callRpc } from '../utils/api'
+import { isAuthenticated, getUserInfo } from '@lenserfight/cli-client'
+import { callRpc } from '@lenserfight/cli-client'
 import { CHECK_ID_TO_CODE, type OnboardingErrorCode } from '../lib/onboarding/errors'
 import { checkForUpdate } from '@lenserfight/utils/update-check'
 import { readCliVersion } from '../lib/version'

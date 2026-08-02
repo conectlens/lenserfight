@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { getUserPreferencesPath } from '../config/project-config'
+import { getUserPreferencesPath } from '@lenserfight/cli-client'
 
 export interface AgentWorkspaceContext {
   aiLenserId: string

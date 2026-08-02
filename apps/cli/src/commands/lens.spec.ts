@@ -10,7 +10,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }))
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   handleError: jest.fn(),
 }))
@@ -32,7 +33,7 @@ jest.mock('../lib/data-services/ai-generate', () => ({
 }))
 
 import consola from 'consola'
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 import { printJson } from '../utils/output'
 

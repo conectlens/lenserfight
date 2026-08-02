@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable, truncate } from '../utils/output'
 
 // Mirrors the row shape returned by public.fn_get_moderation_decisions_for_owner.

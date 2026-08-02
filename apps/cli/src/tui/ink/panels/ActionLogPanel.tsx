@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink'
-import { sym } from '../../../utils/ansi'
+import { sym } from '@lenserfight/cli-client'
 import { truncate } from '../../../utils/output'
 import type { ActionLogRow } from '../../dashboard'
 

@@ -1,5 +1,5 @@
 import type { AgentWorkspaceContext } from '../../lib/agent-workspace-context'
-import { A } from '../../utils/ansi'
+import { A } from '@lenserfight/cli-client'
 import { printTable } from '../../utils/output'
 
 export type AgentWorkspaceOp = {

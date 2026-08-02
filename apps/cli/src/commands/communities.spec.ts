@@ -3,16 +3,17 @@ jest.mock('consola', () => ({
   __esModule: true,
   default: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), start: jest.fn(), success: jest.fn() },
 }));
-jest.mock('../utils/api', () => ({ callRpc: jest.fn(), handleError: jest.fn() }));
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
+  callRpc: jest.fn(), handleError: jest.fn(),
+  loadUserConfig: jest.fn(() => ({})),
+  saveUserConfig: jest.fn(),
+  resolveConfig: jest.fn(() => ({ mode: 'local', supabaseUrl: 'http://127.0.0.1:54321', supabaseAnonKey: 'anon' })),
+}))
 jest.mock('../utils/output', () => ({
   printTable: jest.fn(),
   printJson: jest.fn(),
   truncate: (s: string, n: number) => (s.length > n ? s.slice(0, n) + '…' : s),
-}));
-jest.mock('../config/project-config', () => ({
-  loadUserConfig: jest.fn(() => ({})),
-  saveUserConfig: jest.fn(),
-  resolveConfig: jest.fn(() => ({ mode: 'local', supabaseUrl: 'http://127.0.0.1:54321', supabaseAnonKey: 'anon' })),
 }));
 jest.mock('../lib/safety', () => ({
   assertSafe: jest.fn(async (opts: { hasForce?: boolean }) => {
@@ -23,9 +24,9 @@ jest.mock('../lib/safety', () => ({
   }),
 }));
 
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, handleError } from '@lenserfight/cli-client';
 import { printJson } from '../utils/output';
-import { saveUserConfig } from '../config/project-config';
+import { saveUserConfig } from '@lenserfight/cli-client';
 import { assertSafe } from '../lib/safety';
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>;

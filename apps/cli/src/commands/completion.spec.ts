@@ -12,7 +12,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }))
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   callRest: jest.fn(),
   handleError: jest.fn(),

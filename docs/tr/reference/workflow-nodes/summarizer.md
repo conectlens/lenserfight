@@ -9,7 +9,7 @@ description: Yapılandırılmış bir dil modeli kullanarak uzun metni veya belg
 
 Summarizer düğümü, girdi metnini kısaltılmış bir sürüm üretmek amacıyla talimatlı bir dil modeline gönderir. Çıktı biçimi yapılandırılan `format`'a bağlı olarak tutarlı bir paragraf, madde listesi veya tek bir TL;DR cümlesi olabilir. İsteğe bağlı `preserve_entities` bayrağı, modeli adlandırılmış varlıkları (kişiler, kuruluşlar, ürünler, tarihler) korumaya yönlendirir.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Summarizer (EN)](../../en/reference/workflow-nodes/summarizer)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Summarizer (EN)](../../../en/reference/workflow-nodes/summarizer.md)
 
 ## Yapılandırma
 

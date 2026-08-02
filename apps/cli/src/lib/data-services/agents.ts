@@ -2,7 +2,7 @@
  * CLI data facade — mirrors `agentsService` RPC contracts.
  */
 import type { AgentActionLogRecord } from '@lenserfight/types'
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 
 /** Per-agent action log history (`fn_list_agent_action_logs`). */
 export async function getActionLogs(

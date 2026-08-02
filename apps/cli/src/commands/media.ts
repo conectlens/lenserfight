@@ -2,9 +2,9 @@ import { writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable } from '../utils/output'
-import { resolveConfig as resolveBaseConfig } from '../config/project-config'
+import { resolveConfig as resolveBaseConfig } from '@lenserfight/cli-client'
 
 // Phase AK — `lf media` surface
 //

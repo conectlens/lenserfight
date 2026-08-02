@@ -1,4 +1,5 @@
-jest.mock('./api', () => ({ callRpc: jest.fn() }))
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'), callRpc: jest.fn() }))
 jest.mock('./output', () => ({
   printJson: jest.fn(),
   printTable: jest.fn(),
@@ -14,7 +15,7 @@ jest.mock('citty', () => ({
   defineCommand: jest.fn(),
 }))
 
-import { callRpc } from './api'
+import { callRpc } from '@lenserfight/cli-client'
 import { printJson, printTable } from './output'
 import { runLifecycleAction } from './lifecycle'
 

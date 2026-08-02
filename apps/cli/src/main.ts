@@ -1,7 +1,7 @@
 import { defineCommand, runMain } from 'citty'
 import consola from 'consola'
-import { getEffectiveMode } from './config/project-config'
-import { setExecContext, getExecContext } from './lib/exec-context'
+import { getEffectiveMode } from '@lenserfight/cli-client'
+import { setExecContext, getExecContext } from '@lenserfight/cli-client'
 import { readCliVersion } from './lib/version'
 
 // Parse --local and --debug before citty takes over so they activate even

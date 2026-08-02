@@ -148,6 +148,17 @@
       "options": {
         "passWithNoTests": true
       }
+    },
+    "test-ink": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/coverage/apps/cli-ink"],
+      "options": {
+        "cwd": "apps/cli",
+        "command": "jest --config jest.ink.config.mjs --passWithNoTests",
+        "env": {
+          "NODE_OPTIONS": "--experimental-vm-modules"
+        }
+      }
     }
   }
 }

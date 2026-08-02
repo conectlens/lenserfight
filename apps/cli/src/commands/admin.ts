@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printTable, printJson } from '../utils/output'
-import { c } from '../utils/ansi'
+import { c } from '@lenserfight/cli-client'
 
 // ---------------------------------------------------------------------------
 // lf admin vote-anomalies

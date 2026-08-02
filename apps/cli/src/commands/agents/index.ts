@@ -9,8 +9,8 @@ import {
 import { getActionLogs, killAgentWorkers } from '../../lib/data-services'
 import { ADAPTER_TYPES, USERNAME_RE, normalizeUsername, resolveAiLenserIdFromIdentifier } from '../../lib/lenser-catalog'
 import { assertSafe } from '../../lib/safety'
-import { callRpc, handleError } from '../../utils/api'
-import { A, sym } from '../../utils/ansi'
+import { callRpc, handleError } from '@lenserfight/cli-client'
+import { A, sym } from '@lenserfight/cli-client'
 import { printJson, printTable, slugify, truncate } from '../../utils/output'
 import { printAgentWorkspaceOperations } from './workspace-ops'
 

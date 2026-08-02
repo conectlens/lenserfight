@@ -11,18 +11,17 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }));
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   callRest: jest.fn(),
   handleError: jest.fn(),
-}));
+  resolveConfig: jest.fn(() => ({ defaultAdapterId: '', authToken: '' })),
+}))
 jest.mock('../utils/output', () => ({
   printTable: jest.fn(),
   printJson: jest.fn(),
   truncate: (s: string, n: number) => (s.length > n ? s.slice(0, n) + '…' : s),
-}));
-jest.mock('../config/project-config', () => ({
-  resolveConfig: jest.fn(() => ({ defaultAdapterId: '', authToken: '' })),
 }));
 jest.mock('@lenserfight/providers', () => ({
   getAdapter: jest.fn(),
@@ -32,7 +31,7 @@ jest.mock('@lenserfight/providers', () => ({
 }));
 
 import consola from 'consola';
-import { callRpc, callRest } from '../utils/api';
+import { callRpc, callRest } from '@lenserfight/cli-client';
 import { byokKeyResolver, getAdapter, getStreamAdapter } from '@lenserfight/providers';
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>;

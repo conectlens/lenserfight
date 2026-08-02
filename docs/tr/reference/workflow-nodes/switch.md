@@ -9,7 +9,7 @@ description: Bir değer veya ifade eşleşmesine göre workflow yürütmesini bi
 
 `switch` düğümü, gelen veriye karşı bir ifade değerlendirir ve bu veriyi eşleşen çıktı portuna ileterek birden fazla yol üzerinde koşullu dallanmayı sağlar. `if_condition`'ın çok dallı eşdeğeridir: `if_condition` ikili doğru/yanlış bölünmelerini ele alırken `switch` üç veya daha fazla farklı sonucu işler.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Switch (EN)](../../en/reference/workflow-nodes/switch)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Switch (EN)](../../../en/reference/workflow-nodes/switch.md)
 
 ## Yapılandırma
 

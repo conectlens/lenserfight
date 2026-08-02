@@ -3,7 +3,7 @@ import consola from 'consola'
 
 import { type ToolFrontmatter } from '@lenserfight/types'
 
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { parseAutomationDocument } from '../utils/automation-objects'
 import { printJson, printTable, truncate } from '../utils/output'
 

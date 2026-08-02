@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import consola from 'consola'
-import { getEffectiveMode } from '../config/project-config'
-import { callRpc } from '../utils/api'
+import { getEffectiveMode } from '@lenserfight/cli-client'
+import { callRpc } from '@lenserfight/cli-client'
 import type { AutomationObjectKind } from '@lenserfight/types'
 import {
   exportAutomationObject,

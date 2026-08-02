@@ -1,7 +1,8 @@
 jest.mock('node:child_process', () => ({
   execSync: jest.fn(),
 }))
-jest.mock('../../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   resolveConfig: jest.fn(),
 }))
 

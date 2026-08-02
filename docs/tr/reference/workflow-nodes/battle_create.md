@@ -9,7 +9,7 @@ description: LenserFight'ta yeni bir battle oluşturur ve ID'sini ile başlangı
 
 Battle Create düğümü, bir workflow çalışmasının parçası olarak LenserFight battle'ını programatik olarak oluşturur. Battle oluşturma sihirbazından ayarlanabilen tüm alanlar burada mevcuttur; bu sayede zamanlamalar, webhook'lar veya yukarı akış mantığından battle'lar başlatan tam otomatik ardışık düzenler oluşturmak mümkündür.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Battle Create (EN)](../../en/reference/workflow-nodes/battle_create)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Battle Create (EN)](../../../en/reference/workflow-nodes/battle_create.md)
 
 ## Yapılandırma
 

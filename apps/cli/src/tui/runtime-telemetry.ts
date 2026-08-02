@@ -1,7 +1,7 @@
 import os from 'node:os'
 import { execFile } from 'node:child_process'
-import { A, sym } from '../utils/ansi'
-import { getEffectiveMode, resolveConfig } from '../config/project-config'
+import { A, sym } from '@lenserfight/cli-client'
+import { getEffectiveMode, resolveConfig } from '@lenserfight/cli-client'
 import { getHealthProbeUrls, probeHealthUrls } from '../lib/health-probe'
 
 // ── Mode ──────────────────────────────────────────────────────────────────────

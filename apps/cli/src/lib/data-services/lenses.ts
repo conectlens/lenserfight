@@ -1,7 +1,7 @@
 /**
  * CLI data facade — mirrors `lensesService.getPersonalFeed` / `lensesRepository`.
  */
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 
 export type PersonalLensFeedRow = {
   id: string

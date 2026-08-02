@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, callRest, handleError } from '../utils/api';
+import { callRpc, callRest, handleError } from '@lenserfight/cli-client';
 import { printTable, printJson, truncate } from '../utils/output';
 import { runLifecycleAction, type CliLifecycleAction } from '../utils/lifecycle';
 import {

@@ -115,7 +115,7 @@ jobs:
             On GitHub you act as the `lenserfighter[bot]` GitHub App.
 
             Your single source of behavior is the persona file
-            `.lenserfight/lensers/lenserfighter/LENSER.MD`. Read it first and follow it exactly.
+            `.lenserfight/lensers/lenserfighter/SKILL.md`. Read it first and follow it exactly.
 
             This run's focus is: ${{ steps.focus.outputs.focus }}
             Optional operator instruction (may be empty): ${{ inputs.task }}

@@ -1,5 +1,5 @@
 import consola from 'consola';
-import { A, sym } from './ansi';
+import { A, sym } from '@lenserfight/cli-client';
 
 export type CheckStatus = 'pass' | 'warn' | 'fail' | 'skip'
 

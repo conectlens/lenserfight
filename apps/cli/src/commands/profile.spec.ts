@@ -10,7 +10,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }))
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   callRest: jest.fn(),
   handleError: jest.fn(),
@@ -129,7 +130,7 @@ describe('profile delete', () => {
     readdirMock.mockResolvedValueOnce(['default.json'])
     readFileMock.mockResolvedValueOnce('default\n') // .active
 
-    const { handleError } = await import('../utils/api')
+    const { handleError } = await import('@lenserfight/cli-client')
     const mockHandleError = handleError as jest.MockedFunction<typeof handleError>
 
     const cmd = await getSubCmd('delete')

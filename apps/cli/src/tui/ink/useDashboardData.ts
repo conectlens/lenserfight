@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getActiveProfileName } from '../../utils/profiles'
 import { probeBackendHealth } from '../../lib/health-probe'
 import { formatAgentWorkspaceBanner } from '../../commands/agents'
-import { stripAnsi } from '../../utils/ansi'
+import { stripAnsi } from '@lenserfight/cli-client'
 import { fetchRecentLogs, type ActionLogRow } from '../dashboard'
 
 export interface DashboardData {

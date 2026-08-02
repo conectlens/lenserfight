@@ -9,7 +9,7 @@ description: Bir veya daha fazla hakem çalışmasından gelen puanları toplar 
 
 Score Aggregator düğümü, bir battle için tüm değerlendirme kayıtlarını — tek bir `judge_battle` düğümü veya birden fazla bağımsız hakem çalışmasıyla üretilmiş olsun — okur ve kriter başına, yarışmacı başına puanları yarışmacı başına tek bir toplam puana indirger. Elde edilen lider tablosu veritabanındaki battle kaydına geri yazılır ve aşağı akışa yayılır.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Score Aggregator (EN)](../../en/reference/workflow-nodes/score_aggregator)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Score Aggregator (EN)](../../../en/reference/workflow-nodes/score_aggregator.md)
 
 ## Yapılandırma
 
