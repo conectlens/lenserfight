@@ -138,8 +138,57 @@ describe('update', () => {
       rawArgs: [],
     })
 
-    expect(consolaError).toHaveBeenCalled()
+    expect(consolaError).toHaveBeenCalledWith(expect.stringContaining("'npm' exited with code 1"))
     expect(process.exitCode).toBe(1)
+    writeSpy.mockRestore()
+  })
+
+  it('reports why the package manager could not be launched', async () => {
+    // The Windows failure mode: npm.cmd is not spawnable, so spawnSync returns an
+    // `error` with a null status. A bare "Update failed" left nothing to diagnose.
+    mockCheckForUpdate.mockResolvedValue({
+      current: '0.2.0',
+      latest: '0.3.0',
+      hasUpdate: true,
+    } as never)
+    mockSpawnSync.mockReturnValue({
+      status: null,
+      error: new Error('spawnSync npm ENOENT'),
+    } as never)
+    const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
+
+    await updateCmd.run?.({
+      args: { check: false, instructions: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(consolaError).toHaveBeenCalledWith(expect.stringContaining('ENOENT'))
+    expect(mockInvalidateUpdateCache).not.toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+    writeSpy.mockRestore()
+  })
+
+  it('detects a pnpm global install from a Windows backslash path', async () => {
+    mockCheckForUpdate.mockResolvedValue({
+      current: '0.2.0',
+      latest: '0.3.0',
+      hasUpdate: true,
+    } as never)
+    process.argv[1] = 'C:\\Users\\x\\AppData\\Local\\pnpm\\global\\5\\node_modules\\@lenserfight\\cli\\main.js'
+    const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
+
+    await updateCmd.run?.({
+      args: { check: false, instructions: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockSpawnSync).toHaveBeenCalledWith(
+      'pnpm',
+      ['add', '-g', '@lenserfight/cli@latest'],
+      expect.anything(),
+    )
     writeSpy.mockRestore()
   })
 
