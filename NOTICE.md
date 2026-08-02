@@ -19,15 +19,8 @@ transitive package; run `pnpm licenses list` for the full dependency tree.
 | [Supabase](https://github.com/supabase/supabase) (`@supabase/supabase-js`) | MIT / Apache-2.0 | Database, auth, storage, edge functions |
 | [Zod](https://github.com/colinhacks/zod) | MIT | Schema validation |
 | [Model Context Protocol SDK](https://github.com/modelcontextprotocol/typescript-sdk) | MIT | `apps/mcp-server` |
+| [OpenCode](https://github.com/sst/opencode) (`@opencode-ai/plugin`) | MIT | Plugin bridge exposing `lf` commands to OpenCode (`libs/adapters/opencode`, `apps/cli`) |
 | [ESLint](https://github.com/eslint/eslint), [Prettier](https://github.com/prettier/prettier), [Jest](https://github.com/jestjs/jest), [Vitest](https://github.com/vitest-dev/vitest) | MIT | Lint, format, test |
-
-## Planned integrations (not yet part of this codebase)
-
-- **[OpenCode](https://github.com/anomalyco/opencode)** (MIT) — a terminal AI coding agent.
-  Integration into `apps/cli` is planned but not yet implemented. Once code from that project is
-  vendored or adapted into this repository, its copyright notice and MIT license text will be
-  added here and to the relevant source files, per the terms of its license. Nothing from OpenCode
-  is present in this codebase as of this notice.
 
 ## Trademarks
 
