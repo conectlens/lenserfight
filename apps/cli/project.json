@@ -104,8 +104,17 @@
         }
       }
     },
+    "copy-plugin": {
+      "dependsOn": ["build", { "target": "bundle-plugin", "projects": ["adapters-opencode"] }],
+      "cache": true,
+      "outputs": ["{workspaceRoot}/dist/apps/cli/lf-plugin.js"],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/cli-release/copy-plugin.mjs"
+      }
+    },
     "strip-package-manager": {
-      "dependsOn": ["build"],
+      "dependsOn": ["copy-plugin"],
       "executor": "nx:run-commands",
       "options": {
         "command": "node -e \"const fs=require('fs'),p='dist/apps/cli/package.json',j=JSON.parse(fs.readFileSync(p,'utf8'));delete j.packageManager;fs.writeFileSync(p,JSON.stringify(j,null,2)+'\\n');\""
