@@ -29,6 +29,10 @@ function cliBinaryPath(): string {
 
 function findPluginBundle(): string | null {
   const candidates = [
+    // Published/installed layout (npm, npx, global install): lf-plugin.js
+    // ships as a sibling of main.js — see apps/cli/project.json's
+    // `copy-plugin` target and package.json's `files` array.
+    resolve(dirname(cliBinaryPath()), 'lf-plugin.js'),
     // Monorepo dist layout: dist/apps/cli/main.js -> dist/libs/adapters/opencode-plugin/
     resolve(dirname(cliBinaryPath()), '../../libs/adapters/opencode-plugin/lf-plugin.js'),
     // Nx workspace dev layout, resolved from cwd.
