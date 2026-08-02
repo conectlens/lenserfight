@@ -94,6 +94,7 @@ Non-conventional commits produce "version bump only" changelogs. Every user-faci
 - Run tasks via `pnpm nx run/run-many/affected`. Never guess flags — use `nx_docs` or `--help`.
 - Scaffold: invoke `nx-generate` skill first. Explore: invoke `nx-workspace` skill first.
 - Plugin docs: `node_modules/@nx/<plugin>/PLUGIN.md` (skip if missing).
+- `nx_docs`: use for advanced config, migrations, edge cases. Skip for basic commands.
 
 # Operating Model
 Instructions: `AGENTS.md` · Runtime: `.codex/config.toml` · Roles: `.codex/agents/*.toml` · Skills: `.agents/skills/*` `.claude/skills/*` `.gemini/skills/*`
@@ -107,6 +108,8 @@ Prefer existing skills before inventing workflows. Keep changes minimal, local, 
 **Stack:** Nx monorepo · `apps/web` entry · `supabase/` DB · Supabase backend.
 
 **Layers (low→high):** `domain` → `api` → `data` → `features` · `infra` · `providers` | cross-cut: `shared` `types` `ui` `utils`
+
+**Rules:** Respect Nx boundaries · no domain logic in UI/routes · RLS-first Supabase · assess migration blast radius · edit existing libs before creating · placement before implementation.
 
 **Mobile env:** No `import.meta.env` in Metro/Hermes. Use `process.env.EXPO_PUBLIC_*`. Add `.native.tsx` stubs for web-only barrel exports.
 
