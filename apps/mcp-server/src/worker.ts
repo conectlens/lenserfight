@@ -9,6 +9,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { buildServer } from './main.js';
 import { buildDiscoveryDocument, buildProtectedResourceDocument } from './oauth/discovery.js';
 import { McpServerConfig } from './config.js';
+import { negotiateProtocolVersion } from './protocol.js';
 
 // ---------------------------------------------------------------------------
 // Environment bindings
@@ -490,7 +491,7 @@ async function handleMcp(req: Request, env: Env, cfg: McpServerConfig): Promise<
       return {
         jsonrpc: '2.0', id,
         result: {
-          protocolVersion: (params?.['protocolVersion'] as string) ?? '2025-06-18',
+          protocolVersion: negotiateProtocolVersion(params?.['protocolVersion']),
           serverInfo: { name: 'lenserfight', version: '1.0.0' },
           capabilities: { tools: { listChanged: false } },
         },
