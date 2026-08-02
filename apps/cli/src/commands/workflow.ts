@@ -4,6 +4,8 @@ import consola from 'consola'
 import { type WorkflowFrontmatter } from '@lenserfight/types'
 
 import { callRpc, handleError } from '@lenserfight/cli-client'
+import { composeWorkflowPayload } from '@lenserfight/api/export-payloads'
+import { cliRpcCaller, runCliExport, writeExportOutput } from '../utils/export-runtime'
 import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate'
 import {
   buildWorkflowSimulationReport,
@@ -553,6 +555,44 @@ const generate = defineCommand({
   },
 })
 
+const exportWorkflow = defineCommand({
+  meta: {
+    name: 'export',
+    description: 'Export a workflow (definition, node/edge graph) as json, yaml, or markdown.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Workflow ID',
+      required: true,
+    },
+    format: {
+      type: 'string',
+      description: 'Output format: json, yaml, or markdown',
+      default: 'markdown',
+    },
+    out: {
+      type: 'string',
+      description: 'Write output to this file instead of stdout',
+    },
+  },
+  async run({ args }) {
+    try {
+      const payload = await composeWorkflowPayload(cliRpcCaller, args.id)
+      const { content } = await runCliExport(
+        'workflow',
+        payload.id,
+        payload.title,
+        payload,
+        args.format as 'json' | 'yaml' | 'markdown'
+      )
+      writeExportOutput(content, args.out || undefined)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 export default defineCommand({
   meta: {
     name: 'workflow',
@@ -564,6 +604,7 @@ export default defineCommand({
     create,
     generate,
     list,
+    export: exportWorkflow,
     status: lifecycleCommand('status', 'Show lifecycle state, pinned state, version snapshot, and delete blockers.'),
     archive: lifecycleCommand('archive', 'Archive a workflow without breaking historical runs or battles.'),
     restore: lifecycleCommand('restore', 'Restore an archived or tombstoned workflow when policy allows it.'),

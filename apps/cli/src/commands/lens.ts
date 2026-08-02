@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '@lenserfight/cli-client';
+import { composeLensPayload } from '@lenserfight/api/export-payloads';
+import { cliRpcCaller, runCliExport, writeExportOutput } from '../utils/export-runtime';
 import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate';
 import { markJourneyStep } from '../lib/onboarding/journey';
 import { printTable, printJson, truncate } from '../utils/output';
@@ -794,6 +796,47 @@ const lifecycleCommand = (action: Parameters<typeof makeLifecycleCommand>[1], de
   makeLifecycleCommand('lens', action, description, 'Lens UUID')
 
 // ---------------------------------------------------------------------------
+// lens export
+// ---------------------------------------------------------------------------
+const lensExport = defineCommand({
+  meta: {
+    name: 'export',
+    description: 'Export a lens (definition, head version, parameters) as json, yaml, or markdown.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Lens ID',
+      required: true,
+    },
+    format: {
+      type: 'string',
+      description: 'Output format: json, yaml, or markdown',
+      default: 'markdown',
+    },
+    out: {
+      type: 'string',
+      description: 'Write output to this file instead of stdout',
+    },
+  },
+  async run({ args }) {
+    try {
+      const payload = await composeLensPayload(cliRpcCaller, args.id);
+      const { content } = await runCliExport(
+        'lens',
+        payload.slug,
+        payload.title,
+        payload,
+        args.format as 'json' | 'yaml' | 'markdown'
+      );
+      writeExportOutput(content, args.out || undefined);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -808,6 +851,7 @@ export default defineCommand({
     resource,
     import: lensImport,
     template: lensTemplate,
+    export: lensExport,
     status: lifecycleCommand('status', 'Show lifecycle state, pinned state, and dependency blockers for a lens.'),
     archive: lifecycleCommand('archive', 'Archive a lens without breaking historical executions or battles.'),
     restore: lifecycleCommand('restore', 'Restore an archived or tombstoned lens when policy allows it.'),
