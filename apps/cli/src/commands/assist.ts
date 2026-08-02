@@ -8,6 +8,7 @@ import consola from 'consola'
 
 import { c } from '@lenserfight/cli-client'
 
+import { isInteractiveTerminal } from '../lib/interactive-terminal'
 import { buildCliToolManifest } from '../lib/opencode-tool-bridge'
 
 // `lf assist` (also the default when `lf`/`lenserfight` is run with no
@@ -79,6 +80,18 @@ export interface RunAssistOptions {
 }
 
 export async function runAssist(opts: RunAssistOptions = {}): Promise<void> {
+  if (!isInteractiveTerminal()) {
+    consola.error(
+      'lf assist needs a real interactive terminal — it launches an OpenCode chat session that reads ' +
+        "keyboard input and renders a live UI. It can't run inside a script, CI job, or an AI agent's " +
+        'built-in command-execution terminal (it will hang on a blank screen instead of failing loudly).\n' +
+        "Run it directly in Terminal.app, iTerm2, Warp, or another terminal you're typing into yourself.\n" +
+        'To drive LenserFight non-interactively, use a specific subcommand instead (e.g. `lf lens run`, ' +
+        '`lf battle create`) or the MCP server integration.',
+    )
+    process.exit(6)
+  }
+
   const pluginPath = findPluginBundle()
   if (!pluginPath) {
     consola.error(
