@@ -1,3 +1,13 @@
+## 1.1.1 (2026-08-02)
+
+### 🩹 Fixes
+
+- **cli:** make plain `nx build cli` produce the opencode plugin bundle ([698214fbf](https://github.com/conectlens/lenserfight/commit/698214fbf))
+
+### ❤️ Thank You
+
+- Lensers
+
 # 1.0.0 (2026-08-02)
 
 ### 🚀 Features
