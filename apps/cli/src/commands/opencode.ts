@@ -6,10 +6,13 @@ import { fileURLToPath } from 'node:url'
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
+import { buildCliToolManifest } from '../lib/opencode-tool-bridge'
+
 // [experimental] `lf opencode` — spawns anomalyco/opencode
 // (https://github.com/anomalyco/opencode) wired up with a LenserFight
-// plugin (lf_lens_run, lf_battle_create — see libs/adapters/opencode) plus
-// this project's existing MCP server config, when present. See
+// plugin (lf_lens_run, lf_battle_create, plus one generic tool per other
+// CLI command — see libs/adapters/opencode and opencode-tool-bridge.ts)
+// plus this project's existing MCP server config, when present. See
 // docs/en/tutorials/getting-started/cli-getting-started.md and
 // ~/.claude/plans/eventual-cooking-sparkle.md (Phase 2) for background.
 
@@ -19,10 +22,14 @@ interface McpServerConfig {
   env?: Record<string, string>
 }
 
+function cliBinaryPath(): string {
+  return fileURLToPath(import.meta.url)
+}
+
 function findPluginBundle(): string | null {
   const candidates = [
     // Monorepo dist layout: dist/apps/cli/main.js -> dist/libs/adapters/opencode-plugin/
-    resolve(dirname(fileURLToPath(import.meta.url)), '../../libs/adapters/opencode-plugin/lf-plugin.js'),
+    resolve(dirname(cliBinaryPath()), '../../libs/adapters/opencode-plugin/lf-plugin.js'),
     // Nx workspace dev layout, resolved from cwd.
     resolve(process.cwd(), 'dist/libs/adapters/opencode-plugin/lf-plugin.js'),
   ]
@@ -77,8 +84,10 @@ export default defineCommand({
   },
   async run({ args, rawArgs }) {
     consola.warn(
-      '`lf opencode` is experimental. It spawns a separate opencode-ai process; see ' +
-        'docs/en/tutorials/getting-started/cli-getting-started.md before relying on it.',
+      '`lf opencode` is experimental. It spawns a separate opencode-ai process, and every other lf ' +
+        'command is exposed to it as a tool — including destructive ones (kill-switch, dark-launch, db ' +
+        'reset, etc). Each keeps its own --confirm/assertSafe gate, but review what the agent does before ' +
+        'trusting it. See docs/en/tutorials/getting-started/cli-getting-started.md.',
     )
 
     const pluginPath = findPluginBundle()
@@ -93,6 +102,7 @@ export default defineCommand({
     const projectDir = process.cwd()
     const opencodeDir = resolve(projectDir, '.opencode')
     const configPath = resolve(opencodeDir, 'opencode.json')
+    const manifestPath = resolve(opencodeDir, 'lf-cli-tools-manifest.json')
 
     if (existsSync(configPath) && !args.force) {
       consola.error(`${configPath} already exists. Re-run with --force to regenerate it.`)
@@ -100,6 +110,10 @@ export default defineCommand({
     }
 
     mkdirSync(opencodeDir, { recursive: true })
+
+    const tools = await buildCliToolManifest()
+    writeFileSync(manifestPath, JSON.stringify({ cliBinaryPath: cliBinaryPath(), tools }, null, 2) + '\n')
+
     const mcp = readMcpConfig(projectDir)
     writeFileSync(
       configPath,
@@ -113,13 +127,17 @@ export default defineCommand({
         2,
       ) + '\n',
     )
-    consola.info(`Generated ${configPath} (lf_lens_run, lf_battle_create${mcp ? ', mcp: ' + Object.keys(mcp).join(', ') : ''})`)
+    consola.info(
+      `Generated ${configPath} — lf_lens_run, lf_battle_create, ${tools.length} lf command(s)` +
+        `${mcp ? ', mcp: ' + Object.keys(mcp).join(', ') : ''}`,
+    )
 
     const { command, args: prefixArgs } = resolveOpencodeBinary()
     const passthroughArgs = rawArgs.filter((a) => a !== '--force')
     const child = spawn(command, [...prefixArgs, ...passthroughArgs], {
       stdio: 'inherit',
       cwd: projectDir,
+      env: { ...process.env, LF_OPENCODE_MANIFEST_PATH: manifestPath },
     })
     child.on('exit', (code) => process.exit(code ?? 0))
   },

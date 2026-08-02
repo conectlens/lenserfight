@@ -36,7 +36,10 @@ async function defaultRun(ctx: { rawArgs?: string[] }) {
   await runDashboard()
 }
 
-const main = defineCommand({
+// Exported (not just invoked below) so `opencode.ts` can import the already-
+// evaluated command tree in-process for introspection — ES modules only
+// evaluate once per process, so this re-import never re-triggers runMain().
+export const main = defineCommand({
   meta: {
     name: 'lenserfight',
     version: readCliVersion(),
