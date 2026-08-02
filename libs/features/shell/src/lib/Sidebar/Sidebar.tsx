@@ -86,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
 
   // All lenser profiles (human + owned AI agents) for workspace switcher
-  const { workspaces, activeWorkspace } = useLenserWorkspace()
+  const { workspaces, activeWorkspace, humanWorkspace } = useLenserWorkspace()
   const { switchToProfile, isSwitching } = useWorkspaceSwitchController()
 
   // Single authoritative source: activeWorkspace (server-authoritative, optimistically updated
@@ -221,6 +221,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       onOpenProfileSetup()
     }
     if (isMobile) onCloseMobile()
+  }
+
+  const handleMyProfileClick = async () => {
+    if (isAIWorkspace && humanWorkspace) {
+      if (isMobile) onCloseMobile()
+      await switchToProfile(humanWorkspace)
+      return
+    }
+
+    handleProfileClick()
   }
 
   const showLabels = isOpen || isMobile
@@ -589,8 +599,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                               onClick={() => {
                                 setIsDropdownOpen(false)
-                                handleProfileClick()
+                                void handleMyProfileClick().catch(() => undefined)
                               }}
+                              disabled={isSwitching}
                             >
                               <User size={16} className="text-gray-400" />
                               My Profile
