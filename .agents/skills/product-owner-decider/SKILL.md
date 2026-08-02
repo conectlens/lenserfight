@@ -1,6 +1,7 @@
 ---
 name: product-owner-decider
 description: The strategic authority for LenserFight. Translates ambiguous requests into product decisions, scope cuts, acceptance criteria, and implementation priorities.
+disable-model-invocation: true
 ---
 
 # Product Owner Decider (Lenser)

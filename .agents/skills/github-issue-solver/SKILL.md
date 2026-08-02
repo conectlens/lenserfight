@@ -29,22 +29,23 @@ Invoke this skill when:
 gh issue view <number> --json title,body,labels,milestone,assignees,comments,url,state,linkedBranches
 ```
 
-Capture:
+Capture and record:
 - Title and full body
 - Labels (bug, feature, security, docs, performance, DX, auth, database, workflow, battle, CLI, mobile, web)
+- Milestone and due date
 - All comments (may contain constraints or partial solutions)
 - Linked PRs or branches
 
 If no issue number is provided, ask the user which issue(s) to target.
 
-### Step 2 — Check for Duplicates
+### Step 2 — Check for Duplicates and Related Work
 
 ```bash
 gh issue list --state all --search "<key terms from title>"
 gh pr list --state all --search "<key terms>"
 ```
 
-If a duplicate exists: comment linking the canonical issue, then stop.
+If a duplicate exists: comment on the issue linking the canonical one, then stop.
 
 ### Step 3 — Repository Exploration
 
@@ -65,7 +66,7 @@ apps/cli/               — CLI if issue is CLI-related
 apps/mobile/            — mobile app if issue is mobile-related
 package.json / pnpm-workspace.yaml — test and build commands
 CLAUDE.md / CONTRIBUTING.md        — coding standards and rules
-.agents/skills/         — available agent skills
+.claude/skills/         — available AI agent skills
 ```
 
 Load relevant skills before implementing:
@@ -82,6 +83,8 @@ Load relevant skills before implementing:
 
 ### Step 4 — Classify the Issue
 
+Determine issue type:
+
 | Type | Detection criteria |
 |------|-------------------|
 | `bug` | Unexpected behavior, crash, incorrect output |
@@ -96,15 +99,17 @@ Load relevant skills before implementing:
 | `mobile` | Mobile app screen, navigation, native |
 | `web` | Web app route, UI, API integration |
 
+A single issue may span multiple types; note all that apply.
+
 ### Step 5 — Identify Root Cause
 
 Before writing any code:
 
-1. Trace data flow from symptom back to origin.
+1. Trace data flow from the issue symptom back to its origin.
 2. Identify which module owns the broken invariant.
-3. Check domain, data, feature, UI, or infra layer.
+3. Check whether the bug is in domain, data, feature, UI, or infra layer.
 4. Confirm whether backend validation is missing (do not enforce only in frontend).
-5. Identify affected tests and whether they catch the bug.
+5. Identify affected tests and whether they currently catch the bug.
 
 State the root cause explicitly before designing a solution.
 
@@ -116,8 +121,8 @@ Rules:
 - Single source of truth: one place owns each business rule
 - Low coupling: changes should not ripple unexpectedly
 - High cohesion: related behavior stays together
-- Information Expert: assign responsibility to the class with the required data
-- Creator: the object that aggregates another creates it
+- Information Expert: assign responsibility to the class/module with the required data
+- Creator: the object that aggregates or uses another creates it
 - Controller: one entry point handles a use case
 - Backend validation: business rules enforced server-side, never frontend-only
 - No duplicated domain logic across layers
@@ -143,7 +148,7 @@ Never work on `main` or `development` directly. See [`docs/en/how-to/contributor
 - Edit only files required to resolve the root cause.
 - No opportunistic refactors.
 - No doc additions unless the behavior change requires them.
-- If schema changes are needed, create a new migration in `supabase/migrations/`.
+- If schema changes are needed, create a new migration file in `supabase/migrations/`.
 - If RLS changes are needed, invoke `supabase-rls-security-reviewer` first.
 - Keep changes auditable: one logical concern per commit.
 
@@ -151,26 +156,47 @@ Never work on `main` or `development` directly. See [`docs/en/how-to/contributor
 
 Load [references/test-discovery-checklist.md](./references/test-discovery-checklist.md).
 
+1. Find existing test commands:
+
 ```bash
-# Discover commands
-pnpm nx show project <project> --json | jq '.targets | keys'
-grep -rE 'nx (test|run|affected)' .github/workflows/
-
-# Smallest scope first
-pnpm nx test <project> --testPathPattern=<spec>
-pnpm nx typecheck <project>
-pnpm nx lint <project>
-
-# If schema/RLS changed
-pnpm supabase test db
-
-# Broader check for critical areas
-pnpm nx affected --target=test --base=origin/development
+# From workspace config
+cat package.json | grep -E '"test|"spec'
+pnpm nx show project <affected-project> --json | jq '.targets | keys'
+# From CI
+cat .github/workflows/*.yml | grep -E 'run:|nx run'
 ```
 
-If no adequate tests exist for the fixed behavior, add them. Do not ship without test coverage.
+2. Run the smallest relevant test set first:
+
+```bash
+pnpm nx test <affected-project> --testPathPattern=<related-spec>
+pnpm nx typecheck <affected-project>
+pnpm nx lint <affected-project>
+```
+
+3. If no adequate tests exist for the fixed behavior, add them. Do not ship without test coverage for the root cause.
+
+4. If the fix touches database logic, run migration/RLS tests:
+
+```bash
+pnpm nx test supabase --testPathPattern=<related>
+# or pgTAP via supabase test db
+```
+
+5. If the fix crosses feature boundaries, run integration tests.
+
+6. Run broader checks if the affected area is critical (auth, billing, RLS, battle engine):
+
+```bash
+pnpm nx affected --target=test --base=origin/development
+pnpm nx affected --target=typecheck --base=origin/development
+```
+
+If tests cannot be run, explain why and what manual verification was done.
 
 ### Step 10 — Commit
+
+Use the `smart-commit` skill for staged changes, or:
 
 ```bash
 git add <specific-files>
@@ -180,12 +206,15 @@ fix(scope): concise imperative description
 Root cause: <one sentence>
 
 Closes #<issue-number>
+
+Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 ```
 
+Rules:
 - Conventional Commits format
-- `Closes #N` only when the PR fully resolves the issue
+- Include `Closes #N` only when the PR fully resolves the issue
 - Never use `--no-verify`
 - Never commit `.env`, secrets, or credentials
 
@@ -198,45 +227,55 @@ gh pr create \
   --title "<type>(scope): short description (fixes #N)" \
   --body "$(cat <<'EOF'
 ## Issue
+
 Closes #<number>
 
 ## Root Cause
+
 <one paragraph>
 
 ## Solution
+
 <one paragraph>
 
 ## Files Changed
+
 - `path/to/file.ts` — what changed and why
 
 ## Tests
+
 - [ ] Existing tests pass
 - [ ] New tests added for: <what>
 - [ ] Typecheck passes
 - [ ] Lint passes
 
 ## Commands Run
+
 \`\`\`bash
-pnpm nx test <project>
+pnpm nx test <project> --testPathPattern=<spec>
 pnpm nx typecheck <project>
 \`\`\`
 
 ## Migration Notes
+
 <!-- If schema changed -->
 
 ## Security Notes
-<!-- If auth/RLS changed -->
+
+<!-- If auth/RLS/data/provider logic changed -->
 
 ## Screenshots
+
 <!-- If UI changed -->
 
 ## Remaining Risks
+
 <!-- Anything not fully addressed -->
 EOF
 )"
 ```
 
-Load [references/pr-template.md](./references/pr-template.md) for the full template.
+Load [references/pr-template.md](./references/pr-template.md) for a full PR body template.
 
 ### Step 12 — Monitor CI
 
@@ -244,7 +283,13 @@ Load [references/pr-template.md](./references/pr-template.md) for the full templ
 gh pr checks <pr-number> --watch
 ```
 
-Fix CI failures before merging. Never merge while CI is failing.
+If CI fails:
+1. Read the failure output.
+2. Fix the root cause locally.
+3. Push the fix.
+4. Re-run failing checks.
+
+Do NOT merge while CI is failing.
 
 ### Step 13 — Merge into Development
 
@@ -259,11 +304,17 @@ Only after:
 gh pr merge <pr-number> --merge --delete-branch
 ```
 
+Use `--squash` only if the team's merge strategy is squash. Use `--rebase` only if the team uses rebase. Default to `--merge` unless CLAUDE.md or CONTRIBUTING.md specifies otherwise.
+
 ### Step 14 — Post-Merge Synchronization
 
 ```bash
 git checkout development
 git pull origin development
+```
+
+Verify:
+```bash
 pnpm install --frozen-lockfile
 pnpm nx typecheck <affected-project>
 pnpm nx test <affected-project>
@@ -278,6 +329,8 @@ Only after merge is confirmed and post-merge validation passes:
 ```bash
 gh issue close <number> --comment "Fixed in PR #<pr-number> (merged into development)."
 ```
+
+If the PR used `Closes #N` syntax and GitHub auto-closed the issue on merge, verify the issue is closed and add a comment with the merge commit hash for traceability.
 
 ---
 
@@ -329,6 +382,8 @@ gh issue close <number> --comment "Fixed in PR #<pr-number> (merged into develop
 ---
 
 ## Final Report Format
+
+After completing the workflow, output:
 
 ```
 ## GitHub Issue Solver — Final Report
