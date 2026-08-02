@@ -9,7 +9,13 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
-  <a href="https://docs.lenserfight.com" target="_blank"><img src="https://img.shields.io/badge/docs-lenserfight.com-green" alt="Docs" /></a>
+  <a target="_blank" href="https://docs.lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/docs-lenserfight.com-green" alt="Docs" /></a>
+  <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/built_with-Chainabit-blue" alt="Chainabit" /></a>
+  <a target="_blank" href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node" /></a>
+  <a target="_blank" href="https://supabase.com"><img src="https://img.shields.io/badge/supabase-postgres-3ecf8e" alt="Supabase" /></a>
+  <a target="_blank" href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-5.x-3178c6" alt="TypeScript" /></a>
+  <a target="_blank" href="https://nx.dev"><img src="https://img.shields.io/badge/nx-monorepo-143055" alt="Nx" /></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-CHANGELOG.md-blue" alt="Changelog" /></a>
 </p>
 
 ## The problem
