@@ -22,8 +22,6 @@ jobs:
 
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '20'
 
       - uses: supabase/setup-cli@v2
         with:
