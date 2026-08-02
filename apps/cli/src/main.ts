@@ -2,6 +2,7 @@ import { defineCommand, runMain } from 'citty'
 import consola from 'consola'
 import { getEffectiveMode } from '@lenserfight/cli-client'
 import { setExecContext, getExecContext } from '@lenserfight/cli-client'
+import { resolveRootInvocation } from './lib/root-invocation'
 import { readCliVersion } from './lib/version'
 
 // Parse --local and --debug before citty takes over so they activate even
@@ -28,12 +29,12 @@ const agentDeprecatedCommand = () =>
   })
 
 // Default action: `lf` with no subcommand launches the assist agent session.
-// citty parses --help before run() fires, so `lf --help` still prints help.
+// citty parses --help/--version before run() fires, so those still short-circuit.
 async function defaultRun(ctx: { rawArgs?: string[] }) {
-  const raw = ctx.rawArgs ?? []
-  if (raw.length > 0) return // citty will hand off to a subcommand
+  const { launchAssist, force, passthroughArgs } = resolveRootInvocation(ctx.rawArgs ?? [])
+  if (!launchAssist) return // citty already handed off to a subcommand
   const { runAssist } = await import('./commands/assist')
-  await runAssist()
+  await runAssist({ force, passthroughArgs })
 }
 
 // Exported (not just invoked below) so `assist.ts` can import the already-
@@ -59,6 +60,11 @@ export const main = defineCommand({
     debug: {
       type: 'boolean',
       description: 'Enable verbose debug diagnostics on stderr',
+      default: false,
+    },
+    force: {
+      type: 'boolean',
+      description: 'For the default assist session: replace .opencode/opencode.json instead of updating it',
       default: false,
     },
   },
@@ -182,11 +188,18 @@ setImmediate(() => {
       checkForUpdate(current)
         .then((result) => {
           if (result?.hasUpdate && isNewer(result.current, result.latest)) {
+            // Size the box to its contents — hardcoded widths misalign the border
+            // as soon as the two version strings differ in length.
+            const lines = [
+              `Update available: v${result.current} → v${result.latest}`,
+              'Run `lf update` to upgrade.',
+            ]
+            const width = Math.max(...lines.map((l) => l.length)) + 4
+            const border = '─'.repeat(width)
             process.stderr.write(
-              `\n  ╭─────────────────────────────────────────────────────╮\n` +
-                `  │  Update available: v${result.current} → v${result.latest.padEnd(Math.max(0, result.current.length))}  │\n` +
-                `  │  Run \`lf update\` to upgrade.                         │\n` +
-                `  ╰─────────────────────────────────────────────────────╯\n\n`
+              `\n  ╭${border}╮\n` +
+                lines.map((l) => `  │  ${l.padEnd(width - 4)}  │\n`).join('') +
+                `  ╰${border}╯\n\n`
             )
           }
         })
