@@ -22,10 +22,17 @@ jest.mock('@lenserfight/utils/update-check', () => ({
 jest.mock('../lib/version', () => ({
   readCliVersion: jest.fn().mockReturnValue('0.2.0'),
 }))
+jest.mock('../lib/install-permissions', () => ({
+  findInstallPermissionBlock: jest.fn().mockReturnValue(null),
+  formatPermissionGuidance: jest.fn().mockReturnValue('  <permission guidance>\n'),
+}))
 
 import { spawnSync } from 'node:child_process'
 import consola from 'consola'
 import { checkForUpdate, detectChannel, invalidateUpdateCache } from '@lenserfight/utils/update-check'
+import { findInstallPermissionBlock } from '../lib/install-permissions'
+
+const mockFindBlock = findInstallPermissionBlock as jest.MockedFunction<typeof findInstallPermissionBlock>
 
 const mockCheckForUpdate = checkForUpdate as jest.MockedFunction<typeof checkForUpdate>
 const mockDetectChannel = detectChannel as jest.MockedFunction<typeof detectChannel>
@@ -51,6 +58,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   process.exitCode = 0
   mockSpawnSync.mockReturnValue({ status: 0 } as never)
+  mockFindBlock.mockReturnValue(null)
   process.argv[1] = '/usr/lib/node_modules/npm/bin/lf.js'
   delete process.env['npm_config_user_agent']
 })
@@ -139,6 +147,62 @@ describe('update', () => {
     })
 
     expect(consolaError).toHaveBeenCalledWith(expect.stringContaining("'npm' exited with code 1"))
+    expect(process.exitCode).toBe(1)
+    writeSpy.mockRestore()
+  })
+
+  it('never spawns npm when the install directory is not writable', async () => {
+    // The reported EACCES case: npm would emit a wall of errors and the old code
+    // then advised re-running the command that had just failed.
+    mockCheckForUpdate.mockResolvedValue({
+      current: '0.2.0',
+      latest: '0.3.0',
+      hasUpdate: true,
+    } as never)
+    mockFindBlock.mockReturnValue({
+      dir: '/opt/homebrew/lib/node_modules/@lenserfight',
+      ownerUid: 501,
+      currentUid: 504,
+    })
+    const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
+
+    await updateCmd.run?.({
+      args: { check: false, instructions: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockSpawnSync).not.toHaveBeenCalled()
+    expect(consolaError).toHaveBeenCalledWith(expect.stringContaining('not writable'))
+    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining('<permission guidance>'))
+    expect(mockInvalidateUpdateCache).not.toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+    writeSpy.mockRestore()
+  })
+
+  it('prints permission guidance instead of the manual command when an install fails on permissions', async () => {
+    mockCheckForUpdate.mockResolvedValue({
+      current: '0.2.0',
+      latest: '0.3.0',
+      hasUpdate: true,
+    } as never)
+    // Pre-flight passes, npm still fails, re-check finds the block.
+    mockFindBlock.mockReturnValueOnce(null).mockReturnValue({
+      dir: '/opt/homebrew/lib/node_modules/@lenserfight',
+      ownerUid: 501,
+      currentUid: 504,
+    })
+    mockSpawnSync.mockReturnValue({ status: 1 } as never)
+    const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
+
+    await updateCmd.run?.({
+      args: { check: false, instructions: false, json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining('<permission guidance>'))
+    expect(writeSpy).not.toHaveBeenCalledWith(expect.stringContaining('  npm install -g'))
     expect(process.exitCode).toBe(1)
     writeSpy.mockRestore()
   })
