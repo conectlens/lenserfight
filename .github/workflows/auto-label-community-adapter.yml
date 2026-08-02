@@ -2,7 +2,7 @@ name: Auto-label community adapter PRs
 
 # Adds the `community-adapter` label to any PR that touches files under
 # `examples/connectors/**`. The label surfaces the PR in the maintainer triage
-# queue used by the rotation in docs/how-to/contributors/mentor-rotation.md.
+# queue used by the rotation in docs/en/how-to/contributors/mentor-rotation.md.
 #
 # Security notes:
 #   - This workflow runs on `pull_request_target`, which exposes write tokens

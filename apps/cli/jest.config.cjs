@@ -12,6 +12,9 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     'src/commands/spec\\.ts$',
+    // ink (React-for-CLI) specs are ESM/JSX and run via jest.ink.config.mjs
+    // (see the `test-ink` Nx target) instead of this CJS suite.
+    '\\.spec\\.tsx$',
   ],
   moduleFileExtensions: ['ts', 'js', 'html', 'mjs'],
   coverageDirectory: '../../coverage/apps/cli',

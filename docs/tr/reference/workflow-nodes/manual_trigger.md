@@ -9,7 +9,7 @@ description: Kullanıcı UI'da tetikleme düğmesine açıkça tıkladığında 
 
 Manual Trigger düğümü, otomatik olarak değil açık kullanıcı isteğiyle bir workflow başlatır. Workflow yayımlandığında LenserFight, yapılandırılmış etiket ve açıklamayı kullanan bir düğme (veya satır içi form) oluşturur. `require_input` etkinleştirildiğinde yürütme başlamadan önce kullanıcının `input_schema` ile tanımlanan bir formu doldurması gerekir. Bu düğüm her zaman çizgedeki ilk düğümdür.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Manual Trigger (EN)](../../en/reference/workflow-nodes/manual_trigger)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Manual Trigger (EN)](../../../en/reference/workflow-nodes/manual_trigger.md)
 
 ## Yapılandırma
 

@@ -57,7 +57,7 @@ See [global flags](global-flags.md) for full details on precedence and environme
 | `lf reset` | Reset local config, auth tokens, and database (typed confirmation or `--force`) |
 | `lf config validate/export/import` | Validate or move safe config state |
 
-See [lf setup](setup.md), [lf status](status.md), [Development Commands](dev.md).
+See [lf setup](setup.md), [lf status](status.md), [Development Commands](db.md#lf-db-dev).
 
 ### Runtime observability
 

@@ -9,7 +9,7 @@ description: Oturum veya uzun süreli bellek deposuna anahtarlı bir değer yaza
 
 Memory Write düğümü, isteğe bağlı JSON değerlerini platformun bellek sistemine adlandırılmış bir ad alanı ve anahtar altında kalıcı hale getirir. Aynı `memory_id` + `key` kombinasyonuna sahip bir giriş zaten varsa üzerine yazılır (upsert semantiği). Oturum kapsamlı girdiler isteğe bağlı TTL taşıyabilir. Konuşma geçmişini denetim noktası olarak kaydetmek, hesaplanan sonuçları önbelleğe almak veya çok turlu bir workflow genelinde durum biriktirmek için yaygın olarak kullanılır.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Memory Write (EN)](../../en/reference/workflow-nodes/memory_write)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Memory Write (EN)](../../../en/reference/workflow-nodes/memory_write.md)
 
 ## Yapılandırma
 

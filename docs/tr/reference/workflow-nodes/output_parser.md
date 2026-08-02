@@ -9,7 +9,7 @@ description: Bir LLM'nin ham metin çıktısını doğrulanmış, yapılandırı
 
 Output Parser düğümü, bir dil modeli tarafından üretilen ham metni alır ve JSON Schema ile tanımlanan yapılandırılmış, tiplendirilmiş bir nesneye dönüştürür. JSON, YAML ve Markdown tablo kaynak biçimlerini destekler. `strict` mod etkinleştirildiğinde ayrıştırma hatalarında düğüm workflow'u durdurur; aşağı akış düğümleri garantili şekle bağımlıysa bu doğru seçimdir.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Output Parser (EN)](../../en/reference/workflow-nodes/output_parser)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Output Parser (EN)](../../../en/reference/workflow-nodes/output_parser.md)
 
 ## Yapılandırma
 

@@ -53,7 +53,7 @@ jobs:
           git config user.email 'bot@lenserfight.org'
           BRANCH="staging-integrity-signoff/$(date -u +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH"
-          git add docs/how-to/battles/battle-integrity-checklist.md
+          git add docs/en/how-to/battles/battle-integrity-checklist.md
           git commit -m "Phase P: auto-sign Phase O staging gate from CI run" || {
             echo "No changes to sign — checklist already up to date."
             exit 0

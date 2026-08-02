@@ -98,7 +98,11 @@ The client reads `.mcp.json` at the repo root and starts `node dist/apps/mcp-ser
 
 ### Step 1 — Fill in `.env.mcp.local`
 
-The repo ships `apps/mcp-server/.env.mcp.local` as a template. Fill in your local credentials:
+The repo ships `.env.mcp.local.example` at the repo root as a template. Copy it and fill in your local credentials:
+
+```bash
+cp .env.mcp.local.example .env.mcp.local
+```
 
 ```bash
 export SUPABASE_URL=http://127.0.0.1:54321
@@ -114,7 +118,7 @@ export MCP_TRANSPORT=stdio
 Source it before launching your client:
 
 ```bash
-source apps/mcp-server/.env.mcp.local
+source .env.mcp.local
 ```
 
 ### Step 2 — Confirm `.mcp.json` exists
@@ -171,7 +175,7 @@ The server auto-detects the ngrok URL from its local API on startup.
 ### Step 2 — Build and start the MCP server
 
 ```bash
-source apps/mcp-server/.env.mcp.local
+source .env.mcp.local
 export MCP_TRANSPORT=http
 export MCP_HTTP_PORT=3001
 pnpm nx build mcp-server --skip-nx-cache
@@ -313,7 +317,7 @@ The tunnel was not detected. Either start ngrok first (`ngrok http 3001`) or set
 
 ### `WARN: environment variable is unset`
 
-You forgot to source your env file. Run `source apps/mcp-server/.env.mcp.local` before starting the server.
+You forgot to source your env file. Run `source .env.mcp.local` before starting the server.
 
 ---
 

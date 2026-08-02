@@ -175,9 +175,8 @@ site_url = "http://127.0.0.1:3000"
 additional_redirect_urls = [
   "https://127.0.0.1:3000",
   "http://localhost:3004/callback",
-  # Tailscale local-network dev (update IP to match your `tailscale ip -4`)
-  "http://100.88.58.68:3004/callback",
-  "http://100.88.58.68:3000",
+  # Tailscale local-network dev: add your own IP here (run `tailscale ip -4`),
+  # e.g. "http://100.x.x.x:3004/callback" and "http://100.x.x.x:3000".
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -483,4 +482,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.media-content]
+verify_jwt = false
+
+[functions.generate-creation]
+verify_jwt = false
+
+[functions.workflow-webhook]
 verify_jwt = false

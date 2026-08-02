@@ -69,5 +69,5 @@ Step-by-step instructions the lenser should follow.
 ## Related
 
 - [Markdown Object Formats overview](../markdown-objects)
-- [ConectLens Agent Skills Ruleset](../ConectLens-agent-skills)
+- [ConectLens Agent Skills Ruleset](../connectlens-agent-skills.md)
 - [Native `SKILL.md`](./lenser-md-native)

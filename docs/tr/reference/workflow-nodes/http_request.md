@@ -9,7 +9,7 @@ description: Herhangi bir URL'ye giden HTTP çağrısı yapar ve durumu, başlı
 
 `http_request` düğümü, harici bir uç noktaya tek bir HTTP isteği gönderir ve yanıtı workflow'a aktarır. Tüm yaygın yöntemleri (GET, POST, PUT, PATCH, DELETE), özel başlıkları ve isteğe bağlı gövdeyi destekler. Üçüncü taraf REST API'lerini çağırmak, webhook'lara olay göndermek veya aşağı akış düğümlerini besleyen uzak veri almak için kullanın.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [HTTP Request (EN)](../../en/reference/workflow-nodes/http_request)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [HTTP Request (EN)](../../../en/reference/workflow-nodes/http_request.md)
 
 ## Yapılandırma
 

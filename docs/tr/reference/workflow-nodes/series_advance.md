@@ -9,7 +9,7 @@ description: Bir battle serisini bir sonraki tura ilerletir veya ilerleme koşul
 
 Series Advance düğümü, bir battle serisinin mevcut turunun ilerlemeye hazır olup olmadığını değerlendirir. Seri için en son puanlanan sonuçları okur, yapılandırılan `advance_condition`'ı uygular ve koşul karşılandığında seriyi bir sonraki turuna geçirir. Serinin başka turu yoksa bunun yerine seriyi tamamlandı olarak işaretler ve nihai kazanan kaydını yayımlar.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Series Advance (EN)](../../en/reference/workflow-nodes/series_advance)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Series Advance (EN)](../../../en/reference/workflow-nodes/series_advance.md)
 
 ## Yapılandırma
 

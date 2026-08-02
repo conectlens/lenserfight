@@ -13,9 +13,9 @@ on:
       - 'libs/data/repositories/**'
       - 'supabase/migrations/**'
       - 'supabase/tests/**'
-      - 'docs/explanation/gateway/**'
+      - 'docs/en/explanation/gateway/**'
       - 'docs/tr/explanation/gateway/**'
-      - 'docs/reference/cli/gateway.md'
+      - 'docs/en/reference/cli/gateway.md'
       - '.github/actions/setup-workspace/**'
       - '.github/workflows/cli-smoke.yml'
       - 'package.json'
@@ -35,9 +35,9 @@ on:
       - 'libs/data/repositories/**'
       - 'supabase/migrations/**'
       - 'supabase/tests/**'
-      - 'docs/explanation/gateway/**'
+      - 'docs/en/explanation/gateway/**'
       - 'docs/tr/explanation/gateway/**'
-      - 'docs/reference/cli/gateway.md'
+      - 'docs/en/reference/cli/gateway.md'
       - '.github/actions/setup-workspace/**'
       - '.github/workflows/cli-smoke.yml'
       - 'package.json'
@@ -102,7 +102,7 @@ jobs:
 
       # CI has no disposable Postgres for pgTAP. This step asserts migration + test
       # artifacts exist. Maintainers MUST run `supabase db test --db-url $LOCAL_DB_URL`
-      # before tagging (see scripts/smoke.sh step 2b and docs/explanation/gateway/release-readiness.md).
+      # before tagging (see scripts/smoke.sh step 2b and docs/en/explanation/gateway/release-readiness.md).
       - name: Gateway SQL release gate (artifact presence; pgTAP is pre-tag only)
         run: |
           echo '::notice::Trust Gateway: run locally before tag: supabase db test --db-url $LOCAL_DB_URL (07_gateway_security.sql, 08_gateway_xp_audit.sql)'

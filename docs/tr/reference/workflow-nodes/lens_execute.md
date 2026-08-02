@@ -9,7 +9,7 @@ description: Kayıtlı bir Lens'i (AI fonksiyonu) ID'si ile çalıştırır ve �
 
 `lens_execute` düğümü, LenserFight üzerinde yayımlanmış herhangi bir Lens'i ID'si ile çağırır; yapılandırılmış parametreleri iletir ve Lens'in çıktısını workflow verisi olarak alır. Varsayılan olarak en son yayımlanmış sürümü kullanır; tekrarlanabilir çalışmalar için belirli bir sürüme sabitlenebilir.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Lens Execute (EN)](../../en/reference/workflow-nodes/lens_execute)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Lens Execute (EN)](../../../en/reference/workflow-nodes/lens_execute.md)
 
 ## Yapılandırma
 

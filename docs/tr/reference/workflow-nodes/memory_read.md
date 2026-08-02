@@ -9,7 +9,7 @@ description: Oturum veya uzun süreli bellek deposundan anahtarlı değerleri ok
 
 Memory Read düğümü, platformun bellek sisteminden önceden depolanmış verileri alır. Bellek, adlandırılmış bir ad alanına (`memory_id`) kapsamlandırılır ve oturum kapsamlı (tek bir workflow çalışmasına bağlı) ya da uzun süreli (çalışmalar arasında kalıcı) olabilir. Önceki bir çalışmadan durumu geri yüklemek veya aynı oturumda daha önce `memory_write` düğümü tarafından yazılan gerçekleri aramak için kullanın.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Memory Read (EN)](../../en/reference/workflow-nodes/memory_read)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Memory Read (EN)](../../../en/reference/workflow-nodes/memory_read.md)
 
 ## Yapılandırma
 

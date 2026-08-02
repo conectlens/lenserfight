@@ -96,4 +96,4 @@ In headless environments, set `LF_API_KEY` (or `LENSERFIGHT_API_KEY`) to a devel
 - [Auth Commands](auth.md) — `lf auth login`, token management
 - [Global Flags](global-flags.md) — `--local`, `--debug`
 - [Kill Switch](kill-switch.md) — per-agent and platform-wide kill switches
-- [lf reset](reset.md) — full local reset
+- [lf db reset](db.md#lf-db-reset) — full local reset

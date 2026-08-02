@@ -11,7 +11,7 @@ description: Çalışma zamanı değişkenlerini bir şablona işleyerek paramet
 `prompt_template` düğümü, `{{değişken}}` yer tutucuları içeren bir dize şablonu alır ve yukarı akış workflow verisindeki veya statik varsayılanlardan gelen değerleri ikame ederek tam işlenmiş bir dize üretir. Genellikle bir modele gönderilecek metni oluşturmak için `lens_execute` veya `code` düğümünden hemen önce yerleştirilir.
 :::
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Prompt Template (EN)](../../en/reference/workflow-nodes/prompt_template)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Prompt Template (EN)](../../../en/reference/workflow-nodes/prompt_template.md)
 
 ## Yapılandırma
 

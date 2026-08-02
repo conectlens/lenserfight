@@ -17,6 +17,10 @@
     {
       "pattern": "^/",
       "replacement": "https://docs.lenserfight.com/"
+    },
+    {
+      "pattern": "^(?:\\.\\./)+(?:lenserfight-platform/)?((?:libs|supabase|apps|tools|docs|examples|templates)/.*|\\.github/.*|eslint\\.config\\.js|LICENSE|CODEOWNERS|MAINTAINERS\\.md)$",
+      "replacement": "https://github.com/conectlens/lenserfight/blob/main/$1"
     }
   ],
   "httpHeaders": [

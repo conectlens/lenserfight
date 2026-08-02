@@ -47,7 +47,20 @@ function mermaidFencePlugin(md: any) {
 }
 
 const REPO_BLOB_BASE = 'https://github.com/conectlens/lenserfight/blob/main'
-const CROSS_TREE_TOP_DIRS = ['libs', 'supabase', 'apps', 'tools', 'docs', 'examples']
+const CROSS_TREE_TOP_DIRS = [
+  'libs',
+  'supabase',
+  'apps',
+  'tools',
+  'docs',
+  'examples',
+  'templates',
+  '.github',
+  'eslint.config.js',
+  'LICENSE',
+  'CODEOWNERS',
+  'MAINTAINERS.md',
+]
 
 /**
  * Rewrites markdown links that walk out of the docs srcDir (e.g. `../../libs/...`,

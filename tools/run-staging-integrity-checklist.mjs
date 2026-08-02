@@ -3,7 +3,7 @@
  * Phase O staging integrity gate — automated evidence collector.
  *
  * Runs every check enumerated in
- * docs/how-to/battles/battle-integrity-checklist.md "Phase O staging gate"
+ * docs/en/how-to/battles/battle-integrity-checklist.md "Phase O staging gate"
  * against a hosted staging Supabase + worker and emits a JSON report.
  *
  * The maintainer's role narrows from "execute the checks" to "review the

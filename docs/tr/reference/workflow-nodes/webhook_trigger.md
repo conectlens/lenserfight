@@ -9,7 +9,7 @@ description: Otomatik oluşturulan webhook URL'sine bir HTTP isteği geldiğinde
 
 Webhook Trigger düğümü, workflow için benzersiz bir HTTPS uç noktası açar. Harici bir sistem bu URL'ye HTTP isteği gönderdiğinde LenserFight, yapılandırılan `auth` yöntemine göre çağıranı doğrular ve ardından istek gövdesini ve başlıklarını başlangıç yükü olarak ileterek bir workflow çalışması başlatır. Uç nokta URL'si ilk yayımlamada oluşturulur ve workflow'un ömrü boyunca sabit kalır. Bu düğüm her zaman çizgedeki ilk düğümdür.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Webhook Trigger (EN)](../../en/reference/workflow-nodes/webhook_trigger)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Webhook Trigger (EN)](../../../en/reference/workflow-nodes/webhook_trigger.md)
 
 ## Yapılandırma
 

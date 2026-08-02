@@ -9,7 +9,7 @@ description: Girdi metnini bir dil modeli kullanarak önceden tanımlanmış bir
 
 Classifier düğümü, girdi metnini ve kategori etiketleri listesini bir dil modeline gönderir; model en uygun etiketi (ya da çok etiketli modda birden fazla etiketi) döndürür. Her tahmin edilen kategori için bir güven puanı üretilir; `confidence_threshold`'un altındaki sonuçlar çıktıdan hariç tutulur. Bu düğüm, sınıflandırma görevleri için geçici prompt mühendisliğinin yerini alır ve tutarlı, yapılandırılmış çıktı üretir.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Classifier (EN)](../../en/reference/workflow-nodes/classifier)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Classifier (EN)](../../../en/reference/workflow-nodes/classifier.md)
 
 ## Yapılandırma
 
