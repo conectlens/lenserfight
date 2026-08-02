@@ -10,16 +10,16 @@ import { registerUserTools } from './tools/user/index.js';
 import { bootStdio } from './transport/stdio.js';
 import { bootHttp } from './transport/http.js';
 
-export function buildServer(sb: SupabaseClient, lenserId?: string): McpServer {
+export function buildServer(sb: SupabaseClient, lenserId?: string, userId?: string): McpServer {
   const server = new McpServer({
     name: 'lenserfight',
     version: '1.0.0',
   });
 
-  registerLensTools(server, sb, lenserId);
+  registerLensTools(server, sb, lenserId, userId);
   registerBattleTools(server, sb, lenserId);
-  registerWorkflowTools(server, sb, lenserId);
-  registerAgentTools(server, sb, lenserId);
+  registerWorkflowTools(server, sb, lenserId, userId);
+  registerAgentTools(server, sb, lenserId, userId);
   registerUserTools(server, sb, lenserId);
 
   return server;

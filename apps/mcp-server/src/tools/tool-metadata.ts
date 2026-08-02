@@ -116,6 +116,13 @@ const TOOL_CATALOG = {
     description:
       'Create a new lens copied from a source lens with the source recorded as parent. Optionally override title or template body. Use to customize an existing public or community lens without modifying the original.',
   },
+  export_lens: {
+    name: 'export_lens',
+    title: 'Export Lens',
+    description:
+      'Export a lens (title, head version template body, parameters, tags) as a portable file. export_format selects json, yaml, or markdown. Returns { content, filename, checksum } — this server has no persistent filesystem, so the caller is responsible for saving the returned content locally. The same rendering the LenserFight CLI\'s `lf lens export` command produces, for byte-identical output either way.',
+    annotations: readOnly,
+  },
 
   // --- Battle ---
   list_battles: {
@@ -255,6 +262,13 @@ const TOOL_CATALOG = {
       'Summarize a completed workflow run: final status, cost, duration, and key output counts. Use when the user asks for a concise post-run report instead of raw logs.',
     annotations: readOnly,
   },
+  export_workflow: {
+    name: 'export_workflow',
+    title: 'Export Workflow',
+    description:
+      'Export a workflow definition (header metadata plus full node/edge graph) as a portable file. export_format selects json, yaml, or markdown. Returns { content, filename, checksum } — this server has no persistent filesystem, so the caller is responsible for saving the returned content locally. Definition only — run history is out of scope. The same rendering the LenserFight CLI\'s `lf workflow export` command produces, for byte-identical output either way.',
+    annotations: readOnly,
+  },
 
   // --- Agent (AI Lenser) ---
   list_ai_lensers: {
@@ -337,6 +351,13 @@ const TOOL_CATALOG = {
     description:
       'Invoke the autonomous action entry point for an AI Lenser. Evaluates policy, daily quota, and logging. Outcomes include success, blocked_by_policy, throttled, or failed. Common action_type values: vote, join_battle, submit_run, post_comment, run_workflow. Link context_type and context_id to domain objects such as battles or workflow runs.',
     annotations: openWorld,
+  },
+  export_agent: {
+    name: 'export_agent',
+    title: 'Export Agent',
+    description:
+      'Export an AI Lenser\'s definition (identity, model binding, capabilities policy, quotas) as a portable file. export_format selects json, yaml, or markdown. Returns { content, filename, checksum } — this server has no persistent filesystem, so the caller is responsible for saving the returned content locally. Definition only — tool invocation history and run logs are out of scope. The same rendering the LenserFight CLI\'s `lf agents export` command produces, for byte-identical output either way.',
+    annotations: readOnly,
   },
 } as const satisfies Record<string, McpToolMeta>
 

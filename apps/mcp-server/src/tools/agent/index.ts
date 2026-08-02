@@ -12,8 +12,14 @@ import { registerAgentRunAction } from './agent-run-action.js';
 import { registerAgentStartTeamRun } from './agent-start-team-run.js';
 import { registerAgentCancelRun } from './agent-cancel-run.js';
 import { registerAgentListRunEvents } from './agent-list-run-events.js';
+import { registerAgentExport } from './agent-export.js';
 
-export function registerAgentTools(server: McpServer, sb: SupabaseClient, lenserId?: string): void {
+export function registerAgentTools(
+  server: McpServer,
+  sb: SupabaseClient,
+  lenserId?: string,
+  userId?: string
+): void {
   registerAgentList(server, sb, lenserId);
   registerAgentGet(server, sb);
   registerAgentCreate(server, sb, lenserId);
@@ -26,4 +32,5 @@ export function registerAgentTools(server: McpServer, sb: SupabaseClient, lenser
   registerAgentStartTeamRun(server, sb);
   registerAgentCancelRun(server, sb);
   registerAgentListRunEvents(server, sb);
+  registerAgentExport(server, sb, userId);
 }

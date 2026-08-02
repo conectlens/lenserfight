@@ -15,8 +15,14 @@ import { registerLensFindAndRun } from './lens-find-and-run.js';
 import { registerLensFork } from './lens-fork.js';
 import { registerLensVersions } from './lens-versions.js';
 import { registerLensGetVersion } from './lens-get-version.js';
+import { registerLensExport } from './lens-export.js';
 
-export function registerLensTools(server: McpServer, sb: SupabaseClient, _lenserId?: string): void {
+export function registerLensTools(
+  server: McpServer,
+  sb: SupabaseClient,
+  _lenserId?: string,
+  userId?: string
+): void {
   registerLensList(server, sb);
   registerLensSearch(server, sb);
   registerLensGet(server, sb);
@@ -32,4 +38,5 @@ export function registerLensTools(server: McpServer, sb: SupabaseClient, _lenser
   registerLensFork(server, sb);
   registerLensVersions(server, sb);
   registerLensGetVersion(server, sb);
+  registerLensExport(server, sb, userId);
 }
