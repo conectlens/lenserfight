@@ -116,7 +116,7 @@
     "react-native-svg": "15.12.1",
     "react-native-svg-transformer": "~1.5.3",
     "react-native-web": "~0.21.0",
-    "react-router-dom": "6.30.3",
+    "react-router-dom": "7.18.2",
     "recharts": "^3.8.1",
     "rehype-raw": "^7.0.0",
     "sonner": "^1.7.4",
