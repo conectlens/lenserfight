@@ -140,7 +140,7 @@
     "@nx/react": "22.6.0",
     "@nx/vite": "22.6.0",
     "@nx/vitest": "22.5.4",
-    "@nx/web": "22.6.0",
+    "@nx/web": "22.6.5",
     "@playwright/test": "^1.60.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
