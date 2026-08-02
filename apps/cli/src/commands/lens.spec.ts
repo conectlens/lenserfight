@@ -14,6 +14,8 @@ jest.mock('@lenserfight/cli-client', () => ({
   ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   handleError: jest.fn(),
+  isAuthenticated: jest.fn(() => false),
+  getUserInfo: jest.fn(),
 }))
 jest.mock('../utils/output', () => ({
   printTable: jest.fn(),
@@ -32,8 +34,9 @@ jest.mock('../lib/data-services/ai-generate', () => ({
   normalizeFunding: (v: string) => v,
 }))
 
-import consola from 'consola'
 import { callRpc, handleError } from '@lenserfight/cli-client'
+import consola from 'consola'
+
 import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 import { printJson } from '../utils/output'
 
@@ -56,6 +59,33 @@ async function getSubCmd(key: string): Promise<AnyCmd> {
   const sub = cmd.subCommands?.[key]
   return typeof sub === 'function' ? sub() : (sub as AnyCmd)
 }
+
+describe('lens export', () => {
+  it('renders the fetched lens as JSON and writes it to stdout', async () => {
+    mockCallRpc.mockResolvedValueOnce({
+      id: 'lens-1',
+      title: 'Market Brief',
+      content: null,
+      head_version: {
+        semver: '1.0.0',
+        template_body: 'Produce a brief for [[topic]].',
+        parameters: [{ label: 'topic', optional: false }],
+      },
+      tags: [],
+    } as never)
+
+    const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
+    const cmd = await getSubCmd('export')
+    await cmd.run?.({ args: { id: 'lens-1', format: 'json', out: '' } })
+    const written = stdoutSpy.mock.calls.map((c) => c[0]).join('')
+    stdoutSpy.mockRestore()
+
+    expect(mockCallRpc).toHaveBeenCalledWith('fn_mcp_lens_get', { p_lens_id: 'lens-1' }, expect.objectContaining({ requireAuth: true }))
+    const envelope = JSON.parse(written)
+    expect(envelope.kind).toBe('lens')
+    expect(envelope.data).toMatchObject({ id: 'lens-1', title: 'Market Brief' })
+  })
+})
 
 describe('lens create', () => {
   it('rejects invalid visibility', async () => {
