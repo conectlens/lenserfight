@@ -50,6 +50,7 @@ import { toast } from 'sonner'
 import { CreateWorkflowWizard } from '../components/CreateWorkflowWizard'
 import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
 import { WorkflowCronPanel } from '../components/WorkflowCronPanel'
+import { WorkflowDocumentCopyButton } from '../components/WorkflowDocumentCopyButton'
 import { WorkflowFinalOutputBanner } from '../components/WorkflowFinalOutputBanner'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
 import { WorkflowNodeConfigDispatcher } from '../components/WorkflowNodeConfigDispatcher'
@@ -794,6 +795,8 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
               })}
               className="!h-8 w-auto rounded-xl px-2.5 text-greyscale-400"
             />
+
+            <WorkflowDocumentCopyButton workflow={workflow} nodes={nodes} edges={edges} />
           </div>
 
           {/* Controls Group */}
