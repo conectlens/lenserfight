@@ -1,3 +1,14 @@
+## 1.1.2 (2026-08-02)
+
+### 🩹 Fixes
+
+- **cli:** fail fast when lf assist has no interactive terminal ([16cf6e3d3](https://github.com/conectlens/lenserfight/commit/16cf6e3d3))
+- **cli:** spawn npm/npx/opencode via shell on Windows ([61517221d](https://github.com/conectlens/lenserfight/commit/61517221d))
+
+### ❤️ Thank You
+
+- Lensers
+
 ## 1.1.1 (2026-08-02)
 
 ### 🩹 Fixes
