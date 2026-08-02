@@ -9,7 +9,7 @@ description: Vektör deposu üzerinde anlamsal benzerlik araması yapar ve en y�
 
 Vector Search düğümü, adlandırılmış bir vektör koleksiyonunu düz metin sorgusu ya da önceden hesaplanmış gömme vektörü kullanarak sorgular. Platform, en yakın komşu araması çalıştırmadan önce metin sorgusunu koleksiyonun varsayılan gömme modeli ile otomatik olarak gömmeye dönüştürür. Sonuçlar kosinüs benzerliğine göre sıralanır; isteğe bağlı puan eşiği ve meta veri yüklemi ile filtrelenir.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Vector Search (EN)](../../en/reference/workflow-nodes/vector_search)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Vector Search (EN)](../../../en/reference/workflow-nodes/vector_search.md)
 
 ## Yapılandırma
 

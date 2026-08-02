@@ -9,7 +9,7 @@ description: Bir battle'daki tüm yarışmacı gönderilerini değerlendirmek ve
 
 Judge Battle düğümü, belirtilen battle için kabul edilen her gönderiyi alır ve tanımlı bir puanlama kriterleri kümesine göre değerlendirmek üzere bir AI hakem modeline gönderir. Her kriter bağımsız olarak sayısal ölçekte puanlanır ve ham kriter başına puanlar aşağı akış toplamlaması için yayılır. `parallel_evaluation` etkinleştirildiğinde tüm gönderiler duvar saati süresini minimize etmek için eş zamanlı değerlendirilir.
 
-> Tam dokümantasyon için İngilizce sayfaya bakınız: [Judge Battle (EN)](../../en/reference/workflow-nodes/judge_battle)
+> Tam dokümantasyon için İngilizce sayfaya bakınız: [Judge Battle (EN)](../../../en/reference/workflow-nodes/judge_battle.md)
 
 ## Yapılandırma
 

@@ -88,7 +88,7 @@ lenserfight battle run ./PRIVATE_BATTLE.md
 
 ## Related
 
-- [ConectLens Agent Skills Ruleset](/en/reference/automation/ConectLens-agent-skills)
+- [ConectLens Agent Skills Ruleset](/en/reference/automation/connectlens-agent-skills)
 - [Automation Workspace Overview](/en/explanation/automation/index)
 - [Agent Exploration API](/en/reference/automation/agent-exploration-api)
 - [CLI Hub](/en/reference/cli/index)
