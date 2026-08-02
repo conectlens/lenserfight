@@ -1,0 +1,13 @@
+{
+  "name": "domain-workflow-protocol",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/workflow-protocol/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:workflow-protocol",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}

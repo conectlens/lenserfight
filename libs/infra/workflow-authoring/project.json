@@ -1,0 +1,12 @@
+{
+  "name": "infra-workflow-authoring",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/infra/workflow-authoring/src",
+  "projectType": "library",
+  "tags": [
+    "layer:infra",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}
