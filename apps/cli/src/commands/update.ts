@@ -134,7 +134,13 @@ function runPackageManagerInstall(
   pm: { cmd: string; args: string[] },
   targetSpec: string,
 ): boolean {
-  const result = spawnSync(pm.cmd, [...pm.args, targetSpec], { stdio: 'inherit' })
+  // npm/pnpm/yarn resolve to .cmd shims on Windows — spawnSync without
+  // shell:true issues a raw CreateProcess call that can't find them and
+  // fails with ENOENT.
+  const result = spawnSync(pm.cmd, [...pm.args, targetSpec], {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  })
   return result.status === 0
 }
 

@@ -67,8 +67,13 @@ function readMcpConfig(projectDir: string): Record<string, unknown> | null {
   }
 }
 
+// On Windows, `opencode`/`npx` resolve to `.cmd` shims on PATH — spawn/spawnSync
+// without shell:true issue a raw CreateProcess call that can't find them and
+// fails with ENOENT. shell:true routes through cmd.exe (Node quotes args safely).
+const isWindows = process.platform === 'win32'
+
 function resolveAssistBinary(): { command: string; args: string[] } {
-  const check = spawnSync('opencode', ['--version'], { stdio: 'ignore' })
+  const check = spawnSync('opencode', ['--version'], { stdio: 'ignore', shell: isWindows })
   if (!check.error) return { command: 'opencode', args: [] }
   return { command: 'npx', args: ['--yes', 'opencode-ai'] }
 }
@@ -127,6 +132,7 @@ export async function runAssist(opts: RunAssistOptions = {}): Promise<void> {
     stdio: 'inherit',
     cwd: projectDir,
     env: { ...process.env, LF_OPENCODE_MANIFEST_PATH: manifestPath },
+    shell: isWindows,
   })
   await new Promise<void>((resolvePromise) => {
     child.on('exit', (code) => {

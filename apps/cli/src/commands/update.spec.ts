@@ -162,7 +162,7 @@ describe('update', () => {
     expect(mockSpawnSync).toHaveBeenCalledWith(
       'npm',
       ['install', '-g', '@lenserfight/cli@latest'],
-      { stdio: 'inherit' },
+      { stdio: 'inherit', shell: false },
     )
     expect(consolaError).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(0)
