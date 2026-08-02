@@ -30,12 +30,17 @@ jobs:
 
       - name: Run markdown-link-check on changed files
         if: steps.changed.outputs.any_changed == 'true'
-        uses: gaurav-nelson/github-action-markdown-link-check@499c1e7f3637c131334fa8e937c45144f79d72d2 # v1
-        with:
-          use-quiet-mode: 'yes'
-          use-verbose-mode: 'yes'
-          config-file: '.markdown-link-check.json'
-          folder-path: 'docs'
-          file-path: ${{ steps.changed.outputs.all_changed_files }}
-          base-branch: ${{ github.base_ref }}
-          check-modified-files-only: 'yes'
+        shell: bash
+        # Runs the underlying tool directly on exactly the changed docs/**/*.md
+        # files (from the step above), rather than the gaurav-nelson wrapper
+        # action's own folder/diff-based discovery — that scans its whole
+        # folder-path against base-branch regardless of file-path, which
+        # picks up every file under vendor/opencode (a vendored third-party
+        # tree, not something this check should touch).
+        run: |
+          npm install --global markdown-link-check@3.13.7
+          for file in ${{ steps.changed.outputs.all_changed_files }}; do
+            echo "::group::$file"
+            markdown-link-check --config .markdown-link-check.json --quiet "$file"
+            echo "::endgroup::"
+          done
