@@ -287,8 +287,11 @@ lf
 lf assist
 ```
 
-This generates `.opencode/opencode.json` in the current directory (re-run with `--force` to
-regenerate it). Review what the agent does before trusting it with destructive commands.
+This generates `.opencode/opencode.json` in the current directory. Re-running is safe: a config
+`lf` generated is refreshed in place, and a config you wrote yourself is merged into — your
+settings are kept, the LenserFight plugin is added, and the original is saved alongside it as
+`opencode.json.lf-backup`. Pass `--force` to replace the file outright instead. Review what the
+agent does before trusting it with destructive commands.
 
 ---
 
