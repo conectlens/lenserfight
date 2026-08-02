@@ -151,7 +151,7 @@
     "@swc/helpers": "~0.5.19",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.3.0",
-    "@testing-library/react-native": "~13.2.2",
+    "@testing-library/react-native": "~14.0.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.19.15",
     "@types/react": "^19.1.17",
