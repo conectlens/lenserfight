@@ -55,6 +55,42 @@ pnpm add -g @lenserfight/cli@latest
 yarn global add @lenserfight/cli@latest
 ```
 
+## "Cannot update in place" — permission errors
+
+`lf update` checks that the install directory is writable before running your
+package manager. When it is not, the update stops with the blocked directory
+named, rather than letting npm fail with a wall of `EACCES` output:
+
+```
+ ERROR  Cannot update in place — the install directory is not writable by your account.
+
+    install dir   /opt/homebrew/lib/node_modules/@lenserfight
+    owned by      uid 501
+    you are       uid 504
+```
+
+This happens when the CLI was installed by a **different account** than the one
+running it — common on a shared machine, or under a Homebrew-managed prefix
+owned by whoever installed Homebrew. Re-running the install, with or without
+`sudo`, does not fix the underlying ownership.
+
+Three ways out, in rough order of preference:
+
+```sh
+# 1. Run the update from the account that owns the install.
+
+# 2. Take ownership of just this package, then re-run `lf update`.
+sudo chown -R "$(id -un)" /opt/homebrew/lib/node_modules/@lenserfight
+
+# 3. Move to a per-user global prefix, so updates never need elevation.
+npm config set prefix ~/.npm-global
+npm install -g @lenserfight/cli@latest
+# then put ~/.npm-global/bin ahead of the old prefix on your PATH
+```
+
+`sudo npm install -g` also works, but under a Homebrew-managed prefix it leaves
+root-owned files behind that can break later `brew` commands.
+
 ## Release channels
 
 | Channel | npm tag | Who should use it |
