@@ -12,21 +12,11 @@ jest.mock('consola', () => ({
     prompt: jest.fn(),
   },
 }))
-jest.mock('../utils/auth', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   isAuthenticated: jest.fn(),
   openBrowser: jest.fn(),
-}))
-jest.mock('../utils/api', () => ({
   callRpc: jest.fn(),
-}))
-jest.mock('../utils/output', () => ({
-  printInfo: jest.fn(),
-  printJson: jest.fn(),
-  printSuccess: jest.fn(),
-  printWarn: jest.fn(),
-  printError: jest.fn(),
-}))
-jest.mock('../utils/ansi', () => ({
   A: { gray: '', reset: '', bold: '', brightCyan: '', brightGreen: '', brightYellow: '', brightRed: '', brightBlue: '' },
   c: {
     brand: (s: string) => s,
@@ -36,11 +26,16 @@ jest.mock('../utils/ansi', () => ({
     bold: (s: string) => s,
   },
   sym: { pass: '✓', fail: '✗', warn: '⚠', info: '●', arrow: '→' },
-}))
-jest.mock('../config/project-config', () => ({
   resolveConfig: jest.fn(),
   configExists: jest.fn(),
   loadUserConfig: jest.fn(),
+}))
+jest.mock('../utils/output', () => ({
+  printInfo: jest.fn(),
+  printJson: jest.fn(),
+  printSuccess: jest.fn(),
+  printWarn: jest.fn(),
+  printError: jest.fn(),
 }))
 jest.mock('../lib/onboarding/state', () => ({
   loadOnboardingSnapshot: jest.fn(),
@@ -97,9 +92,9 @@ jest.mock('node:child_process', () => ({
   spawn: jest.fn(),
 }))
 
-import { isAuthenticated } from '../utils/auth'
+import { isAuthenticated } from '@lenserfight/cli-client'
 import { printJson, printInfo, printSuccess, printWarn, printError } from '../utils/output'
-import { configExists, loadUserConfig } from '../config/project-config'
+import { configExists, loadUserConfig } from '@lenserfight/cli-client'
 import {
   loadOnboardingSnapshot,
   markOnboardingComplete,

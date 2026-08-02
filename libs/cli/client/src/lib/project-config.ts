@@ -198,9 +198,10 @@ export function resolveSupabaseAnonKey(
   if (mode === 'local') {
     return envKey?.trim() || userKey?.trim() || LOCAL_ANON_KEY;
   }
+  const envKeyTrimmed = envKey?.trim();
   const envKeyUsable =
-    envKey?.trim() && !isLocalSupabaseAnonKey(envKey) && !isEnvKeyBoundToDevSupabase(envKey, envUrl);
-  if (envKeyUsable) return envKey.trim();
+    envKeyTrimmed && !isLocalSupabaseAnonKey(envKey) && !isEnvKeyBoundToDevSupabase(envKey, envUrl);
+  if (envKeyUsable) return envKeyTrimmed;
   for (const key of [userKey]) {
     const value = key?.trim();
     if (value && !isLocalSupabaseAnonKey(value)) return value;

@@ -12,10 +12,10 @@ import {
   isDevOnlyHostUrl,
   loadEnvConfig,
   type LenserfightConfig,
-} from '../config/project-config';
+} from './project-config';
 import { reportCliError } from './error-reporter';
-import { getExecContext } from '../lib/exec-context';
-import { redactHeaders, redactUrl } from '../lib/redact';
+import { getExecContext } from './exec-context';
+import { redactHeaders, redactUrl } from './redact';
 import { attemptAuthRecovery } from './auth-recovery';
 
 // ─── Profile overlay (Y1) ────────────────────────────────────────────────────

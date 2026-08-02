@@ -8,8 +8,8 @@
 //   Broadcast failures are swallowed — consistent with event-publisher.ts pattern.
 
 import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
-import { resolveConfig, loadUserConfig } from '../config/project-config';
-import { resolveBearerToken } from './api';
+import { resolveConfig, loadUserConfig } from '@lenserfight/cli-client';
+import { resolveBearerToken } from '@lenserfight/cli-client';
 
 export interface TokenUsage {
   input_tokens: number;

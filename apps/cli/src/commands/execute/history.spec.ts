@@ -8,7 +8,8 @@ jest.mock('../../lib/data-services/executions', () => ({
   getLensExecutionHistory: jest.fn(),
   listWorkflowRuns: jest.fn(),
 }))
-jest.mock('../../utils/api', () => ({ handleError: jest.fn() }))
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'), handleError: jest.fn() }))
 jest.mock('../../utils/output', () => ({
   printTable: jest.fn(),
   printJson: jest.fn(),

@@ -173,6 +173,7 @@
     "jest-util": "^30.3.0",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
+    "jsonc-eslint-parser": "^2.1.0",
     "knip": "^6.14.1",
     "mermaid": "^11.15.0",
     "metro-config": "~0.83.5",

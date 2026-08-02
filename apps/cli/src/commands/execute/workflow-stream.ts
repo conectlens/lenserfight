@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { handleError } from '../../utils/api'
+import { handleError } from '@lenserfight/cli-client'
 import { followWorkflowRunEvents } from '../../lib/workflow-event-stream'
 
 export default defineCommand({

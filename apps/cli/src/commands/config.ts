@@ -10,9 +10,9 @@ import {
   saveConfig,
   saveUserConfig,
   type ProjectConfig,
-} from '../config/project-config'
+} from '@lenserfight/cli-client'
 import { printJson, printSuccess, printWarn } from '../utils/output'
-import { handleError } from '../utils/api'
+import { handleError } from '@lenserfight/cli-client'
 
 interface ConfigExportPayload {
   projectConfig: ProjectConfig

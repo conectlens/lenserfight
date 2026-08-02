@@ -1,14 +1,13 @@
 jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }))
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   handleError: jest.fn((err: unknown) => { throw err }),
+  c: { success: (s: string) => s, warn: (s: string) => s },
 }))
 jest.mock('../utils/output', () => ({
   printTable: jest.fn(),
   printJson: jest.fn(),
-}))
-jest.mock('../utils/ansi', () => ({
-  c: { success: (s: string) => s, warn: (s: string) => s },
 }))
 jest.mock('consola', () => ({
   __esModule: true,
@@ -21,7 +20,7 @@ jest.mock('consola', () => ({
 }))
 
 import consola from 'consola'
-import { callRpc } from '../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { printTable } from '../utils/output'
 import adminCommand from './admin'
 

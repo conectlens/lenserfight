@@ -8,8 +8,8 @@ import {
   readProjectConfigAt,
   saveConfig,
   saveUserPreferences,
-} from '../config/project-config'
-import { c, sym } from '../utils/ansi'
+} from '@lenserfight/cli-client'
+import { c, sym } from '@lenserfight/cli-client'
 
 type Mode = 'local' | 'cloud'
 

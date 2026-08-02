@@ -4,7 +4,7 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { homedir } from 'node:os'
 import { type PrivateBattleFrontmatter } from '@lenserfight/types'
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate'
 import { wrapBattleLocalAliasCommand } from '../lib/battle-file-alias'
 import { assertSafe } from '../lib/safety'
@@ -15,7 +15,7 @@ import {
 } from '../utils/automation-objects'
 import { printTable, printJson, truncate } from '../utils/output'
 import { runLifecycleAction, type CliLifecycleAction } from '../utils/lifecycle'
-import { A } from '../utils/ansi'
+import { A } from '@lenserfight/cli-client'
 import {
   battleCreationValidator,
   BATTLE_FORMATS,

@@ -1,5 +1,5 @@
 import consola from 'consola';
-import { callRpc } from '../utils/api';
+import { callRpc } from '@lenserfight/cli-client';
 
 export type LenserKind = 'human' | 'ai';
 export type LenserListFilter = 'all' | LenserKind;

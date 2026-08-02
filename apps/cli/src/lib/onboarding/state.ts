@@ -2,7 +2,7 @@ import {
   getOnboardingState,
   saveOnboardingState,
   type OnboardingStateSnapshot,
-} from '../../config/project-config'
+} from '@lenserfight/cli-client'
 import type { OnboardingStepId, SetupMode } from './schema'
 
 export function loadOnboardingSnapshot(cwd = process.cwd()): OnboardingStateSnapshot | null {

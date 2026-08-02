@@ -30,20 +30,18 @@ jest.mock('../../lib/safety', () => ({
   assertSafe: jest.fn(),
 }))
 
-jest.mock('../../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   handleError: jest.fn(),
+  A: new Proxy({}, { get: () => '' }),
+  sym: { fight: '⚔' },
 }))
 
 jest.mock('../../utils/output', () => ({
   printJson: jest.fn(),
   printTable: jest.fn(),
   truncate: (s: string) => s,
-}))
-
-jest.mock('../../utils/ansi', () => ({
-  A: new Proxy({}, { get: () => '' }),
-  sym: { fight: '⚔' },
 }))
 
 jest.mock('./workspace-ops', () => ({

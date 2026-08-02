@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, handleError } from '@lenserfight/cli-client';
 import { writeFileSync } from 'node:fs';
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRpc, callRest, handleError } from '../utils/api'
+import { callRpc, callRest, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable } from '../utils/output'
 import { assertSafe } from '../lib/safety'
 

@@ -23,7 +23,7 @@ import { A, isPlainText } from './ansi'
 import { classifyError, serializeTaxonomyEntry } from './error-taxonomy'
 import { renderDocsLine } from './docs-registry'
 import { compactHints, allHints, buildContextLabel } from './recovery-guidance'
-import { getExecContext } from '../lib/exec-context'
+import { getExecContext } from './exec-context'
 
 // ─── Colors (always raw — we gate them via isPlainText()) ────────────────────
 

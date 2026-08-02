@@ -3,7 +3,7 @@ import consola from 'consola'
 
 import { type WorkflowFrontmatter } from '@lenserfight/types'
 
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate'
 import {
   buildWorkflowSimulationReport,
@@ -12,7 +12,7 @@ import {
 } from '../utils/automation-objects'
 import { printJson, printTable, truncate } from '../utils/output'
 import { makeLifecycleCommand, runLifecycleAction } from '../utils/lifecycle'
-import { A, sym } from '../utils/ansi'
+import { A, sym } from '@lenserfight/cli-client'
 import { resolveWorkflowId } from '../utils/workflow-ref'
 
 // Node types that can execute in the current CLI context.

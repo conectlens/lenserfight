@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink'
-import { sym } from '../../../utils/ansi'
+import { sym } from '@lenserfight/cli-client'
 
 interface HealthPanelProps {
   profile: string

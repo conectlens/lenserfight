@@ -18,8 +18,12 @@
       "@lenserfight/features/store": ["libs/features/store/src/index.ts"],
       "@lenserfight/features/feedback": ["libs/features/feedback/src/index.ts"],
       "@lenserfight/features/generations": ["libs/features/generations/src/index.ts"],
-      "@lenserfight/features/generations/AIProviderSelectList": ["libs/features/generations/src/lib/components/AIProviderSelectList.tsx"],
-      "@lenserfight/features/generations/AIModelSelectList": ["libs/features/generations/src/lib/components/AIModelSelectList.tsx"],
+      "@lenserfight/features/generations/AIProviderSelectList": [
+        "libs/features/generations/src/lib/components/AIProviderSelectList.tsx"
+      ],
+      "@lenserfight/features/generations/AIModelSelectList": [
+        "libs/features/generations/src/lib/components/AIModelSelectList.tsx"
+      ],
       "@lenserfight/features/onboarding": ["libs/features/onboarding/src/index.ts"],
       "@lenserfight/features/lenses": ["libs/features/lenses/src/index.ts"],
       "@lenserfight/features/exports": ["libs/features/exports/src/index.ts"],
@@ -78,20 +82,35 @@
       "@lenserfight/api/contracts": ["libs/api/contracts/src/index.ts"],
       "@lenserfight/api/dto": ["libs/api/dto/src/index.ts"],
       "@lenserfight/api/exports": ["libs/api/exports/src/index.ts"],
-      "@lenserfight/seo": ["libs/seo/src/index.ts"],
       "@lenserfight/types": ["libs/types/src/index.ts"],
       "@lenserfight/ui/components": ["libs/ui/components/src/index.ts"],
       "@lenserfight/ui/components/native": ["libs/ui/components/src/native.ts"],
       "@lenserfight/ui/components/Badge": ["libs/ui/components/src/lib/Badge.tsx"],
       "@lenserfight/ui/components/Card": ["libs/ui/components/src/lib/Card.tsx"],
-      "@lenserfight/features/agents/AgentPolicySummary": ["libs/features/agents/src/lib/components/AgentPolicySummary.tsx"],
-      "@lenserfight/features/agents/AgentStatusBadge": ["libs/features/agents/src/lib/components/AgentStatusBadge.tsx"],
-      "@lenserfight/features/agents/useRunUnified": ["libs/features/agents/src/lib/hooks/useRunUnified.ts"],
-      "@lenserfight/features/agents/AgentManageWizard": ["libs/features/agents/src/lib/components/AgentManageWizard.tsx"],
-      "@lenserfight/features/agents/AgentCard": ["libs/features/agents/src/lib/components/AgentCard.tsx"],
-      "@lenserfight/features/profile/useLenserWorkspace": ["libs/features/profile/src/lib/useLenserWorkspace.ts"],
-      "@lenserfight/features/profile/useWorkspaceSwitchController": ["libs/features/profile/src/lib/useWorkspaceSwitchController.ts"],
-      "@lenserfight/features/profile/useLenser": ["libs/features/profile/src/lib/context/LenserContext"],
+      "@lenserfight/features/agents/AgentPolicySummary": [
+        "libs/features/agents/src/lib/components/AgentPolicySummary.tsx"
+      ],
+      "@lenserfight/features/agents/AgentStatusBadge": [
+        "libs/features/agents/src/lib/components/AgentStatusBadge.tsx"
+      ],
+      "@lenserfight/features/agents/useRunUnified": [
+        "libs/features/agents/src/lib/hooks/useRunUnified.ts"
+      ],
+      "@lenserfight/features/agents/AgentManageWizard": [
+        "libs/features/agents/src/lib/components/AgentManageWizard.tsx"
+      ],
+      "@lenserfight/features/agents/AgentCard": [
+        "libs/features/agents/src/lib/components/AgentCard.tsx"
+      ],
+      "@lenserfight/features/profile/useLenserWorkspace": [
+        "libs/features/profile/src/lib/useLenserWorkspace.ts"
+      ],
+      "@lenserfight/features/profile/useWorkspaceSwitchController": [
+        "libs/features/profile/src/lib/useWorkspaceSwitchController.ts"
+      ],
+      "@lenserfight/features/profile/useLenser": [
+        "libs/features/profile/src/lib/context/LenserContext"
+      ],
       "@lenserfight/features/home/useThreads": ["libs/features/home/src/lib/useThreads.ts"],
       "@lenserfight/ui/forms": ["libs/ui/forms/src/index.ts"],
       "@lenserfight/ui/forms/native": ["libs/ui/forms/src/native.ts"],
@@ -129,7 +148,8 @@
       "@lenserfight/ui/widgets": ["libs/ui/widgets/src/index.ts"],
       "@lenserfight/ui/media": ["libs/ui/media/src/index.ts"],
       "@lenserfight/features/chat": ["libs/features/chat/src/index.ts"],
-      "@lenserfight/features/connectors": ["libs/features/connectors/src/index.ts"]
+      "@lenserfight/features/connectors": ["libs/features/connectors/src/index.ts"],
+      "@lenserfight/cli-client": ["libs/cli/client/src/index.ts"]
     }
   }
 }

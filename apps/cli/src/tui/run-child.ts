@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { A, sym } from '../utils/ansi'
+import { A, sym } from '@lenserfight/cli-client'
 import { hackBanner } from '../lib/terminal-fx'
 
 const RETURN_KEYS = new Set(['q', 'Q', '\x1b', '\r', '\n'])

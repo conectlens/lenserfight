@@ -374,6 +374,9 @@ importers:
       jsdom:
         specifier: ~22.1.0
         version: 22.1.0(supports-color@8.1.1)
+      jsonc-eslint-parser:
+        specifier: ^2.1.0
+        version: 2.4.2
       knip:
         specifier: ^6.14.1
         version: 6.14.1(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)

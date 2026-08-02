@@ -1,4 +1,4 @@
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 
 export interface JourneyState {
   lens_created: boolean

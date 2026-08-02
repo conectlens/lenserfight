@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, callRest, handleError } from '../utils/api';
+import { callRpc, callRest, handleError } from '@lenserfight/cli-client';
 import { printTable, printJson } from '../utils/output';
-import { resolveConfig as loadConfig } from '../config/project-config';
+import { resolveConfig as loadConfig } from '@lenserfight/cli-client';
 import {
   getAdapter,
   getStreamAdapter,

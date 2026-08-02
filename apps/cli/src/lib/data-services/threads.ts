@@ -2,7 +2,7 @@
  * CLI data facade — mirrors `threadsService.getPersonalFeed` / `threadsRepository`.
  */
 import type { PersonalFeedItem } from '@lenserfight/types'
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 
 type PersonalThreadRow = {
   id: string

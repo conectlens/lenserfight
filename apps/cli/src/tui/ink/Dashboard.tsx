@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, Text, useInput } from 'ink'
-import { sym } from '../../utils/ansi'
+import { sym } from '@lenserfight/cli-client'
 import { getSuggestions, cycleSuggestion, validateSubcommand, tokenise } from '../dashboard'
 import { HealthPanel } from './panels/HealthPanel'
 import { ActionLogPanel } from './panels/ActionLogPanel'

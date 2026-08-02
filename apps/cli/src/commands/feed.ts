@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getPersonalContentFeed, isContentFeedType } from '../lib/data-services';
-import { handleError } from '../utils/api';
+import { handleError } from '@lenserfight/cli-client';
 import { printTable, printJson, truncate } from '../utils/output';
 
 export default defineCommand({

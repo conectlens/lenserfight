@@ -1,9 +1,10 @@
-jest.mock('../../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRest: jest.fn(),
   callRpc: jest.fn(),
 }))
 
-import { callRest, callRpc } from '../../utils/api'
+import { callRest, callRpc } from '@lenserfight/cli-client'
 import {
   cancelAgentTeamRun,
   killAgentWorkers,

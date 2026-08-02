@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 import consola from 'consola'
 
 import { canonicalAutomationKind, exportAutomationObject, exportAutomationTemplate, isAutomationObjectKind } from '../utils/automation-objects'
-import { handleError } from '../utils/api'
+import { handleError } from '@lenserfight/cli-client'
 
 export default defineCommand({
   meta: {

@@ -11,10 +11,9 @@ jest.mock('consola', () => ({
     box: jest.fn(),
   },
 }))
-jest.mock('../utils/auth', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   isAuthenticated: jest.fn(),
-}))
-jest.mock('../utils/api', () => ({
   callRpc: jest.fn(),
 }))
 jest.mock('../utils/output', () => ({
@@ -26,8 +25,8 @@ jest.mock('./setup', () => ({
 }))
 
 import consola from 'consola'
-import { isAuthenticated } from '../utils/auth'
-import { callRpc } from '../utils/api'
+import { isAuthenticated } from '@lenserfight/cli-client'
+import { callRpc } from '@lenserfight/cli-client'
 import { printJson } from '../utils/output'
 import setupCommand from './setup'
 

@@ -10,7 +10,8 @@ jest.mock('../commands/agents', () => ({
 jest.mock('../utils/profiles', () => ({
   getActiveProfileName: jest.fn().mockResolvedValue('default'),
 }))
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   resolveConfig: () => ({ supabaseUrl: '', supabaseAnonKey: '', cloudApiUrl: '' }),
 }))
 jest.mock('../utils/output', () => ({

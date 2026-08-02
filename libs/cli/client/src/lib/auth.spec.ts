@@ -10,9 +10,9 @@ const mockSaveUserConfig = jest.fn()
 const mockResolveConfig = jest.fn()
 const mockLoadEnvConfig = jest.fn()
 
-jest.mock('../config/project-config', () => ({
-  ...jest.requireActual<typeof import('../config/project-config')>(
-    '../config/project-config',
+jest.mock('./project-config', () => ({
+  ...jest.requireActual<typeof import('./project-config')>(
+    './project-config',
   ),
   loadUserConfig: () => mockLoadUserConfig(),
   saveUserConfig: (partial: Record<string, unknown>) => mockSaveUserConfig(partial),

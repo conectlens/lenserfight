@@ -1,5 +1,6 @@
 jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }))
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   handleError: jest.fn((err: unknown) => { throw err }),
 }))
@@ -16,7 +17,7 @@ jest.mock('consola', () => ({
   },
 }))
 
-import { callRpc } from '../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import securityCommand from './security'
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>

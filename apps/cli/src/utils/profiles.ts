@@ -1,7 +1,7 @@
 import { promises as fsp } from 'node:fs'
 import { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
-import { getDeviceConfigDir } from '../config/project-config'
+import { getDeviceConfigDir } from '@lenserfight/cli-client'
 
 // ─── Profile shape ──────────────────────────────────────────────────────────
 //

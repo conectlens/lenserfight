@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable, truncate } from '../utils/output'
 
 // ─── Types ─────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 
 export type AgentTeamRunRow = {
   id: string

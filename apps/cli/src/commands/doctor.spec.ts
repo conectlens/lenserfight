@@ -10,7 +10,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }))
-jest.mock('../config/project-config', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   configExists: jest.fn(),
   loadConfig: jest.fn(),
   resolveConfig: jest.fn(),
@@ -18,6 +19,9 @@ jest.mock('../config/project-config', () => ({
   getOnboardingState: jest.fn(),
   userPreferencesExist: jest.fn().mockReturnValue(false),
   getUserPreferencesPath: jest.fn().mockReturnValue('/home/user/.config/lenserfight/lenserfight.json'),
+  isAuthenticated: jest.fn(),
+  getUserInfo: jest.fn(),
+  callRpc: jest.fn(),
 }))
 jest.mock('../lib/onboarding/detect', () => ({
   detectNode: jest.fn(),
@@ -25,13 +29,6 @@ jest.mock('../lib/onboarding/detect', () => ({
   detectSupabaseCli: jest.fn(),
   detectOllama: jest.fn(),
   detectCloudApi: jest.fn(),
-}))
-jest.mock('../utils/auth', () => ({
-  isAuthenticated: jest.fn(),
-  getUserInfo: jest.fn(),
-}))
-jest.mock('../utils/api', () => ({
-  callRpc: jest.fn(),
 }))
 jest.mock('../utils/output', () => ({
   formatCheck: jest.fn((_s: string, label: string, detail: string) => `${label}: ${detail}`),
@@ -44,10 +41,10 @@ jest.mock('@lenserfight/providers', () => ({
   byokKeyResolver: { has: jest.fn() },
 }))
 
-import { configExists, loadConfig, resolveConfig, getOnboardingState } from '../config/project-config'
+import { configExists, loadConfig, resolveConfig, getOnboardingState } from '@lenserfight/cli-client'
 import { detectNode, detectDocker, detectSupabaseCli, detectOllama, detectCloudApi } from '../lib/onboarding/detect'
-import { isAuthenticated, getUserInfo } from '../utils/auth'
-import { callRpc } from '../utils/api'
+import { isAuthenticated, getUserInfo } from '@lenserfight/cli-client'
+import { callRpc } from '@lenserfight/cli-client'
 import { printJson, printSuccess, printWarn, printError } from '../utils/output'
 import { byokKeyResolver } from '@lenserfight/providers'
 

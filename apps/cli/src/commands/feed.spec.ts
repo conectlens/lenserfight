@@ -7,7 +7,8 @@ jest.mock('../lib/data-services', () => ({
   getPersonalContentFeed: jest.fn(),
   isContentFeedType: jest.fn((t: string) => ['threads', 'prompts', 'lenses'].includes(t)),
 }))
-jest.mock('../utils/api', () => ({ handleError: jest.fn() }))
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'), handleError: jest.fn() }))
 jest.mock('../utils/output', () => ({ printJson: jest.fn(), printTable: jest.fn(), truncate: jest.fn((s: string) => s) }))
 
 import consola from 'consola'

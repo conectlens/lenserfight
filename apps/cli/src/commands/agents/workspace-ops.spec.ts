@@ -2,7 +2,8 @@ jest.mock('../../utils/output', () => ({
   printTable: jest.fn(),
 }))
 
-jest.mock('../../utils/ansi', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   A: new Proxy({}, { get: () => '' }),
 }))
 

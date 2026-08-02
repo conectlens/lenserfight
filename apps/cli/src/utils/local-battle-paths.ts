@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 
-import { getDeviceConfigDir } from '../config/project-config'
+import { getDeviceConfigDir } from '@lenserfight/cli-client'
 
 export const LENSERFIGHT_RUNTIME_DIR_ENV = 'LENSERFIGHT_RUNTIME_DIR'
 export const LOCAL_BATTLE_DIR_NAME = 'local-battles'

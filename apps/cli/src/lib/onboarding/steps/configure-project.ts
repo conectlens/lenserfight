@@ -7,7 +7,7 @@ import {
   projectConfigExists,
   saveConfig,
   saveUserPreferences,
-} from '../../../config/project-config'
+} from '@lenserfight/cli-client'
 import type { OnboardingStep } from '../schema'
 
 export const configureProjectStep: OnboardingStep = {

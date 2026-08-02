@@ -2,7 +2,7 @@ import { defineCommand } from 'citty';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, handleError } from '@lenserfight/cli-client';
 import { printJson, printSuccess, printTable, printWarn } from '../utils/output';
 
 type ProviderRow = {

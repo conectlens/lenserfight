@@ -9,7 +9,7 @@ import {
   setActiveProfileName,
   type LenserfightProfile,
 } from '../utils/profiles'
-import { callRpc, handleError } from '../utils/api'
+import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable } from '../utils/output'
 
 // ─── profile list ────────────────────────────────────────────────────────────

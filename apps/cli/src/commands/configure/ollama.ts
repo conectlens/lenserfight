@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { getEffectiveMode, loadEnvConfig, resolveConfig } from '../../config/project-config'
+import { getEffectiveMode, loadEnvConfig, resolveConfig } from '@lenserfight/cli-client'
 import { OLLAMA_DEFAULT_BASE_URL } from '@lenserfight/providers'
 
 export default defineCommand({

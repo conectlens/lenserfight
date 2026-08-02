@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
 import { spawnSync } from 'node:child_process'
-import { c, sym } from '../utils/ansi'
+import { c, sym } from '@lenserfight/cli-client'
 
 const DOCS_BASE_URL = 'https://docs.lenserfight.com/en'
 

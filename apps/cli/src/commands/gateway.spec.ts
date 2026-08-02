@@ -18,7 +18,8 @@ jest.mock('consola', () => ({
     prompt: jest.fn(),
   },
 }));
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   callRest: jest.fn(),
   handleError: jest.fn(),
@@ -33,7 +34,7 @@ jest.mock('@lenserfight/utils/signing', () => ({ generateEd25519Keypair: jest.fn
 jest.mock('@lenserfight/infra/gateway', () => ({ detectTailscaleInterfaces: jest.fn(() => []) }));
 
 import consola from 'consola';
-import { callRpc } from '../utils/api';
+import { callRpc } from '@lenserfight/cli-client';
 import { printJson, printTable } from '../utils/output';
 import gatewayCmd from './gateway';
 

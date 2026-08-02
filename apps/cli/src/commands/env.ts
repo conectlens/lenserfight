@@ -5,10 +5,10 @@ import {
   loadConfig,
   getEffectiveMode,
   type LenserfightConfig,
-} from '../config/project-config'
-import { maskSecret } from '../lib/redact'
+} from '@lenserfight/cli-client'
+import { maskSecret } from '@lenserfight/cli-client'
 import { printJson, printTable } from '../utils/output'
-import { c, sym } from '../utils/ansi'
+import { c, sym } from '@lenserfight/cli-client'
 import { byokKeyResolver } from '@lenserfight/providers'
 
 type EnvStatus = 'set' | 'missing'

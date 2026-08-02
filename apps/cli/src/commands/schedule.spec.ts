@@ -10,7 +10,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }));
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   callRest: jest.fn(),
   handleError: jest.fn(),
@@ -26,7 +27,7 @@ jest.mock('node:fs/promises', () => ({
 
 import consola from 'consola';
 
-import { callRpc } from '../utils/api';
+import { callRpc } from '@lenserfight/cli-client';
 import { printTable } from '../utils/output';
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>;
@@ -474,11 +475,11 @@ describe('schedule calendar create', () => {
       rawArgs: [],
     });
 
-    const mockCallRest = (await import('../utils/api')).callRest as jest.MockedFunction<
-      typeof import('../utils/api').callRest
+    const mockCallRest = (await import('@lenserfight/cli-client')).callRest as jest.MockedFunction<
+      typeof import('@lenserfight/cli-client').callRest
     >;
-    const mockHandleError = (await import('../utils/api')).handleError as jest.MockedFunction<
-      typeof import('../utils/api').handleError
+    const mockHandleError = (await import('@lenserfight/cli-client')).handleError as jest.MockedFunction<
+      typeof import('@lenserfight/cli-client').handleError
     >;
     expect(mockCallRest).not.toHaveBeenCalled();
     expect(mockHandleError).toHaveBeenCalled();
@@ -499,8 +500,8 @@ describe('schedule calendar create', () => {
       rawArgs: [],
     });
 
-    const mockHandleError = (await import('../utils/api')).handleError as jest.MockedFunction<
-      typeof import('../utils/api').handleError
+    const mockHandleError = (await import('@lenserfight/cli-client')).handleError as jest.MockedFunction<
+      typeof import('@lenserfight/cli-client').handleError
     >;
     expect(mockHandleError).toHaveBeenCalled();
     const err = mockHandleError.mock.calls[0][0] as Error;
@@ -575,11 +576,11 @@ describe('schedule condition set', () => {
       rawArgs: [],
     });
 
-    const mockHandleError = (await import('../utils/api')).handleError as jest.MockedFunction<
-      typeof import('../utils/api').handleError
+    const mockHandleError = (await import('@lenserfight/cli-client')).handleError as jest.MockedFunction<
+      typeof import('@lenserfight/cli-client').handleError
     >;
-    const mockCallRest = (await import('../utils/api')).callRest as jest.MockedFunction<
-      typeof import('../utils/api').callRest
+    const mockCallRest = (await import('@lenserfight/cli-client')).callRest as jest.MockedFunction<
+      typeof import('@lenserfight/cli-client').callRest
     >;
     expect(mockCallRest).not.toHaveBeenCalled();
     expect(mockHandleError).toHaveBeenCalled();
@@ -600,11 +601,11 @@ describe('schedule rotation set', () => {
       rawArgs: [],
     });
 
-    const mockHandleError = (await import('../utils/api')).handleError as jest.MockedFunction<
-      typeof import('../utils/api').handleError
+    const mockHandleError = (await import('@lenserfight/cli-client')).handleError as jest.MockedFunction<
+      typeof import('@lenserfight/cli-client').handleError
     >;
-    const mockCallRest = (await import('../utils/api')).callRest as jest.MockedFunction<
-      typeof import('../utils/api').callRest
+    const mockCallRest = (await import('@lenserfight/cli-client')).callRest as jest.MockedFunction<
+      typeof import('@lenserfight/cli-client').callRest
     >;
     expect(mockCallRest).not.toHaveBeenCalled();
     expect(mockHandleError).toHaveBeenCalled();

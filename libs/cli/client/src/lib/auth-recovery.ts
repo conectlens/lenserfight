@@ -1,5 +1,5 @@
-import { loadUserConfig, resolveConfig, saveUserConfig } from '../config/project-config'
-import { isCI, isInteractiveTTY } from '../lib/safety/env-inspector'
+import { loadUserConfig, resolveConfig, saveUserConfig } from './project-config'
+import { isCI, isInteractiveTTY } from './env-inspector'
 import {
   buildAuthAppUrl,
   openBrowser,

@@ -8,7 +8,7 @@ import {
   resolveConfig,
   isDevOnlyAuthBaseUrl,
   PRODUCTION_AUTH_BASE_URL,
-} from '../config/project-config'
+} from './project-config'
 import { callRpc } from './api'
 import type {
   ApproveDeviceRequestDTO,
@@ -408,7 +408,7 @@ async function createLenserProfile(
   userId: string,
   handle: string,
   displayName: string,
-  config: import('../config/project-config').LenserfightConfig
+  config: import('./project-config').LenserfightConfig
 ): Promise<void> {
   const key = config.supabaseServiceRoleKey ?? config.supabaseAnonKey
   const authHeader = config.supabaseServiceRoleKey

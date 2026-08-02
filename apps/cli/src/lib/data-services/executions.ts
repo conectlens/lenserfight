@@ -3,7 +3,7 @@
  * Mirrors `executionRepository` / `workflowsRepository` RPC contracts.
  */
 import type { CrossAgentFeedItem, LensExecutionHistoryItem } from '@lenserfight/types'
-import { callRpc } from '../../utils/api'
+import { callRpc } from '@lenserfight/cli-client'
 import { getHumanActivityFeed } from './agent-workspace'
 
 export type { CrossAgentFeedItem, LensExecutionHistoryItem }

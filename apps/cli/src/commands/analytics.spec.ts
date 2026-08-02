@@ -11,7 +11,8 @@ jest.mock('consola', () => ({
     log: jest.fn(),
   },
 }));
-jest.mock('../utils/api', () => ({
+jest.mock('@lenserfight/cli-client', () => ({
+  ...jest.requireActual('@lenserfight/cli-client'),
   callRpc: jest.fn(),
   callRest: jest.fn(),
   handleError: jest.fn(),
@@ -23,7 +24,7 @@ jest.mock('../utils/output', () => ({
 }));
 
 import consola from 'consola';
-import { callRpc, callRest, handleError } from '../utils/api';
+import { callRpc, callRest, handleError } from '@lenserfight/cli-client';
 import { printTable, printJson } from '../utils/output';
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>;

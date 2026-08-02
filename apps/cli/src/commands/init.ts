@@ -11,7 +11,7 @@ import {
   saveConfig,
   saveUserPreferences,
   userPreferencesExist,
-} from '../config/project-config';
+} from '@lenserfight/cli-client';
 
 // Well-known local Supabase URL (same for every project)
 const LOCAL_DEFAULT_URL = 'http://127.0.0.1:54321';

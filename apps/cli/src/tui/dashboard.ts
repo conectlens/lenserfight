@@ -4,7 +4,7 @@ import { getAgentWorkspaceContext } from '../lib/agent-workspace-context'
 import { formatAgentWorkspaceBanner } from '../commands/agents'
 import { getAgentWorkspaceOpsLines } from '../commands/agents/workspace-ops'
 import { truncate } from '../utils/output'
-import { A, sym, isPlainText, stripAnsi } from '../utils/ansi'
+import { A, sym, isPlainText, stripAnsi } from '@lenserfight/cli-client'
 
 // Single sink for full-screen frames. Honors NO_COLOR / dumb-terminal / non-TTY
 // by stripping ANSI so the dashboard degrades to readable plain text. The
