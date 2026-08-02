@@ -2487,6 +2487,7 @@ export default defineConfig({
             { text: 'Development Setup', link: '/en/how-to/contributors/development-setup' },
             { text: 'Coding Standards', link: '/en/how-to/contributors/coding-standards' },
             { text: 'UI Refactor Guide', link: '/en/how-to/contributors/ui-refactor-guide' },
+            { text: 'Root Directory Audit', link: '/en/how-to/contributors/root-directory-audit' },
             { text: 'Branching and Versioning', link: '/en/how-to/contributors/branching' },
             { text: 'Release Process', link: '/en/how-to/contributors/release-process' },
             { text: 'Release Checklist', link: '/en/how-to/contributors/release-checklist' },
