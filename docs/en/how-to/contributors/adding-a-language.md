@@ -11,6 +11,27 @@ The two enabled languages today are **English (`en`)** and **Turkish (`tr`)**. U
 
 Pick a target locale code from the registry — for this guide we will use `de` (German). Replace `de` with your target.
 
+## Current locale status
+
+Source of truth: `libs/utils/locale/src/lib/locales.ts`.
+
+| Language | Code | Status |
+|---|:--:|---|
+| English | `en` | Stable |
+| Turkish | `tr` | WIP |
+| Spanish | `es` | Stub |
+| French | `fr` | Stub |
+| German | `de` | Stub |
+| Chinese | `zh` | Stub |
+| Japanese | `ja` | Stub |
+| Korean | `ko` | Stub |
+| Russian | `ru` | Stub |
+| Portuguese | `pt` | Stub |
+| Italian | `it` | Stub |
+
+**Stable** — translated and reviewed by a native speaker. **WIP** — in progress, some strings
+translated. **Stub** — framework in place (routing, docs scaffold), no translated content yet.
+
 ---
 
 ## 1. Promote the locale in the registry
