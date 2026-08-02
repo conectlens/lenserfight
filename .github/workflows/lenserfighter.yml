@@ -83,14 +83,14 @@ jobs:
         # Pin to an immutable commit SHA before merging this change. Resolve via:
         #   gh api repos/actions/create-github-app-token/git/refs/tags/v1 | jq -r .object.sha
         # then replace the tag below with `@<full-40-char-sha>  # v1`.
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.LENSERFIGHTER_APP_ID }}
           private-key: ${{ secrets.LENSERFIGHTER_APP_PRIVATE_KEY }}
 
       - name: Checkout repository
         if: steps.preflight.outputs.configured == 'true'
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           token: ${{ steps.app-token.outputs.token }}
