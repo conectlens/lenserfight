@@ -7,7 +7,7 @@ import { useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
 import { ExportModal } from '@lenserfight/features/exports'
-import type { LensExportPayload } from '@lenserfight/shared/serializers'
+import { lensToSkillPayload, type LensExportPayload } from '@lenserfight/shared/serializers'
 import { SEOHead, Badge, Button, Card, DesktopFrame, HelpButton } from '@lenserfight/ui/components'
 import {
   ArtifactLifecycleMenu,
@@ -174,6 +174,31 @@ export const LensDetailPage: React.FC = () => {
     ? 'main'
     : displayVersion?.versionNumber ?? versionRoute.routeVersionNumber
   const parameterCount = activeVersionParams?.length ?? 0
+
+  /**
+   * Single source for the Lens export payload. The Skill export derives from
+   * this same payload via lensToSkillPayload, so the two exports can never
+   * describe different versions of the Lens.
+   */
+  const buildLensExportPayload = useCallback(
+    async (): Promise<LensExportPayload> => ({
+      id: lens?.id ?? '',
+      slug: lens?.id ?? '',
+      title: lens?.title ?? '',
+      body: displayVersion?.templateBody ?? lens?.content ?? null,
+      version: displayVersion?.versionNumber ?? lens?.latestVersionNumber ?? null,
+      tags: lens?.tags.map((t) => t.name).filter(Boolean) ?? [],
+      parameters: activeVersionParams?.map((p) => ({
+        label: p.label,
+        type: p.tool.type,
+        required: !p.optional && p.tool.required,
+        description: p.tool.helpText ?? null,
+        placeholder: p.tool.placeholder ?? null,
+        options: p.tool.options ?? null,
+      })),
+    }),
+    [lens, displayVersion, activeVersionParams],
+  )
 
   const selectedModel = lab.providerModels.find((m) => m.key === lab.selectedModelKey)
   const inputModalities = selectedModelInputModalities?.length
@@ -501,24 +526,18 @@ export const LensDetailPage: React.FC = () => {
                   open={isExportOpen}
                   onClose={() => setIsExportOpen(false)}
                   kind="lens"
+                  kindLabel="Lens"
                   slug={lens.id}
                   title={lens.title ?? undefined}
-                  fetchPayload={async (): Promise<LensExportPayload> => ({
-                    id: lens.id,
-                    slug: lens.id,
-                    title: lens.title ?? '',
-                    body: displayVersion?.templateBody ?? lens.content ?? null,
-                    version: displayVersion?.versionNumber ?? lens.latestVersionNumber ?? null,
-                    tags: lens.tags.map((t) => t.name).filter(Boolean),
-                    parameters: activeVersionParams?.map((p) => ({
-                      label: p.label,
-                      type: p.tool.type,
-                      required: !p.optional && p.tool.required,
-                      description: p.tool.helpText ?? null,
-                      placeholder: p.tool.placeholder ?? null,
-                      options: p.tool.options ?? null,
-                    })),
-                  })}
+                  fetchPayload={buildLensExportPayload}
+                  alternateKinds={[
+                    {
+                      kind: 'skill',
+                      label: 'Skill',
+                      fetchPayload: async () =>
+                        lensToSkillPayload(await buildLensExportPayload()),
+                    },
+                  ]}
                   isOwner={isOwner}
                 />
               }

@@ -6,9 +6,9 @@
   "license": "MIT",
   "engines": {
     "node": ">=22",
-    "pnpm": ">=9"
+    "pnpm": ">=11"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@11.18.0",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:web": "npx nx serve web",
@@ -52,31 +52,6 @@
     "announcement:gates": "node tools/announcement-dashboard.mjs",
     "announcement:dashboard": "bash scripts/announcement-dashboard.sh",
     "staging-integrity": "node tools/run-staging-integrity-checklist.mjs"
-  },
-  "pnpm": {
-    "overrides": {
-      "protobufjs": ">=7.5.6",
-      "minimatch": ">=9.0.7",
-      "@xmldom/xmldom": ">=0.8.13",
-      "axios": ">=1.15.2",
-      "tmp": ">=0.2.7",
-      "handlebars": ">=4.7.9",
-      "flatted": ">=3.4.2",
-      "koa": ">=3.2.1",
-      "fast-uri": ">=3.1.2",
-      "lodash": ">=4.18.1",
-      "lodash-es": ">=4.18.1",
-      "@babel/plugin-transform-modules-systemjs": ">=7.29.7",
-      "postcss": ">=8.5.6",
-      "uuid": ">=9.0.1",
-      "esbuild": ">=0.25.0",
-      "shell-quote": ">=1.8.4",
-      "ws": ">=8.21.0",
-      "form-data": ">=4.0.6",
-      "hono": ">=4.12.25",
-      "vite": ">=7.3.5",
-      "undici": ">=7.28.0 <8"
-    }
   },
   "config": {
     "commitizen": {

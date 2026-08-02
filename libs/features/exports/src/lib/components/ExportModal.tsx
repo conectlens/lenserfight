@@ -19,6 +19,7 @@ import { LocalDownloadTransport } from '../transport/LocalDownloadTransport'
 import { ExportOrchestrator } from '../orchestrator/ExportOrchestrator'
 import { DestinationSelector } from './DestinationSelector'
 import { FormatSelector } from './FormatSelector'
+import { KindSelector } from './KindSelector'
 
 export interface ExportModalProps<T> {
   open: boolean
@@ -31,6 +32,19 @@ export interface ExportModalProps<T> {
   isOwner?: boolean
   /** Formats this entity supports (EX-1: markdown + json only). */
   availableFormats?: ExportFormat[]
+  /**
+   * Other shapes this entity can be exported as — e.g. a Lens exported as an
+   * agentskills.io Skill. When present, a kind selector appears and choosing
+   * an entry swaps both the export kind and the payload builder. `kind` above
+   * remains the default.
+   */
+  alternateKinds?: ReadonlyArray<{
+    kind: ExportKind
+    label: string
+    fetchPayload: () => Promise<unknown>
+  }>
+  /** Label for the default kind in the selector. Defaults to the kind itself. */
+  kindLabel?: string
   /** Override the run-export handler — primarily for tests / Storybook. */
   onConfirm?: (input: { format: ExportFormat; destination: TransportId }) => Promise<void>
 }
@@ -52,10 +66,21 @@ export function ExportModal<T>({
   fetchPayload,
   isOwner = false,
   availableFormats,
+  alternateKinds,
+  kindLabel,
   onConfirm,
 }: ExportModalProps<T>) {
   const mode = useRuntimeMode()
   const { user, isAuthenticated } = useAuth()
+  // Null means "follow the kind prop". Storing an override rather than a copy
+  // keeps the prop authoritative: a parent that swaps `kind` must win over a
+  // stale selection, otherwise the modal would keep exporting the old entity.
+  const [kindOverride, setKindOverride] = useState<ExportKind | null>(null)
+  const [lastKind, setLastKind] = useState<ExportKind>(kind)
+  if (lastKind !== kind) {
+    setLastKind(kind)
+    setKindOverride(null)
+  }
   const [format, setFormat] = useState<ExportFormat>('markdown')
   const [destination, setDestination] = useState<TransportId>(
     mode === 'cloud' ? 'cloud-download' : 'local-download',
@@ -64,9 +89,28 @@ export function ExportModal<T>({
   const [isCopied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The selector may swap the export target (e.g. Lens → Skill); everything
+  // downstream keys off the active kind and its matching payload builder.
+  const activeKind: ExportKind = kindOverride ?? kind
+  const activeFetchPayload = useMemo(
+    () =>
+      (activeKind === kind
+        ? fetchPayload
+        : alternateKinds?.find((a) => a.kind === activeKind)?.fetchPayload ??
+          fetchPayload) as () => Promise<T>,
+    [activeKind, kind, fetchPayload, alternateKinds],
+  )
+  const kindOptions = useMemo(
+    () =>
+      alternateKinds && alternateKinds.length > 0
+        ? [{ kind, label: kindLabel ?? kind }, ...alternateKinds.map((a) => ({ kind: a.kind, label: a.label }))]
+        : [],
+    [alternateKinds, kind, kindLabel],
+  )
+
   const formats: ExportFormat[] | undefined =
-    availableFormats ?? (kind === 'workflow' ? ['markdown'] : undefined)
-  const isWorkflowGuide = kind === 'workflow' && formats?.length === 1
+    availableFormats ?? (activeKind === 'workflow' ? ['markdown'] : undefined)
+  const isWorkflowGuide = activeKind === 'workflow' && formats?.length === 1
   const effectiveFormat: ExportFormat = isWorkflowGuide ? 'markdown' : format
 
   const buildContext = useCallback((): ExportContext => ({
@@ -85,10 +129,10 @@ export function ExportModal<T>({
   }, [])
 
   const runExportDefault = useExportRunner<T>({
-    kind,
+    kind: activeKind,
     slug,
     title,
-    fetchPayload,
+    fetchPayload: activeFetchPayload,
     buildContext,
     resolveTransport,
   })
@@ -102,8 +146,8 @@ export function ExportModal<T>({
       skill: '/explanation/architecture/universal-export-system',
       bundle: '/explanation/architecture/universal-export-system',
     }
-    return map[kind]
-  }, [kind])
+    return map[activeKind]
+  }, [activeKind])
 
   const handleCopy = useCallback(async () => {
     setError(null)
@@ -121,8 +165,8 @@ export function ExportModal<T>({
       const registry = bootstrapSerializers(getDefaultRegistry())
       const orchestrator = new ExportOrchestrator(registry)
       const ctx = buildContext()
-      const request: ExportRequest = { kind, slug, format: effectiveFormat }
-      await orchestrator.run<T>({ request, ctx, fetchPayload, transport: captureTransport })
+      const request: ExportRequest = { kind: activeKind, slug, format: effectiveFormat }
+      await orchestrator.run<T>({ request, ctx, fetchPayload: activeFetchPayload, transport: captureTransport })
       await navigator.clipboard.writeText(capturedText)
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
       setCopied(true)
@@ -132,7 +176,7 @@ export function ExportModal<T>({
     } finally {
       setRunning(false)
     }
-  }, [buildContext, effectiveFormat, fetchPayload, kind, slug])
+  }, [buildContext, effectiveFormat, activeFetchPayload, activeKind, slug])
 
   const handleConfirm = async () => {
     setError(null)
@@ -151,11 +195,11 @@ export function ExportModal<T>({
     }
   }
 
-  const headerTitle = title ? `Export "${title}"` : `Export ${kind}`
+  const headerTitle = title ? `Export "${title}"` : `Export ${activeKind}`
   const safeHeader = headerTitle.length > 60 ? `${headerTitle.slice(0, 57)}...` : headerTitle
-  const description = kind === 'workflow'
+  const description = activeKind === 'workflow'
     ? 'Create an AI-readable guide with ordered steps, inputs, and data flow.'
-    : `Kind: ${kind} · Slug: ${slug}`
+    : `Kind: ${activeKind} · Slug: ${slug}`
 
   return (
     <Dialog
@@ -200,6 +244,19 @@ export function ExportModal<T>({
       }
     >
       <div className="flex flex-col gap-5">
+        {kindOptions.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <label className="text-xs font-semibold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
+              Export as
+            </label>
+            <KindSelector
+              value={activeKind}
+              onChange={setKindOverride}
+              options={kindOptions}
+              disabled={isRunning}
+            />
+          </section>
+        )}
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
             <label className="text-xs font-semibold uppercase tracking-wide text-greyscale-500 dark:text-greyscale-400">
