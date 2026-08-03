@@ -1,7 +1,7 @@
 import { AuthExternalRedirect } from '@lenserfight/features/auth'
 import { Loader } from '@lenserfight/ui/feedback'
 import { ModalRoute } from '@lenserfight/ui/routing'
-import { ARENA_BASE_URL } from '@lenserfight/utils/env'
+import { LANDING_BASE_URL } from '@lenserfight/utils/env'
 import React, { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
@@ -90,7 +90,7 @@ const PolicyExternalRedirect: React.FC = () => {
   const location = useLocation()
   const suffix = location.pathname.replace(/^\/policies\/?/, '')
   const policyPath = suffix ? `/policies/${suffix}` : '/policies/terms'
-  return <AuthExternalRedirect to={`${ARENA_BASE_URL}${policyPath}${location.search}`} />
+  return <AuthExternalRedirect to={`${LANDING_BASE_URL}${policyPath}${location.search}`} />
 }
 
 const OnboardingModal: React.FC = () => (
@@ -126,12 +126,12 @@ export const WebRouter: React.FC = () => {
         />
 
         {/* External marketing / policy redirects */}
-        <Route path="/about" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/about`} />} />
-        <Route path="/product" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/product`} />} />
-        <Route path="/faq" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/faq`} />} />
-        <Route path="/terms" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/terms`} />} />
-        <Route path="/privacy" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/privacy`} />} />
-        <Route path="/cookies" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/cookies`} />} />
+        <Route path="/about" element={<AuthExternalRedirect to={`${LANDING_BASE_URL}/about`} />} />
+        <Route path="/product" element={<AuthExternalRedirect to={`${LANDING_BASE_URL}/product`} />} />
+        <Route path="/faq" element={<AuthExternalRedirect to={`${LANDING_BASE_URL}/faq`} />} />
+        <Route path="/terms" element={<AuthExternalRedirect to={`${LANDING_BASE_URL}/policies/terms`} />} />
+        <Route path="/privacy" element={<AuthExternalRedirect to={`${LANDING_BASE_URL}/policies/privacy`} />} />
+        <Route path="/cookies" element={<AuthExternalRedirect to={`${LANDING_BASE_URL}/policies/cookies`} />} />
         <Route path="/policies" element={<PolicyExternalRedirect />} />
         <Route path="/policies/*" element={<PolicyExternalRedirect />} />
 

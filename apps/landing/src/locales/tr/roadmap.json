@@ -1,0 +1,53 @@
+{
+  "hero": {
+    "badge": "Yol Haritası",
+    "title": "Ne bitti, sırada ne var ve ne zaman.",
+    "subtitle": "LenserFight açık şekilde geliştiriliyor. Bu sayfa neyin yayınlandığını, neyin devam ettiğini ve neyin planlandığını takip eder — sabit bir vaat değil, geliştikçe güncellenir."
+  },
+  "now": {
+    "badge": "Bugün kullanılabilir",
+    "title": "Şu anda güvenebileceğiniz özellikler",
+    "items": {
+      "0": { "title": "Lensler", "description": "Tipli parametrelere sahip, yeniden kullanılabilir yapay zeka istemlerini oluşturun, sürümleyin, çatallayın ve çalıştırın. Platformun en olgun bölümü budur." },
+      "1": { "title": "Topluluk", "description": "Yapay Zeka Geliştiricileri ve Vibe Coder'lar için Lensleri paylaşmak ve tartışmak üzere herkese açık profiller, konular, XP ve bir forum." },
+      "2": { "title": "CLI", "description": "Terminalinizden Lensleri çalıştırın, profilinizi yönetin ve yapay zeka değerlendirmesini otomatikleştirin." }
+    }
+  },
+  "timeline": {
+    "badge": "Plan",
+    "title": "Çeyrek çeyrek",
+    "statusLabels": {
+      "in_progress": "Devam ediyor",
+      "planned": "Planlandı"
+    },
+    "phases": {
+      "0": {
+        "period": "Ağustos 2026",
+        "status": "in_progress",
+        "title": "İş akışı yönetimi",
+        "description": "Bu ayki ana odağımız: Lensleri zamanlanabilir, izlenebilir ve yeniden kullanılabilir gerçek, DAG tabanlı İş Akışlarına bağlamak — çalıştırılabilir bir sonuç üretmek için manuel JSON düzenlemesi gerektirmeyen bir oluşturucu ile."
+      },
+      "1": {
+        "period": "Eylül – Ekim 2026",
+        "status": "planned",
+        "title": "Yapay Zeka Ajanları ve Yarışların sağlamlaştırılması",
+        "description": "Ajanlar ve Yarışlar bugün uçtan uca çalışıyor ancak Deneysel olarak etiketlenmiş durumda. Bu aşama güvenilirliğe odaklanır: eşleştirme, yarışa katılma akışı, ajan orkestrasyonu ve bunları kararlı ilan etmeden önce bilinen pürüzlerin giderilmesi."
+      },
+      "2": {
+        "period": "Aralık 2026",
+        "status": "planned",
+        "title": "Mobil destek",
+        "description": "Yarışları takip etmek, Lenslerinizi kontrol etmek ve iOS ile Android üzerinden topluluğa bağlı kalmak için bir mobil yol arkadaşı uygulaması."
+      }
+    }
+  },
+  "note": {
+    "title": "Bunu neden yayınlıyoruz",
+    "description": "Uygulamada eksik bir özelliği yanlışlıkla keşfetmenizdense, burada az vaat edip fazla iletişim kurmayı tercih ederiz. Bir tarih kayarsa, bu sayfayı güncelleriz — sessizce gömmeyiz."
+  },
+  "cta": {
+    "title": "Sıradakini şekillendirmeye yardım etmek ister misiniz?",
+    "description": "Yol haritası sabit bir plandan değil, gerçek kullanım ve topluluk geri bildiriminden yönlendirilir. Canlı olanı deneyin, eksik olanı bize söyleyin.",
+    "github": "GitHub'da bir konu açın"
+  }
+}

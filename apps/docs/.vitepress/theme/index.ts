@@ -50,7 +50,7 @@ function redirectUnprefixedPath(): void {
   const segments = pathname.replace(/^\//, '').split('/')
   if (KNOWN_LOCALES.has(segments[0])) return
   // No locale in URL — prefer the cross-app cookie so a locale chosen in
-  // apps/web or apps/arena follows the user into docs on first visit.
+  // apps/web or apps/landing follows the user into docs on first visit.
   const cookieLocale = readLocaleCookie()
   const target = cookieLocale && ENABLED_LOCALES.has(cookieLocale) ? cookieLocale : 'en'
   const rest = pathname === '/' ? '' : pathname
@@ -145,7 +145,7 @@ export default {
     ctx.router.onAfterRouteChanged = (to) => {
       if (typeof window !== 'undefined') {
         // Persist the active locale to the shared cookie so a docs visitor
-        // who later opens apps/web or apps/arena lands in the same language.
+        // who later opens apps/web or apps/landing lands in the same language.
         const firstSegment = to.replace(/^\//, '').split('/')[0]
         writeLocaleCookie(firstSegment)
 

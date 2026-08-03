@@ -1,5 +1,5 @@
 import { Lenser } from '@lenserfight/types'
-import { ARENA_BASE_URL } from '@lenserfight/utils/env'
+import { LANDING_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 import { Swords, X } from 'lucide-react'
 import React, { useState } from 'react'
@@ -70,7 +70,7 @@ export function NewUserWelcomeBanner({ lenser }: NewUserWelcomeBannerProps) {
           <Swords size={15} /> Start your first battle
         </button>
         <a
-          href={`${ARENA_BASE_URL}/battle-showcase`}
+          href={`${LANDING_BASE_URL}/battle-showcase`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={dismiss}

@@ -2651,14 +2651,64 @@ const localVote = defineCommand({
 })
 
 const localStatus = defineCommand({
-  meta: { name: 'status', description: 'Show the current state and vote tally of a local battle.' },
+  meta: {
+    name: 'status',
+    description:
+      'Show battle status. Resolves a local file-workspace battle by ID, or a Cloud battle by slug/UUID.',
+  },
   args: {
-    id: { type: 'string', description: 'Local battle ID (omit to use most recent)', default: '' },
+    id: {
+      type: 'positional',
+      description: 'Local battle ID, or Cloud battle slug/UUID (omit to use most recent local battle)',
+      required: false,
+    },
     json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
+    // Try to resolve against local file-workspace battles first (existing
+    // behavior). If that fails and an id was given, fall back to a Cloud
+    // battle lookup by slug or UUID via fn_battles_resolve_slug.
+    let state: ReturnType<typeof localBattleStore.list>[number] | undefined
     try {
-      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0]
+      state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0]
+    } catch {
+      state = undefined
+    }
+
+    if (!state && args.id) {
+      try {
+        const battleId = await resolveBattleId(args.id)
+        const battle = await callRpc<Record<string, unknown>>('fn_battles_get_public', {
+          p_battle_id: battleId,
+        })
+
+        if (!battle) {
+          consola.error('Battle not found or not public: %s', args.id)
+          process.exitCode = 1
+          return
+        }
+
+        if (args.json) {
+          printJson(battle)
+          return
+        }
+
+        consola.log('')
+        consola.log('  Title:   %s', battle['title'])
+        consola.log('  ID:      %s', battle['id'])
+        consola.log('  Status:  %s', battle['status'])
+        consola.log('  Task:    %s', battle['task_prompt'])
+        if (battle['voting_opens_at']) consola.log('  Voting opens:  %s', battle['voting_opens_at'])
+        if (battle['voting_closes_at']) consola.log('  Voting closes: %s', battle['voting_closes_at'])
+        consola.log('')
+        return
+      } catch (err) {
+        handleError(err)
+        return
+      }
+    }
+
+    try {
       if (!state) {
         consola.info('No local battles yet. Run `lf battle file init`.')
         return

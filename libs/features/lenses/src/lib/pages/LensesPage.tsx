@@ -136,22 +136,38 @@ export const LensesPage: React.FC = () => {
   } = useCreateLens()
 
   // Intersection Observer callback
+  // Guard state is read via refs (not deps) so the observer is created once
+  // per DOM node instead of being torn down and recreated on every fetch —
+  // recreating it mid-scroll made IntersectionObserver replay its "already
+  // intersecting" callback immediately, re-triggering fetchNextPage in a loop.
   const observer = useRef<IntersectionObserver | null>(null)
-  const lastElementRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (isLoading || isFetchingNextPage) return
-      if (observer.current) observer.current.disconnect()
+  const isLoadingRef = useRef(isLoading)
+  const isFetchingNextPageRef = useRef(isFetchingNextPage)
+  const hasNextPageRef = useRef(hasNextPage)
+  const fetchNextPageRef = useRef(fetchNextPage)
+  useEffect(() => {
+    isLoadingRef.current = isLoading
+    isFetchingNextPageRef.current = isFetchingNextPage
+    hasNextPageRef.current = hasNextPage
+    fetchNextPageRef.current = fetchNextPage
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage])
 
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasNextPage) {
-          fetchNextPage()
-        }
-      })
+  const lastElementRef = useCallback((node: HTMLDivElement) => {
+    if (observer.current) observer.current.disconnect()
 
-      if (node) observer.current.observe(node)
-    },
-    [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]
-  )
+    observer.current = new IntersectionObserver((entries) => {
+      if (
+        entries[0].isIntersecting &&
+        hasNextPageRef.current &&
+        !isLoadingRef.current &&
+        !isFetchingNextPageRef.current
+      ) {
+        fetchNextPageRef.current()
+      }
+    })
+
+    if (node) observer.current.observe(node)
+  }, [])
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {

@@ -1,6 +1,6 @@
 ---
 title: Internationalization (i18n) Contribution Guide
-description: How LenserFight resolves, persists, and exposes locale across apps/web (cookie-driven), apps/arena (URL-prefix), and apps/docs (VitePress).
+description: How LenserFight resolves, persists, and exposes locale across apps/web (cookie-driven), apps/landing (URL-prefix), and apps/docs (VitePress).
 ---
 
 # Internationalization (i18n) Contribution Guide
@@ -29,14 +29,14 @@ If you want to **add a brand-new language**, jump to [Adding a Language](./addin
                                          | reads/writes
                                          v
                                   +--------------+
-                                  |  apps/arena  |
+                                  |  apps/landing  |
                                   | (URL-prefix  |
                                   |  /:lang/...) |
                                   +--------------+
 ```
 
 - `apps/web` is route-stable — there are no `/en/...` URLs. Locale is resolved from auth → cookie → localStorage → navigator → default.
-- `apps/arena` keeps its `/en/`, `/tr/` URL prefixes for SEO/hreflang. It writes the cookie when the user switches.
+- `apps/landing` keeps its `/en/`, `/tr/` URL prefixes for SEO/hreflang. It writes the cookie when the user switches.
 - `apps/docs` (VitePress) keeps `/en/`, `/tr/` prefixes but redirects bare paths using the cookie value, and writes the cookie on every locale-prefixed page load.
 
 The cookie name is `lf-locale`, scoped to the parent domain (`.lenserfight.com` in prod, `localhost` locally). Attributes: `Path=/`, `SameSite=Lax`, `Secure` on HTTPS, `Max-Age=1y`.
@@ -65,14 +65,14 @@ On every change, the provider writes cookie + localStorage + `i18next.changeLang
 |:---|:---|
 | Locale registry (11 langs, en+tr enabled) | `libs/utils/locale/src/lib/locales.ts` |
 | Cookie-driven provider (apps/web) | `libs/shared/i18n-locale/` |
-| URL-prefix provider (apps/arena, apps/docs) | `libs/shared/i18n-routing/` |
+| URL-prefix provider (apps/landing, apps/docs) | `libs/shared/i18n-routing/` |
 | Auth bridge (apps/web) | `apps/web/src/locale/LocaleProviderBridge.tsx` |
 | i18next bootstrap (apps/web) | `apps/web/src/i18n.ts` |
-| i18next bootstrap (apps/arena) | `apps/arena/src/i18n.ts` |
+| i18next bootstrap (apps/landing) | `apps/landing/src/i18n.ts` |
 | VitePress locale config | `apps/docs/.vitepress/config.ts` |
 | VitePress cookie hook | `apps/docs/.vitepress/theme/index.ts` |
 | English UI strings (web) | `apps/web/src/locales/en.json` |
-| English UI strings (arena) | `apps/arena/src/locales/en.json` |
+| English UI strings (arena) | `apps/landing/src/locales/en.json` |
 | English docs | `docs/en/` |
 | Turkish docs | `docs/tr/` |
 | Database language registry | `supabase/seeds/01_core_languages.sql` |
@@ -97,9 +97,9 @@ Three reference refactors live in the tree as examples — `apps/web/src/NotAuth
 
 ---
 
-## Extracting a hardcoded string in apps/arena
+## Extracting a hardcoded string in apps/landing
 
-Same pattern, but the file lives at `apps/arena/src/locales/en.json` and the locale is bound to the URL via `:lang` rather than the cookie. The arena `LanguageSwitcher` also writes the cross-app cookie, so a switch in arena is visible to web/docs on the next visit.
+Same pattern, but the file lives at `apps/landing/src/locales/en.json` and the locale is bound to the URL via `:lang` rather than the cookie. The arena `LanguageSwitcher` also writes the cross-app cookie, so a switch in arena is visible to web/docs on the next visit.
 
 ---
 
@@ -108,7 +108,7 @@ Same pattern, but the file lives at `apps/arena/src/locales/en.json` and the loc
 | You're building... | Use |
 |:---|:---|
 | A new screen in `apps/web` or a `libs/features/*` slice consumed by web | `useTranslation()` + `useLocale()` from `@lenserfight/shared/i18n-locale` |
-| A new landing/marketing page in `apps/arena` | `useTranslation()` + `useLocale()` from `@lenserfight/shared/i18n-routing` |
+| A new landing/marketing page in `apps/landing` | `useTranslation()` + `useLocale()` from `@lenserfight/shared/i18n-routing` |
 | A new docs page | Add the file to both `docs/en/...` and `docs/tr/...` (Turkish can be a WIP stub) |
 | A locale-aware link inside arena/docs | `<LocaleLink>` from `@lenserfight/shared/i18n-routing` |
 | A locale-aware action inside web (cookie-driven) | `useLocale().setLocale(...)` from `@lenserfight/shared/i18n-locale` |
@@ -123,7 +123,7 @@ Do not import `@lenserfight/shared/i18n-locale` from arena/docs code, or `@lense
 pnpm nx test shared-i18n-locale
 pnpm nx test shared-i18n-routing
 pnpm nx build web
-pnpm nx build arena
+pnpm nx build landing
 pnpm nx build docs
 ```
 

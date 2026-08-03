@@ -1,0 +1,9 @@
+{
+  "delayMs": 1600,
+  "main": {
+    "frames": 10
+  },
+  "agent": {
+    "frames": 9
+  }
+}

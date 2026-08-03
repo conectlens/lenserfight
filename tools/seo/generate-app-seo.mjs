@@ -13,7 +13,7 @@ import {
 const appName = process.argv[2]
 
 if (!appName) {
-  console.error('Usage: node tools/seo/generate-app-seo.mjs <web|arena>')
+  console.error('Usage: node tools/seo/generate-app-seo.mjs <web|landing>')
   process.exit(1)
 }
 

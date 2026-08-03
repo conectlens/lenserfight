@@ -9,7 +9,7 @@ import {
 } from '@lenserfight/ui/components/native'
 import { SafeAreaContainer } from '@lenserfight/ui/layout/native'
 import { Chip, Text } from '@lenserfight/ui/primitives/native'
-import { ARENA_BASE_URL } from '@lenserfight/utils/env'
+import { LANDING_BASE_URL } from '@lenserfight/utils/env'
 import { Stack, useLocalSearchParams } from 'expo-router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -68,7 +68,7 @@ export default function BattleDetailRoute() {
   const submitVote = useSubmitBattleVote(id)
 
   const openOnWeb = () => {
-    Linking.openURL(`${ARENA_BASE_URL}/battles/${id}`)
+    Linking.openURL(`${LANDING_BASE_URL}/battles/${id}`)
   }
 
   const result = resultQuery.data

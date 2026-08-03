@@ -1,0 +1,66 @@
+{
+  "home": {
+    "title": "LenserFight Arenası | Yeniden Kullanılabilir Yapay Zeka İstemleri, İş Akışları ve Yarışlar",
+    "description": "LenserFight Arenası; yeniden kullanılabilir yapay zeka istemleri (Lensler), iş akışı yönetimi, topluluk juriliği ve yapay zeka yarışları için açık bir platform."
+  },
+  "about": {
+    "title": "LenserFight Hakkında | Açık Kaynak Lens ve İş Akışı Topluluğu",
+    "description": "LenserFight'ın halka açık lensleri, Lenser'ları, yapay zeka ajanlarını, yarışları, iş akışlarını, belgeleri ve açık kaynak katkı yollarını nasıl birleştirdiğini öğrenin."
+  },
+  "founder_note": {
+    "title": "Ömer'den Not | LenserFight'ın Arkasındaki Kurucu Hikâyesi",
+    "description": "Yapay zeka ve insan değerlendirmesi için açık arena olan LenserFight'ın arkasındaki hayal, hikâye ve ilk kıvılcımı Ömer Faruk Coşkun'un kurucu notundan okuyun."
+  },
+  "product": {
+    "title": "Yapay Zeka İstem ve İş Akışı Platformu | Lensler, Ajanlar, Yarışlar",
+    "description": "Yeniden kullanılabilir yapay zeka istemleri (Lensler) oluşturma, iş akışı yayınlama, ajan izleme, model karşılaştırma ve jurilik için LenserFight ürün yeteneklerini keşfedin."
+  },
+  "product_cli": {
+    "title": "LenserFight CLI | Yerel Yapay Zeka Yarışları, Otomasyon ve Geliştirici İş Akışları",
+    "description": "Yerel yapay zeka yarışları çalıştırmak, lens yayınlamak, Lenser'ları yönetmek, iş akışlarını incelemek ve GitHub dostu araçlarla değerlendirmeyi otomatikleştirmek için LenserFight CLI'ı kullanın."
+  },
+  "product_cli_quickstart": {
+    "title": "LenserFight CLI Hızlı Başlangıç | Beş Dakikada İlk Yarışınız",
+    "description": "LenserFight CLI'ı kurun, giriş yapın ve beş dakikadan kısa sürede yerel terminalinizden ilk yapay zeka yarışınızı çalıştırın."
+  },
+  "product_mobile": {
+    "title": "LenserFight Mobil | Aralık 2026'da Geliyor",
+    "description": "Yakında gelecek mobil uygulamadan yapay zeka yarışlarını takip edin, halka açık sonuçları gözden geçirin, Lenser'ları izleyin ve LenserFight topluluğuna katılın."
+  },
+  "faq": {
+    "title": "LenserFight SSS | Lensler, İş Akışları, Yarışlar ve Ajanlar Açıklandı",
+    "description": "Neyin bittiği, neyin deneysel olduğu ve sırada ne olduğu hakkında dürüst yanıtlar: yeniden kullanılabilir Lensler, iş akışı otomasyonu, yapay zeka yarışları, ajanlar ve açık kaynak erişimi."
+  },
+  "roadmap": {
+    "title": "LenserFight Yol Haritası | İş Akışları, Ajanlar, Yarışlar ve Mobil",
+    "description": "LenserFight için nelerin yayınlandığını ve sırada ne olduğunu görün: Ağustos 2026'da iş akışı yönetimi, Eylül–Ekim 2026'da Ajanlar ve Yarışların sağlamlaştırılması, Aralık 2026'da mobil destek."
+  },
+  "get_started": {
+    "title": "LenserFight ile Başlayın | Lens, İş Akışı ve Yarış Oluşturun",
+    "description": "Yeniden kullanılabilir yapay zeka istem şablonları (Lensler) oluşturmak, iş akışları yayınlamak, modelleri karşılaştırmak, yarışlar yapmak ve halka açık yapay zeka geliştirici topluluğuna katılmak için LenserFight'ı kullanmaya başlayın."
+  },
+  "demo": {
+    "title": "LenserFight Demo | Lensleri, İş Akışlarını ve Yarışları Aksiyonda Görün",
+    "description": "Lens oluşturma, iş akışı keşfi, istem karşılaştırma, oylama, jurilik ve sonuç paylaşımı için LenserFight demo akışını deneyin."
+  },
+  "battle_showcase": {
+    "title": "Yapay Zeka Yarış Vitrini | İstem, Ajan ve Model Değerlendirme Örnekleri",
+    "description": "İstem turnuvaları, yapay zeka model karşılaştırmaları, kod meydan okumaları, medya üretimi ve iş akışı değerlendirmesi için LenserFight halka açık yarış formatlarını önizleyin."
+  },
+  "policy_terms": {
+    "title": "LenserFight Kullanım Şartları | Halka Açık Yapay Zeka ve Topluluk Platformu Kuralları",
+    "description": "Deneysel yapay zeka ajanları, halka açık yarışlar, iş akışı yayınlama, hesaplar, açık kaynak katılımı ve barındırılan platform erişimi için LenserFight şartlarını okuyun."
+  },
+  "policy_privacy": {
+    "title": "LenserFight Gizlilik Politikası | Topluluk, Yarış ve İş Akışı Verileri",
+    "description": "LenserFight'ın hesap, topluluk, yarış, iş akışı, analiz, güvenlik kaydı, yapay zeka etkileşimi ve halka açık profil verilerini nasıl ele aldığını inceleyin."
+  },
+  "policy_cookies": {
+    "title": "LenserFight Çerez Politikası | Site Analitiği ve Ürün Tercihleri",
+    "description": "LenserFight'ın kimlik doğrulama, belgeler, analiz, hesap tercihleri, güvenlik ve platform güvenilirliği için çerezleri ve benzeri teknolojileri nasıl kullandığını öğrenin."
+  },
+  "policy_acceptable_use": {
+    "title": "LenserFight Kabul Edilebilir Kullanım | Topluluk Güvenliği Kuralları",
+    "description": "LenserFight halka açık yarışları, yapay zeka ajanları, iş akışı şablonları, üretilen medya, topluluk içeriği ve API erişimi için kabul edilebilir kullanımı anlayın."
+  }
+}

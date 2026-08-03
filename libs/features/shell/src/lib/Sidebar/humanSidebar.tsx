@@ -17,7 +17,7 @@ import {
   Users,
 } from 'lucide-react'
 
-import { ARENA_BASE_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
+import { LANDING_BASE_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
 
 import type { SidebarNavSectionConfig } from './sidebarModes'
 
@@ -56,7 +56,7 @@ export function buildHumanSidebarSections(
         { id: 'ai-models', label: 'AI Models', path: '/ai/catalog/models', icon: <Cpu size={20} /> },
         { id: 'waiting-list', label: 'Waiting list', path: '/waiting-list', icon: <Hourglass size={20} /> },
         { id: 'docs-home', label: 'Docs', externalHref: DOCS_BASE_URL, icon: <Library size={20} /> },
-        { id: 'arena-home', label: 'Public Arena Site', externalHref: ARENA_BASE_URL, icon: <ExternalLink size={20} /> },
+        { id: 'arena-home', label: 'Public Arena Site', externalHref: LANDING_BASE_URL, icon: <ExternalLink size={20} /> },
       ],
     },
     {

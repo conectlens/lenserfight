@@ -8,7 +8,7 @@ transitive package; run `pnpm licenses list` for the full dependency tree.
 
 | Project | License | Used for |
 |---|---|---|
-| [React](https://github.com/facebook/react) | MIT | UI (`apps/web`, `apps/auth`, `apps/arena`) |
+| [React](https://github.com/facebook/react) | MIT | UI (`apps/web`, `apps/auth`, `apps/landing`) |
 | [React Native](https://github.com/facebook/react-native) | MIT | Mobile app (`apps/mobile`) |
 | [React Router](https://github.com/remix-run/react-router) | MIT | Routing |
 | [Vite](https://github.com/vitejs/vite) | MIT | Build tooling |

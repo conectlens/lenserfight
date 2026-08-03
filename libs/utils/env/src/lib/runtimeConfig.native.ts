@@ -21,7 +21,7 @@ function stripSupabaseRestPath(url: string): string {
 }
 
 export const AUTH_BASE_URL = readPublicBaseUrl('AUTH_BASE_URL', 'https://auth.lenserfight.com')
-export const ARENA_BASE_URL = readPublicBaseUrl('ARENA_URL', 'https://lenserfight.com')
+export const LANDING_BASE_URL = readPublicBaseUrl('LANDING_URL', 'https://lenserfight.com')
 export const WEB_BASE_URL = readPublicBaseUrl('WEB_BASE_URL', 'https://lenserfight.com')
 export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.lenserfight.com')
 export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https://app.chainabit.com')

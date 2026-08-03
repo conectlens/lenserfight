@@ -1,5 +1,6 @@
 import React from 'react'
 import { Badge } from './Badge'
+import { useTranslation } from 'react-i18next'
 
 const CDN_AI = 'https://cdn.lenserfight.com/brand/lensers/AI'
 
@@ -19,15 +20,16 @@ export interface AiLenserFamilyProps {
 }
 
 export const AiLenserFamily: React.FC<AiLenserFamilyProps> = ({ className, centered = true }) => {
+  const { t } = useTranslation(['common'])
   return (
     <section className={className}>
       <div className={`mb-8 space-y-2${centered ? ' text-center' : ''}`}>
-        <Badge color="yellow" variant="outline">AI Lenser Family</Badge>
+        <Badge color="yellow" variant="outline">{t('aiLenserFamily.badge', 'AI Lenser Family')}</Badge>
         <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-          Meet the mascots
+          {t('aiLenserFamily.title', 'Meet the mascots')}
         </h2>
         <p className={`${centered ? 'mx-auto ' : ''}max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400`}>
-          CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, and LUPEM are the AI lensers of the arena — your guides through every battle.
+          {t('aiLenserFamily.description', 'CHAO, LAHİT, LAPSEKİ, LENSA, LENSE, LOLA, and LUPEM are the AI lensers of the arena — your guides through every battle.')}
         </p>
       </div>
       <div className={`flex flex-wrap items-center ${centered ? 'justify-center' : 'justify-start'}`}>

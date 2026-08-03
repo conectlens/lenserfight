@@ -152,7 +152,7 @@ The [Developer Onboarding guide](/en/tutorials/getting-started/developer-onboard
 
 ```text
 apps/web        →  main web app (React + Vite)
-apps/arena      →  public battle arena (live streaming, leaderboards)
+apps/landing      →  public battle arena (live streaming, leaderboards)
 apps/cli        →  lf CLI (citty-based, all platform features)
 apps/mobile     →  Expo mobile app
 libs/features/* →  vertical feature slices (battles, lenses, workflows…)

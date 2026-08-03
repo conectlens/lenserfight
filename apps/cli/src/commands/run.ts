@@ -404,7 +404,7 @@ const replay = defineCommand({
 // from --key flag or the corresponding env var (OPENAI_API_KEY, etc.) and
 // is not included in any DB row, log, or error message.
 // ---------------------------------------------------------------------------
-const exec = defineCommand({
+export const exec = defineCommand({
   meta: {
     name: 'exec',
     description: 'Execute a prompt against an AI model (Ollama / BYOK / Cloud).',
