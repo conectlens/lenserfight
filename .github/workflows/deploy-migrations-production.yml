@@ -1,0 +1,69 @@
+name: Deploy Supabase migrations (production)
+
+# Applies pending supabase/migrations/**  to the production Supabase project
+# whenever they land on main. Gated by the `production` GitHub Environment —
+# configure a required reviewer there (Settings → Environments → production)
+# so this pauses for a maintainer's approval before supabase db push runs
+# against real user data. Until that environment protection rule exists,
+# this job will run unattended the moment it appears on main.
+#
+# Required repo secrets:
+#   SUPABASE_ACCESS_TOKEN   — personal/CI access token (supabase.com/dashboard/account/tokens)
+#   PROD_SUPABASE_PROJECT_REF — production project ref (Settings → General → Reference ID)
+#   PROD_SUPABASE_DB_PASSWORD — production database password
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-migrations-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: supabase db push
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          install: 'false'
+
+      - uses: supabase/setup-cli@v2
+        with:
+          version: latest
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Link production project
+        run: >
+          supabase link
+          --project-ref "${{ secrets.PROD_SUPABASE_PROJECT_REF }}"
+          --password "${{ secrets.PROD_SUPABASE_DB_PASSWORD }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Show pending migrations
+        run: supabase migration list --linked --password "${{ secrets.PROD_SUPABASE_DB_PASSWORD }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Apply migrations
+        run: supabase db push --linked --yes --password "${{ secrets.PROD_SUPABASE_DB_PASSWORD }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Confirm migration history
+        if: always()
+        run: supabase migration list --linked --password "${{ secrets.PROD_SUPABASE_DB_PASSWORD }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
