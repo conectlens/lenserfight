@@ -1,3 +1,15 @@
+## 1.1.4 (2026-08-03)
+
+### 🩹 Fixes
+
+- **cli:** repair pgTAP-adjacent CLI test suite failures blocking release ([#425](https://github.com/conectlens/lenserfight/issues/425))
+- **cli:** detect an unwritable install dir before lf update runs npm ([ac0a2da72](https://github.com/conectlens/lenserfight/commit/ac0a2da72))
+
+### ❤️ Thank You
+
+- Lenser
+- Lensers
+
 ## 1.1.3 (2026-08-02)
 
 ### 🩹 Fixes
