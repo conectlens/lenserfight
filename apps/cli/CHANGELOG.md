@@ -1,3 +1,91 @@
+## 1.1.4 (2026-08-03)
+
+### 🩹 Fixes
+
+- **cli:** repair pgTAP-adjacent CLI test suite failures blocking release ([#425](https://github.com/conectlens/lenserfight/issues/425))
+- **cli:** detect an unwritable install dir before lf update runs npm ([ac0a2da72](https://github.com/conectlens/lenserfight/commit/ac0a2da72))
+
+### ❤️ Thank You
+
+- Lenser
+- Lensers
+
+## 1.1.3 (2026-08-02)
+
+### 🩹 Fixes
+
+- **cli:** report why lf update failed and detect Windows install paths ([599df87c0](https://github.com/conectlens/lenserfight/commit/599df87c0))
+- **cli:** launch assist for flag-only invocations such as `lf --force` ([68b085ce9](https://github.com/conectlens/lenserfight/commit/68b085ce9))
+- **cli:** stop lf assist failing when opencode.json already exists ([4cf0d1c1d](https://github.com/conectlens/lenserfight/commit/4cf0d1c1d))
+
+### ❤️ Thank You
+
+- Lensers
+
+## 1.1.2 (2026-08-02)
+
+### 🩹 Fixes
+
+- **cli:** fail fast when lf assist has no interactive terminal ([16cf6e3d3](https://github.com/conectlens/lenserfight/commit/16cf6e3d3))
+- **cli:** spawn npm/npx/opencode via shell on Windows ([61517221d](https://github.com/conectlens/lenserfight/commit/61517221d))
+
+### ❤️ Thank You
+
+- Lensers
+
+## 1.1.1 (2026-08-02)
+
+### 🩹 Fixes
+
+- **cli:** make plain `nx build cli` produce the opencode plugin bundle ([698214fbf](https://github.com/conectlens/lenserfight/commit/698214fbf))
+
+### ❤️ Thank You
+
+- Lensers
+
+# 1.0.0 (2026-08-02)
+
+### 🚀 Features
+
+- **cli:** color the LenserFight name gold (#ffde59) in the assist ready line ([d5f9058b9](https://github.com/conectlens/lenserfight/commit/d5f9058b9))
+- ⚠️  **cli:** lf assist replaces the TUI dashboard as the default lf behavior ([10a900fe7](https://github.com/conectlens/lenserfight/commit/10a900fe7))
+- **cli:** expose every lf command to OpenCode via a generic tool bridge ([bff95365e](https://github.com/conectlens/lenserfight/commit/bff95365e))
+- **cli:** add lf opencode — experimental OpenCode plugin bridge ([174503fe8](https://github.com/conectlens/lenserfight/commit/174503fe8))
+
+### 🩹 Fixes
+
+- **docs:** resolve CI failures on lf assist PR ([#408](https://github.com/conectlens/lenserfight/issues/408))
+
+### ⚠️  Breaking Changes
+
+- **cli:** lf assist replaces the TUI dashboard as the default lf behavior  ([10a900fe7](https://github.com/conectlens/lenserfight/commit/10a900fe7))
+  `lf` with no subcommand no longer opens the Ink TUI
+  dashboard — it launches `lf assist`, an interactive agent session with
+  every lf command available to it as a tool. The dashboard is removed
+  entirely (apps/cli/src/tui/{dashboard,labyrinth,rooms,run-child}.ts and
+  the ink/ component tree), along with its now-dead test-ink Nx target,
+  jest.ink.config.mjs, and the ink/ink-testing-library dependencies —
+  nothing else in the repo used them. `lf top`'s shared runtime-telemetry.ts
+  is unaffected.
+  Also renames the `lf opencode` subcommand to `lf assist` and removes every
+  other user-facing mention of "opencode" (command descriptions, console
+  output) — the CLI's own command surface shouldn't expose the name of the
+  underlying runtime it happens to be built on. Internal references (source
+  comments, the vendor's own required config schema fields, the actual
+  `opencode`/`opencode-ai` binary this spawns) are unavoidable and left
+  alone; NOTICE.md attribution is unaffected.
+  Updated the getting-started tutorial, apps/cli/README.md, the
+  cli-developer skill, and every doc page that referenced the removed
+  dashboard's keybindings or linked to its now-deleted reference page.
+  Verified: full build clean, 546-command manifest still generates
+  correctly under the new name with zero remaining "opencode" strings in
+  user-facing output, same pre-existing test failures as before this change
+  (4 suites, unrelated to this work).
+
+### ❤️ Thank You
+
+- Lensers
+
 ## 0.25.1 (2026-08-02)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.
