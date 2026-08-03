@@ -57,7 +57,7 @@ The builder, Lens templates, and Markdown export use different syntax for differ
 | --- | --- | --- |
 | `[[parameter]]` | Lens template | Declares a named Lens input. |
 | `[[nodeId.fieldPath]]` | Workflow builder and runtime storage | Addresses a persisted upstream node output. Dragging an upstream output into an input inserts this form. |
-| `{{steps.readable-alias.fieldPath}}` | Markdown export only | Describes the same dependency without exposing a runtime node UUID. |
+| <code v-pre>{{steps.readable-alias.fieldPath}}</code> | Markdown export only | Describes the same dependency without exposing a runtime node UUID. |
 
 Export aliases are presentation references. Do not paste them into the workflow builder or send them as runtime parameter values. The builder requires `[[nodeId.fieldPath]]` because display labels are not guaranteed to be unique.
 
