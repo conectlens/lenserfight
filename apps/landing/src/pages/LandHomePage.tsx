@@ -1,15 +1,12 @@
 import {
   Accordion,
-  AiLenserFamily,
   Badge,
   Card,
   DesktopFrame,
-  HumanLenserFamily,
 } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import {
   ArrowRight,
-  CheckCircle,
   Clock,
   Heart,
   // eslint-disable-next-line deprecation/deprecation
