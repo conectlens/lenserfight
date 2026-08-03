@@ -105,7 +105,7 @@
 
 - name: area:arena
   color: e4e669
-  description: apps/arena battle viewer and arena surface
+  description: apps/landing battle viewer and arena surface
 
 - name: area:gateway
   color: 0e8a16

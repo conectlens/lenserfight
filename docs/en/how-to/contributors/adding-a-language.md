@@ -67,9 +67,9 @@ i18n.use(initReactI18next).init({
 })
 ```
 
-### apps/arena
+### apps/landing
 
-Same pattern. Copy `apps/arena/src/locales/en.json` → `de.json`, translate, then register in `apps/arena/src/i18n.ts`. Also translate the legal markdown under `apps/arena/src/locales/en/policies/` into `apps/arena/src/locales/de/policies/` — these are legal documents, so use a lawyer-grade translation or commission a review.
+Same pattern. Copy `apps/landing/src/locales/en.json` → `de.json`, translate, then register in `apps/landing/src/i18n.ts`. Also translate the legal markdown under `apps/landing/src/locales/en/policies/` into `apps/landing/src/locales/de/policies/` — these are legal documents, so use a lawyer-grade translation or commission a review.
 
 ### apps/auth and apps/cli
 
@@ -139,7 +139,7 @@ If you intend to translate the contributor tree (`docs/de/how-to/contributors/..
 
 ```bash
 pnpm nx build web
-pnpm nx build arena
+pnpm nx build landing
 pnpm nx build docs
 pnpm nx test shared-i18n-locale
 pnpm nx test shared-i18n-routing
@@ -153,7 +153,7 @@ pnpm nx serve web
 # Open the topbar LocaleSelect — your new locale appears.
 # Switch to it. UI flips to your translations. Reload — still your locale.
 
-pnpm nx serve arena
+pnpm nx serve landing
 # Visit /de/. Layout renders. Switching back to /en/ updates the cookie.
 
 pnpm nx serve docs

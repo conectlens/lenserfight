@@ -11,8 +11,8 @@ Every new locale requires changes or additions to these files:
 | File | Action |
 |------|--------|
 | `supabase/seeds/01_core_languages.sql` | Edit — add `('LOCALE', ...)` if missing |
-| `apps/arena/src/locales/LOCALE.json` | Create — mirror `en.json`, translate all values |
-| `apps/arena/src/i18n.ts` | Edit — add to `SUPPORTED_LANGUAGES`, `resources`, `supportedLngs` |
+| `apps/landing/src/locales/LOCALE.json` | Create — mirror `en.json`, translate all values |
+| `apps/landing/src/i18n.ts` | Edit — add to `SUPPORTED_LANGUAGES`, `resources`, `supportedLngs` |
 | `apps/web/src/locales/LOCALE.json` | Create — mirror `en.json`, translate all values |
 | `apps/web/src/i18n.ts` | Edit — add to `SUPPORTED_LANGUAGES`, `resources`, `supportedLngs` |
 | `docs/LOCALE/index.md` | Create — VitePress locale home page |
@@ -25,16 +25,16 @@ Optional (if legal content is requested):
 
 | File | Action |
 |------|--------|
-| `apps/arena/src/locales/LOCALE/policies/terms.md` | Create |
-| `apps/arena/src/locales/LOCALE/policies/privacy.md` | Create |
-| `apps/arena/src/locales/LOCALE/policies/cookies.md` | Create |
-| `apps/arena/src/locales/LOCALE/policies/acceptable-use.md` | Create |
+| `apps/landing/src/locales/LOCALE/policies/terms.md` | Create |
+| `apps/landing/src/locales/LOCALE/policies/privacy.md` | Create |
+| `apps/landing/src/locales/LOCALE/policies/cookies.md` | Create |
+| `apps/landing/src/locales/LOCALE/policies/acceptable-use.md` | Create |
 
 ---
 
 ## i18n.ts registration template
 
-Applies to both `apps/arena/src/i18n.ts` and `apps/web/src/i18n.ts`:
+Applies to both `apps/landing/src/i18n.ts` and `apps/web/src/i18n.ts`:
 
 ```ts
 import i18n from 'i18next'
@@ -238,7 +238,7 @@ i18n(LOCALE): translate {surface} to {Language}
 ```
 
 Examples:
-- `i18n(fr): translate arena UI to French`
+- `i18n(fr): translate landing UI to French`
 - `i18n(ar): add Arabic legal policies`
 - `i18n(de): create docs getting-started stub`
 

@@ -1,7 +1,7 @@
 interface ImportMetaEnv {
   readonly [key: string]: string | boolean | undefined
   readonly API_URL?: string
-  readonly ARENA_URL?: string
+  readonly LANDING_URL?: string
   readonly AUTH_BASE_URL?: string
   readonly CAPTCHA_SITE_KEY?: string
   readonly CHAINABIT_API_URL?: string

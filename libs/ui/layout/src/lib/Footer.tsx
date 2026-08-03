@@ -3,7 +3,8 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
-import { ARENA_BASE_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
+import { LANDING_BASE_URL, DOCS_BASE_URL } from '@lenserfight/utils/env'
+import { useTranslation } from 'react-i18next'
 
 interface FooterProps {
   isDashboard?: boolean
@@ -34,15 +35,15 @@ const THEME_LABELS: Record<Theme, string> = {
 }
 
 const POLICY_SLUGS = [
-  { slug: 'terms', label: 'Terms & Policies' },
-  { slug: 'privacy', label: 'Privacy' },
-  { slug: 'cookies', label: 'Cookies' },
+  { slug: 'terms', labelKey: 'footer.policies.terms' },
+  { slug: 'privacy', labelKey: 'footer.policies.privacy' },
+  { slug: 'cookies', labelKey: 'footer.policies.cookies' },
 ]
 
 const NAV_LINKS = [
-  { to: '/about', label: 'About' },
-  { to: '/product', label: 'Product' },
-  { to: '/faq', label: 'FAQ' },
+  { to: '/about', labelKey: 'footer.nav.about' },
+  { to: '/product', labelKey: 'footer.nav.product' },
+  { to: '/faq', labelKey: 'footer.nav.faq' },
 ]
 
 const CHAINABIT_SITE = 'https://chainabit.com'
@@ -80,6 +81,7 @@ export const Footer: React.FC<FooterProps> = ({
   utmMedium = 'arena_footer',
   lang,
 }) => {
+  const { t } = useTranslation(['common'])
   const currentYear = new Date().getFullYear()
   const { themeMode, setTheme } = useTheme()
   const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
@@ -114,10 +116,10 @@ export const Footer: React.FC<FooterProps> = ({
                 href={appendUtm(GITHUB_SPONSORS_URL, utmMedium, 'footer_sponsor_link')}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Sponsor LenserFight"
+                aria-label={t('footer.sponsorUs', 'Sponsor us')}
                 className="flex items-center gap-1 text-xs text-pink-500 transition-colors hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300"
               >
-                <Heart size={12} /> Sponsor us
+                <Heart size={12} /> {t('footer.sponsorUs', 'Sponsor us')}
               </a>
 
               <span className="hidden md:inline text-greyscale-300 dark:text-greyscale-700">·</span>
@@ -127,7 +129,7 @@ export const Footer: React.FC<FooterProps> = ({
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs text-greyscale-400 dark:text-greyscale-500 hover:text-greyscale-600 dark:hover:text-greyscale-300 transition-colors"
               >
-                Powered by ConectLens
+                {t('footer.poweredBy', 'Powered by')} ConectLens
                 <ExternalLink size={10} aria-label="External link" />
               </a>
             </div>
@@ -136,7 +138,7 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Right: built-by + theme/social icons */}
           <div className="flex items-center gap-4">
             <span className="hidden md:inline text-[10px] uppercase tracking-widest text-greyscale-400 dark:text-greyscale-600">
-              built by{' '}
+              {t('footer.builtBy', 'built by')}{' '}
               <a
                 href={ofcsknUrl}
                 target="_blank"
@@ -152,7 +154,7 @@ export const Footer: React.FC<FooterProps> = ({
                 rel="noopener noreferrer"
                 className="font-bold hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors"
               >
-                Lenser Community
+                {t('footer.lenserCommunity', 'Lenser Community')}
               </a>
             </span>
 
@@ -186,16 +188,16 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Bottom Row: Centered Nav Links */}
         <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 text-sm font-medium border-t border-surface-border-subtle pt-8">
           {/* About / Product / FAQ — internal when no navBaseUrl, external otherwise */}
-          {NAV_LINKS.map(({ to, label }) =>
+          {NAV_LINKS.map(({ to, labelKey }) =>
             navBaseUrl ? (
               <a
                 key={to}
-                href={appendUtm(`${ARENA_BASE_URL}${to}`, utmMedium, `footer_${to.replace(/\W+/g, '_')}_link`)}
+                href={appendUtm(`${LANDING_BASE_URL}${to}`, utmMedium, `footer_${to.replace(/\W+/g, '_')}_link`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
               >
-                {label}
+                {t(labelKey)}
               </a>
             ) : (
               <Link
@@ -203,7 +205,7 @@ export const Footer: React.FC<FooterProps> = ({
                 to={to}
                 className="hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
               >
-                {label}
+                {t(labelKey)}
               </Link>
             )
           )}
@@ -215,21 +217,21 @@ export const Footer: React.FC<FooterProps> = ({
             rel="noopener noreferrer"
             className="flex items-center gap-1 hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
           >
-            Contact
+            {t('footer.nav.contact', 'Contact')}
             <ExternalLink size={11} aria-label="External link" />
           </a>
 
           {/* Policies — internal when no navBaseUrl, external otherwise */}
-          {POLICY_SLUGS.map(({ slug, label }) =>
+          {POLICY_SLUGS.map(({ slug, labelKey }) =>
             navBaseUrl ? (
               <a
                 key={slug}
-                href={appendUtm(`${ARENA_BASE_URL}/policies/${slug}`, utmMedium, `footer_policy_${slug}_link`)}
+                href={appendUtm(`${LANDING_BASE_URL}/policies/${slug}`, utmMedium, `footer_policy_${slug}_link`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
               >
-                {label}
+                {t(labelKey)}
               </a>
             ) : (
               <Link
@@ -237,7 +239,7 @@ export const Footer: React.FC<FooterProps> = ({
                 to={`/policies/${slug}`}
                 className="hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
               >
-                {label}
+                {t(labelKey)}
               </Link>
             )
           )}
@@ -249,7 +251,7 @@ export const Footer: React.FC<FooterProps> = ({
             rel="noopener noreferrer"
             className="flex items-center gap-1 hover:text-greyscale-900 dark:hover:text-greyscale-200 transition-colors"
           >
-            Docs
+            {t('footer.nav.docs', 'Docs')}
             <ExternalLink size={11} aria-label="External link" />
           </a>
         </div>

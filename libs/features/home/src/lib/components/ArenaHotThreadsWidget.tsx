@@ -20,9 +20,17 @@ const SkeletonRow = () => (
 interface ArenaHotThreadsWidgetProps {
   /** Base URL for thread links (e.g. 'https://moon.lenserfight.com'). Empty string for in-app routing. */
   baseUrl?: string
+  title?: string
+  emptyTitle?: string
+  emptyDescription?: string
 }
 
-export function ArenaHotThreadsWidget({ baseUrl = '' }: ArenaHotThreadsWidgetProps) {
+export function ArenaHotThreadsWidget({
+  baseUrl = '',
+  title = 'Hot Threads',
+  emptyTitle = 'No hot threads yet',
+  emptyDescription = 'Active discussions will surface here as they heat up.',
+}: ArenaHotThreadsWidgetProps) {
   const { data, isLoading } = useTrendingThreads()
 
   const threads = (data?.pages.flatMap((p) => p.data ?? []) ?? [])
@@ -33,7 +41,7 @@ export function ArenaHotThreadsWidget({ baseUrl = '' }: ArenaHotThreadsWidgetPro
       <div className="flex items-center gap-2 border-b border-surface-border bg-card/60 px-4 py-3">
         <MessageSquare size={14} aria-hidden="true" className="text-blue-500" />
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground/70">
-          Hot Threads
+          {title}
         </h3>
       </div>
 
@@ -47,8 +55,8 @@ export function ArenaHotThreadsWidget({ baseUrl = '' }: ArenaHotThreadsWidgetPro
         <div className="p-4">
           <EmptyState
             icon={Flame}
-            title="No hot threads yet"
-            description="Active discussions will surface here as they heat up."
+            title={emptyTitle}
+            description={emptyDescription}
           />
         </div>
       ) : (

@@ -7,6 +7,7 @@ import {
 import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable, truncate } from '../utils/output'
 import { assertSafe } from '../lib/safety'
+import { exec as runExec } from './run'
 
 interface WorkflowRunRow {
   id: string
@@ -714,5 +715,8 @@ export default defineCommand({
     events: executionEvents,
     cancel: executionCancel,
     retry: executionRetry,
+    // Alias for `lenserfight run exec` — submits a model execution
+    // (Ollama / BYOK / Cloud) without requiring the `run` command group.
+    run: runExec,
   },
 })

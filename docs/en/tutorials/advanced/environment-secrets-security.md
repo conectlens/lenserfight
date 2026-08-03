@@ -40,7 +40,7 @@ LenserFight runs across two distinct runtime environments with different trust l
 | Environment | Examples | Who can read it |
 |---|---|---|
 | **Server / CLI / Worker** | Node.js, Cloudflare Workers, Supabase Edge Functions, the `lf` CLI | Backend processes only |
-| **Browser (client)** | `apps/web`, `apps/arena`, `apps/auth` — compiled by Vite | Anyone with DevTools |
+| **Browser (client)** | `apps/web`, `apps/landing`, `apps/auth` — compiled by Vite | Anyone with DevTools |
 
 **The fundamental rule**: anything in the browser bundle is public. API keys, service role tokens, and database passwords must never reach the client.
 

@@ -19,7 +19,7 @@ export default defineConfig(() => ({
     'AUTH_',
     // Cross-app redirect targets
     'WEB_',
-    'ARENA_',
+    'LANDING_',
     'CHAINABIT_APP_URL',
     // Product & feature flags
     'PRODUCT_',

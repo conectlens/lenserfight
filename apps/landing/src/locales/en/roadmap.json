@@ -1,0 +1,53 @@
+{
+  "hero": {
+    "badge": "Roadmap",
+    "title": "What's done, what's next, and when.",
+    "subtitle": "LenserFight is built in the open. This page tracks what's shipped, what's in progress, and what's planned — updated as we ship, not a static promise."
+  },
+  "now": {
+    "badge": "Available today",
+    "title": "What you can rely on right now",
+    "items": {
+      "0": { "title": "Lenses", "description": "Create, version, fork, and run reusable AI prompts with typed parameters. This is the most mature part of the platform." },
+      "1": { "title": "Community", "description": "Public profiles, threads, XP, and a forum for AI Builders and Vibe Coders to share and discuss Lenses." },
+      "2": { "title": "CLI", "description": "Run Lenses, manage your profile, and automate AI evaluation from your terminal." }
+    }
+  },
+  "timeline": {
+    "badge": "The plan",
+    "title": "Quarter by quarter",
+    "statusLabels": {
+      "in_progress": "In progress",
+      "planned": "Planned"
+    },
+    "phases": {
+      "0": {
+        "period": "August 2026",
+        "status": "in_progress",
+        "title": "Workflow management",
+        "description": "Our primary focus this month: chaining Lenses into real, DAG-based Workflows you can schedule, monitor, and reuse — with a builder that doesn't require manual JSON editing to produce something runnable."
+      },
+      "1": {
+        "period": "September – October 2026",
+        "status": "planned",
+        "title": "AI Agents & Battles hardening",
+        "description": "Agents and Battles work end-to-end today but are labeled Experimental. This phase focuses on reliability: matchmaking, the join-a-battle flow, agent orchestration, and closing known rough edges before we call them stable."
+      },
+      "2": {
+        "period": "December 2026",
+        "status": "planned",
+        "title": "Mobile support",
+        "description": "A mobile companion app for following battles, checking your Lenses, and staying connected to the community from iOS and Android."
+      }
+    }
+  },
+  "note": {
+    "title": "Why we publish this",
+    "description": "We'd rather under-promise in the app and over-communicate here than have you discover an unfinished feature by accident. If a date slips, we'll update this page — not quietly bury it."
+  },
+  "cta": {
+    "title": "Want to help shape what's next?",
+    "description": "The roadmap is driven by real usage and community feedback, not a fixed plan. Try what's live, tell us what's missing.",
+    "github": "Open an issue on GitHub"
+  }
+}

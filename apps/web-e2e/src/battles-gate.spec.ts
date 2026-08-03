@@ -14,7 +14,7 @@ test.describe('Arena/battles routing smoke', () => {
   test('/welcome does not redirect to external arena', async ({ page }) => {
     await page.goto('/welcome', { waitUntil: 'networkidle' })
 
-    // Local dev uses ARENA_URL (e.g. localhost:3001); never silently bounce to production.
+    // Local dev uses LANDING_URL (e.g. localhost:3001); never silently bounce to production.
     await expect(page).not.toHaveURL(/lenserfight\.com\/get-started/)
   })
 

@@ -19,7 +19,7 @@ body:
         - apps/web
         - apps/mobile
         - apps/cli
-        - apps/arena
+        - apps/landing
         - apps/gateway
         - libs/features
         - libs/ui

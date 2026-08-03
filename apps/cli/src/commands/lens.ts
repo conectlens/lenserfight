@@ -9,6 +9,7 @@ import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/dat
 import { markJourneyStep } from '../lib/onboarding/journey';
 import { printTable, printJson, truncate } from '../utils/output';
 import { makeLifecycleCommand } from '../utils/lifecycle';
+import { browse as lensesBrowse } from './lenses';
 
 const MIN_TEMPLATE_LENGTH = 50;
 const VALID_VISIBILITY = ['public', 'community', 'private'] as const;
@@ -847,6 +848,8 @@ export default defineCommand({
   subCommands: {
     create: lensCreate,
     generate: lensGenerate,
+    // Alias for `lenserfight lenses` — browse/list public lenses.
+    list: lensesBrowse,
     version,
     resource,
     import: lensImport,

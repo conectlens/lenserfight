@@ -98,7 +98,7 @@ async function setupLocal() {
       '',
       '# Local app URLs (nx serve web uses port 3000 — see apps/web/vite.config.mts)',
       'WEB_BASE_URL=http://localhost:3000',
-      'ARENA_URL=http://localhost:3001',
+      'LANDING_URL=http://localhost:3001',
       '# AUTH_BASE_URL=http://localhost:3004',
       'DOCS_BASE_URL=http://localhost:3002',
       'STATUS_BASE_URL=http://localhost:3003',
@@ -148,7 +148,7 @@ async function setupCloud() {
       'API_URL=https://api.lenserfight.com',
       'WEB_BASE_URL=http://localhost:3000',
       '# AUTH_BASE_URL=…',
-      '# ARENA_URL=http://localhost:3001',
+      '# LANDING_URL=http://localhost:3001',
       '',
     ].join('\n')
     writeFileSync(envPath, envContent, 'utf-8')

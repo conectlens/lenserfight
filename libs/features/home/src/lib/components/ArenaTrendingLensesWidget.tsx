@@ -14,9 +14,17 @@ const SkeletonCard = () => (
 interface ArenaTrendingLensesWidgetProps {
   /** Base URL for lens links (e.g. 'https://moon.lenserfight.com'). Empty string for in-app routing. */
   baseUrl?: string
+  title?: string
+  emptyTitle?: string
+  emptyDescription?: string
 }
 
-export function ArenaTrendingLensesWidget({ baseUrl = '' }: ArenaTrendingLensesWidgetProps) {
+export function ArenaTrendingLensesWidget({
+  baseUrl = '',
+  title = 'Trending Lenses',
+  emptyTitle = 'No trending lenses yet',
+  emptyDescription = 'The most-used lenses will appear here as the community creates.',
+}: ArenaTrendingLensesWidgetProps) {
   const { data, isLoading } = useTrendingPrompts()
   const lenses = (data?.pages.flatMap((p) => p.data ?? []) ?? [])
     .slice(0, DISPLAY_COUNT)
@@ -25,7 +33,7 @@ export function ArenaTrendingLensesWidget({ baseUrl = '' }: ArenaTrendingLensesW
       <div className="flex items-center gap-2 border-b border-surface-border bg-card/60 px-4 py-3">
         <Sparkles size={14} aria-hidden="true" className="text-violet-500" />
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground/70">
-          Trending Lenses
+          {title}
         </h3>
       </div>
 
@@ -39,8 +47,8 @@ export function ArenaTrendingLensesWidget({ baseUrl = '' }: ArenaTrendingLensesW
         ) : lenses.length === 0 ? (
           <EmptyState
             icon={Sparkles}
-            title="No trending lenses yet"
-            description="The most-used lenses will appear here as the community creates."
+            title={emptyTitle}
+            description={emptyDescription}
           />
         ) : (
           <div className="grid grid-cols-2 gap-2">

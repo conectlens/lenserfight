@@ -89,6 +89,7 @@ export const main = defineCommand({
     // Top-level aliases for the most common auth actions
     login: () => import('./commands/auth').then((m) => (m.default.subCommands as Record<string, unknown>)['login'] as ReturnType<typeof defineCommand>),
     logout: () => import('./commands/auth').then((m) => (m.default.subCommands as Record<string, unknown>)['logout'] as ReturnType<typeof defineCommand>),
+    whoami: () => import('./commands/auth').then((m) => (m.default.subCommands as Record<string, unknown>)['whoami'] as ReturnType<typeof defineCommand>),
     // Mode switch: `lf use local` / `lf use cloud` / `lf use` (show)
     use: () => import('./commands/use').then((m) => m.default),
     init: () => import('./commands/init').then((m) => m.default),

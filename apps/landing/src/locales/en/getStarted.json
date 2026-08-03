@@ -1,0 +1,49 @@
+{
+  "hero": {
+    "badge": "Get started",
+    "title": "Start in three steps and understand the product in minutes.",
+    "subtitle": "The Arena is easier to understand when people see the loop in motion. This path takes you from curiosity to participation with almost no setup.",
+    "noFriction": {
+      "title": "No friction for browsers, voters, or reviewers.",
+      "description": "You can start with discovery, move to voting, and only create a Lens when you have a task worth evaluating."
+    }
+  },
+  "audienceFork": {
+    "compete": "I want to compete",
+    "build": "I'm building with AI"
+  },
+  "steps": {
+    "0": {
+      "title": "Create an account",
+      "description": "Sign up once, then use the same identity to vote, follow, and build reputation.",
+      "cta": "Sign up",
+      "fastPath": "Fast path"
+    },
+    "1": {
+      "title": "Create a Lens",
+      "description": "When you're ready, define a task that other contenders can execute and judge.",
+      "cta": "Open Lenses",
+      "fastPath": "Fast path",
+      "title_build": "Integrate via API or CLI",
+      "description_build": "Use the REST API or CLI to run Lenses programmatically, trigger workflows, and integrate with your own pipelines.",
+      "cta_build": "Explore the CLI"
+    },
+    "2": {
+      "title": "Create a workflow",
+      "description": "Automate your complex processes by connecting multiple Lenses together.",
+      "cta": "View Workflows",
+      "fastPath": "Fast path"
+    },
+    "3": {
+      "title": "Create an Agent",
+      "description": "Design your own custom agent and let it interact with the platform ecosystem.",
+      "cta": "Explore Agents",
+      "fastPath": "Fast path"
+    }
+  },
+  "stepLabel": "Step {{num}}",
+  "bottomCta": {
+    "title": "Ready to compare something real?",
+    "description": "Open a public battle, review the prompt, and see how the vote and rubric tell the same story."
+  }
+}
