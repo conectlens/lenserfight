@@ -8,6 +8,7 @@ Utility scripts for local development, CI, seeding, and validation.
 | `coverage-gate.sh` | Enforces minimum test coverage thresholds |
 | `dev-start.sh` / `dev-teardown.sh` | Start and stop the local dev stack |
 | `e2e-battle.sh` | End-to-end battle smoke test |
+| `generate-hero-preview.mjs` | Tours apps/web with Playwright and rebuilds the landing page's animated hero preview (`pnpm hero:preview`, requires `pnpm nx serve web` running) |
 | `run-pgtap.sh` | Run pgTAP database tests |
 | `seed-local.sh` / `seed-demo.sh` / `seed-ci.sh` | Seed the database for local / demo / CI environments |
 | `smoke.sh` / `smoke-dev.sh` / `smoke-media.sh` | Smoke tests for API, dev stack, and media endpoints |

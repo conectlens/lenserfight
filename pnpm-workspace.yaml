@@ -23,6 +23,7 @@ allowBuilds:
   msgpackr-extract: true # native msgpack codec pulled in by @opencode-ai/sdk
   nx: true # native Nx bindings
   protobufjs: true
+  sharp: true # native libvips binary — used by scripts/generate-hero-preview.mjs to encode animated WebP
   unrs-resolver: true # native resolver used by the eslint import plugin
 
 minimumReleaseAgeExclude:
