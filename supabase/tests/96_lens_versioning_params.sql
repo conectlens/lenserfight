@@ -153,18 +153,15 @@ SELECT is(
 );
 
 -- ── Test 9: fn_validate_inputs accepts inputs with all required params ───────
--- fn_validate_inputs returns void. We verify it does NOT raise by asserting no
--- exception is thrown: wrap in throws_ok with an impossible error code to prove
--- the call succeeds, OR use a live_ok() pattern. The simplest portable approach
--- is: attempt the call inside a SELECT that wraps the void result as NULL, then
--- confirm that result IS NULL (i.e. call returned without error).
-SELECT is(
-  (SELECT lenses.fn_validate_inputs(
-     current_setting('lf_test.version_id')::uuid,
-     '{"topic": "AI systems"}'::jsonb
-   )),
-  NULL,
-  'fn_validate_inputs returns void (NULL) when all required params are present'
+-- fn_validate_inputs returns void, so pgTAP's is()/isnt() cannot accept its
+-- result directly (PL/pgSQL functions cannot accept type void). Use lives_ok
+-- to assert the call completes without raising.
+SELECT lives_ok(
+  $$ SELECT lenses.fn_validate_inputs(
+       current_setting('lf_test.version_id', true)::uuid,
+       '{"topic": "AI systems"}'::jsonb
+     ) $$,
+  'fn_validate_inputs does not raise when all required params are present'
 );
 
 -- ── Test 10: fn_validate_inputs rejects inputs missing a required param ──────

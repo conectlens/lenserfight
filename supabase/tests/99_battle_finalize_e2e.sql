@@ -52,6 +52,28 @@ VALUES ('99999999-bf01-9999-9999-999999999991',
         'BF Template', 'do the thing', true)
 ON CONFLICT (id) DO NOTHING;
 
+-- AI Lensers backing the ai_model contenders in Scenario B (contender_ref_id
+-- is NOT NULL and must resolve via fn_populate_contender_entity_map).
+INSERT INTO auth.users (id, email)
+VALUES
+  ('eeeeeee1-bf01-eeee-eeee-eeeeeeeeee01', 'bf-ai-a@test.local'),
+  ('eeeeeee2-bf01-eeee-eeee-eeeeeeeeee02', 'bf-ai-b@test.local')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO lensers.profiles (id, user_id, handle, display_name, type)
+VALUES
+  ('eeeeeee1-bf01-eeee-eeee-eeeeeeeeee01',
+   'eeeeeee1-bf01-eeee-eeee-eeeeeeeeee01', 'bf_ai_a', 'BF AI A', 'ai'),
+  ('eeeeeee2-bf01-eeee-eeee-eeeeeeeeee02',
+   'eeeeeee2-bf01-eeee-eeee-eeeeeeeeee02', 'bf_ai_b', 'BF AI B', 'ai')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO agents.ai_lensers (id, profile_id)
+VALUES
+  ('eeeeeee3-bf01-eeee-eeee-eeeeeeeeee03', 'eeeeeee1-bf01-eeee-eeee-eeeeeeeeee01'),
+  ('eeeeeee4-bf01-eeee-eeee-eeeeeeeeee04', 'eeeeeee2-bf01-eeee-eeee-eeeeeeeeee02')
+ON CONFLICT (id) DO NOTHING;
+
 -- ═════════════════════════════════════════════════════════════════════════════
 -- SCENARIO A — community_vote end-to-end (draft → … → published)
 -- ═════════════════════════════════════════════════════════════════════════════
@@ -319,13 +341,13 @@ INSERT INTO battles.contenders (
   'bbbbbbb1-bf01-bbbb-bbbb-bbbbbbbbbb01',
   current_setting('lf_test.battle_b')::uuid, 'A',
   'ai_model'::battles.contender_type_enum,
-  NULL,
+  'eeeeeee3-bf01-eeee-eeee-eeeeeeeeee03',
   'AI A', 'direct', 'accepted', now()
 ), (
   'bbbbbbb2-bf01-bbbb-bbbb-bbbbbbbbbb02',
   current_setting('lf_test.battle_b')::uuid, 'B',
   'ai_model'::battles.contender_type_enum,
-  NULL,
+  'eeeeeee4-bf01-eeee-eeee-eeeeeeeeee04',
   'AI B', 'direct', 'accepted', now()
 )
 ON CONFLICT (id) DO NOTHING;
@@ -477,13 +499,23 @@ INSERT INTO battles.contenders (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Advance draft → open → executing → voting → scoring (each step must be a
+-- legal transition per battles.trg_enforce_status_transition).
 UPDATE battles.battles
-   SET status = 'scoring',
-       judging_mode = 'community_vote'::battles.judging_mode_enum,
-       ai_judge_enabled = FALSE,
+   SET judging_mode = 'community_vote'::battles.judging_mode_enum,
+       ai_judge_enabled = FALSE
+ WHERE id = current_setting('lf_test.cycle_eligible')::uuid;
+UPDATE battles.battles
+   SET status = 'open' WHERE id = current_setting('lf_test.cycle_eligible')::uuid;
+UPDATE battles.battles
+   SET status = 'executing' WHERE id = current_setting('lf_test.cycle_eligible')::uuid;
+UPDATE battles.battles
+   SET status           = 'voting',
        voting_opens_at  = now() - interval '2 hour',
        voting_closes_at = now() - interval '1 minute'
  WHERE id = current_setting('lf_test.cycle_eligible')::uuid;
+UPDATE battles.battles
+   SET status = 'scoring' WHERE id = current_setting('lf_test.cycle_eligible')::uuid;
 
 -- Battle C-open: ineligible (status='open') → must stay untouched.
 SET LOCAL "request.jwt.claims" TO '{"sub":"11111111-bf01-1111-1111-111111111111","role":"authenticated"}';
@@ -589,10 +621,18 @@ INSERT INTO battles.contenders (
 ON CONFLICT (id) DO NOTHING;
 
 -- Leave the battle in 'voting' with an ELAPSED window (the dead-end condition).
+-- Advance draft → open → executing → voting (each step must be a legal
+-- transition per battles.trg_enforce_status_transition).
 UPDATE battles.battles
-   SET status = 'voting',
-       judging_mode     = 'community_vote'::battles.judging_mode_enum,
-       ai_judge_enabled = FALSE,
+   SET judging_mode     = 'community_vote'::battles.judging_mode_enum,
+       ai_judge_enabled = FALSE
+ WHERE id = current_setting('lf_test.cycle_voting')::uuid;
+UPDATE battles.battles
+   SET status = 'open' WHERE id = current_setting('lf_test.cycle_voting')::uuid;
+UPDATE battles.battles
+   SET status = 'executing' WHERE id = current_setting('lf_test.cycle_voting')::uuid;
+UPDATE battles.battles
+   SET status           = 'voting',
        voting_opens_at  = now() - interval '2 hour',
        voting_closes_at = now() - interval '1 minute'
  WHERE id = current_setting('lf_test.cycle_voting')::uuid;
