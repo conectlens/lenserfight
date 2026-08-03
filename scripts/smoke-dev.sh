@@ -14,9 +14,15 @@ step_fail() { echo -e "${RED}FAIL${RESET} $1"; FAIL=$((FAIL+1)); }
 # ---------------------------------------------------------------------------
 # 1. Ensure Supabase is running and seeded
 # ---------------------------------------------------------------------------
-if ! curl -sf http://localhost:54321/health >/dev/null 2>&1; then
+# Kong's /health route 404s on this Supabase CLI version, so probe /rest/v1/
+# (PostgREST) directly with the local anon key instead — same fix already
+# applied in scripts/smoke.sh.
+SUPABASE_ANON_KEY="$(pnpm supabase status -o env 2>/dev/null | grep -oE '^ANON_KEY="[^"]*"' | cut -d'"' -f2)"
+
+if ! curl -sf http://localhost:54321/rest/v1/ -H "apikey: ${SUPABASE_ANON_KEY}" >/dev/null 2>&1; then
   echo "Supabase not running — starting..."
   pnpm supabase start 2>&1 | tail -3
+  SUPABASE_ANON_KEY="$(pnpm supabase status -o env 2>/dev/null | grep -oE '^ANON_KEY="[^"]*"' | cut -d'"' -f2)"
 fi
 
 # Seed the local DB so battle browse has data to return.
@@ -24,7 +30,7 @@ fi
 echo "Resetting and seeding local database..."
 if pnpm supabase:db:reset 2>&1 | tail -5; then
   WAIT_ATTEMPTS=0
-  until curl -sf http://localhost:54321/health >/dev/null 2>&1; do
+  until curl -sf http://localhost:54321/rest/v1/ -H "apikey: ${SUPABASE_ANON_KEY}" >/dev/null 2>&1; do
     WAIT_ATTEMPTS=$((WAIT_ATTEMPTS+1))
     if [[ $WAIT_ATTEMPTS -ge 30 ]]; then
       step_fail "Supabase did not become healthy within 60s after db reset"
@@ -57,7 +63,7 @@ PGTAP_FILES=$(ls supabase/tests/0*.sql supabase/tests/1*.sql 2>/dev/null | head 
 if [ -n "$PGTAP_FILES" ]; then
   FAILED_TESTS=()
   for f in $PGTAP_FILES; do
-    if pnpm supabase test --file "$f" 2>&1 | grep -q 'not ok'; then
+    if pnpm supabase db test "$f" 2>&1 | grep -q 'not ok'; then
       FAILED_TESTS+=("$f")
     fi
   done
