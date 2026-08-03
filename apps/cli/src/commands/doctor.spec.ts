@@ -40,6 +40,12 @@ jest.mock('../utils/output', () => ({
 jest.mock('@lenserfight/providers', () => ({
   byokKeyResolver: { has: jest.fn() },
 }))
+// import.meta.url is invalid syntax under ts-jest's commonjs module target —
+// mock the file that isolates it so ts-jest never transforms its real source
+// (doctor.ts pulls it in transitively via ../lib/version).
+jest.mock('../lib/current-script-url', () => ({
+  currentScriptUrl: require('node:url').pathToFileURL(__filename).href,
+}))
 
 import { configExists, loadConfig, resolveConfig, getOnboardingState } from '@lenserfight/cli-client'
 import { detectNode, detectDocker, detectSupabaseCli, detectOllama, detectCloudApi } from '../lib/onboarding/detect'

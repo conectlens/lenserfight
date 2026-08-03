@@ -35,6 +35,7 @@ import {
   parseAutomationDocument,
 } from '../utils/automation-objects'
 import { printJson, printTable } from '../utils/output'
+import { currentScriptUrl } from '../lib/current-script-url'
 
 // ─── lf spec validate ────────────────────────────────────────────────────────
 
@@ -461,7 +462,7 @@ const specSchema = defineCommand({
     }
 
     // Locate schema file relative to this package's distribution location.
-    const _thisFile = fileURLToPath(import.meta.url)
+    const _thisFile = fileURLToPath(currentScriptUrl)
     const _thisDir = dirname(_thisFile)
 
     const candidates = [

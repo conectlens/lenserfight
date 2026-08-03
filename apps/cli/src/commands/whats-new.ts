@@ -3,12 +3,13 @@ import consola from 'consola';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { currentScriptUrl } from '../lib/current-script-url';
 
 const CHANGELOG_LINK = 'https://docs.lenserfight.com/changelog';
 
 /** Walk up from the CLI binary to find the repo root CHANGELOG.md. */
 function findChangelog(): string | null {
-  const thisDir = dirname(fileURLToPath(import.meta.url));
+  const thisDir = dirname(fileURLToPath(currentScriptUrl));
   const candidates = [
     // Running from dist/ → go up two levels to repo root
     resolve(thisDir, '..', '..', '..', '..', 'CHANGELOG.md'),
