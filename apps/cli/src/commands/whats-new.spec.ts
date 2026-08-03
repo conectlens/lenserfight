@@ -7,6 +7,11 @@ jest.mock('node:fs', () => ({
   readFileSync: jest.fn(),
   existsSync: jest.fn(),
 }))
+// import.meta.url is invalid syntax under ts-jest's commonjs module target —
+// mock the file that isolates it so ts-jest never transforms its real source.
+jest.mock('../lib/current-script-url', () => ({
+  currentScriptUrl: require('node:url').pathToFileURL(__filename).href,
+}))
 
 import consola from 'consola'
 import { readFileSync, existsSync } from 'node:fs'

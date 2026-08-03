@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { defineCommand } from 'citty'
 import consola from 'consola'
 import { checkForUpdate, detectChannel, invalidateUpdateCache } from '@lenserfight/utils/update-check'
+import { findInstallPermissionBlock, formatPermissionGuidance } from '../lib/install-permissions'
 import { readCliVersion } from '../lib/version'
 
 /**
@@ -68,9 +69,30 @@ export default defineCommand({
       return
     }
 
+    // Bail before spawning npm when the install directory is not writable —
+    // otherwise the user gets a wall of EACCES output followed by advice to run
+    // the exact command that just failed.
+    const permissionBlock = findInstallPermissionBlock(process.argv[1])
+    if (permissionBlock) {
+      consola.error('Cannot update in place — the install directory is not writable by your account.')
+      process.stdout.write(formatPermissionGuidance(permissionBlock, targetSpec))
+      process.exitCode = 1
+      return
+    }
+
     consola.start(`Installing ${targetSpec}…`)
     const failure = runPackageManagerInstall(pm, targetSpec)
     if (failure) {
+      // The pre-flight cannot see every layout, so re-check before falling back
+      // to "run it yourself" — that advice is useless if permissions are why it
+      // failed in the first place.
+      const blockedAfterAttempt = findInstallPermissionBlock(process.argv[1])
+      if (blockedAfterAttempt) {
+        consola.error(`Update failed — ${failure}. The install directory is not writable by your account.`)
+        process.stdout.write(formatPermissionGuidance(blockedAfterAttempt, targetSpec))
+        process.exitCode = 1
+        return
+      }
       consola.error(`Update failed — ${failure}. Try the command below manually:\n`)
       printInstallInstructions(installMethod, targetSpec, channel)
       process.exitCode = 1

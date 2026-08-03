@@ -79,28 +79,37 @@ END $$;
 
 RESET ROLE;
 
--- Set community_vote mode and advance to scoring.
+-- Set community_vote mode, then advance draft → open → executing → voting →
+-- scoring one legal hop at a time (battles.trg_enforce_status_transition only
+-- allows single-step transitions — see 99_battle_finalize_e2e.sql convention).
 UPDATE battles.battles
    SET judging_mode      = 'community_vote'::battles.judging_mode_enum,
        battle_type       = 'human_vs_human_open_votes'::battles.battle_type_enum,
        ai_judge_enabled  = FALSE,
-       status            = 'scoring',
+       status            = 'open'
+ WHERE id = current_setting('lf_test.mcp_battle_id')::uuid;
+UPDATE battles.battles
+   SET status = 'executing' WHERE id = current_setting('lf_test.mcp_battle_id')::uuid;
+UPDATE battles.battles
+   SET status            = 'voting',
        voting_opens_at   = now() - interval '2 hours',
        voting_closes_at  = now() - interval '1 minute'
  WHERE id = current_setting('lf_test.mcp_battle_id')::uuid;
+UPDATE battles.battles
+   SET status = 'scoring' WHERE id = current_setting('lf_test.mcp_battle_id')::uuid;
 
 -- Enroll two contenders.
 INSERT INTO battles.contenders (
   id, battle_id, slot, contender_type, contender_ref_id,
   display_name, entry_mode, contender_status, accepted_at
 ) VALUES (
-  'cg000001-9898-cg00-cg00-cg0000000001',
+  'c0000001-9898-c000-c000-c00000000001',
   current_setting('lf_test.mcp_battle_id')::uuid, 'A',
   'human'::battles.contender_type_enum,
   '98980001-9898-9898-9898-989800000001',
   'CG A', 'direct', 'accepted', now()
 ), (
-  'cg000002-9898-cg00-cg00-cg0000000002',
+  'c0000002-9898-c000-c000-c00000000002',
   current_setting('lf_test.mcp_battle_id')::uuid, 'B',
   'human'::battles.contender_type_enum,
   '98980002-9898-9898-9898-989800000002',
@@ -112,9 +121,9 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO battles.vote_aggregates (battle_id, contender_id, raw_vote_count, weighted_vote_sum)
 VALUES
   (current_setting('lf_test.mcp_battle_id')::uuid,
-   'cg000001-9898-cg00-cg00-cg0000000001', 2, 2),
+   'c0000001-9898-c000-c000-c00000000001', 2, 2),
   (current_setting('lf_test.mcp_battle_id')::uuid,
-   'cg000002-9898-cg00-cg00-cg0000000002', 0, 0)
+   'c0000002-9898-c000-c000-c00000000002', 0, 0)
 ON CONFLICT DO NOTHING;
 
 -- ── Test 1: first call to fn_mcp_battle_finalize succeeds (returns JSONB) ────
@@ -207,7 +216,7 @@ RESET ROLE;
 SELECT is(
   (SELECT winner_contender_id FROM battles.battles
     WHERE id = current_setting('lf_test.mcp_battle_id')::uuid),
-  'cg000001-9898-cg00-cg00-cg0000000001'::uuid,
+  'c0000001-9898-c000-c000-c00000000001'::uuid,
   'winner_contender_id = A (raw-vote leader) and not overwritten by failed second call'
 );
 

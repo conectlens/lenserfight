@@ -13,6 +13,7 @@ import { detectTailscaleInterfaces } from '@lenserfight/infra/gateway'
 
 import { callRpc, handleError } from '@lenserfight/cli-client'
 import { printJson, printTable } from '../utils/output'
+import { currentScriptUrl } from '../lib/current-script-url'
 
 type CatalogModel = {
   provider_key: string
@@ -309,7 +310,7 @@ function findDaemonBinary(): string | null {
   const candidates = [
     path.resolve(process.cwd(), 'dist/apps/gateway/main.js'),
     // When CLI runs from dist/apps/cli/main.js, gateway is one dir up: dist/apps/gateway/
-    path.resolve(dirname(fileURLToPath(import.meta.url)), '../gateway/main.js'),
+    path.resolve(dirname(fileURLToPath(currentScriptUrl)), '../gateway/main.js'),
   ]
   for (const c of candidates) {
     if (existsSync(c)) return c

@@ -147,7 +147,12 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
   }
 
   React.useEffect(() => {
-    if (shouldSwitchWorkspace && !isSwitching && !isAnySwitchInProgress) {
+    if (
+      shouldSwitchWorkspace &&
+      !isSwitching &&
+      !isAnySwitchInProgress &&
+      window.location.pathname.split('/')[2] === profile.handle
+    ) {
       switchToProfile(profile).catch((err) => {
         console.error('Auto-switch failed', err)
       })

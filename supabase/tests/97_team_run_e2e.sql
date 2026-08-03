@@ -37,7 +37,9 @@ SELECT plan(15);
 INSERT INTO auth.users (id, email)
 VALUES
   ('97970001-9797-9797-9797-979700000001', 'tr-owner@test.local'),
-  ('97970002-9797-9797-9797-979700000002', 'tr-agent@test.local')
+  ('97970002-9797-9797-9797-979700000002', 'tr-agent@test.local'),
+  ('97970004-9797-9797-9797-979700000004', 'tr-judge-a@test.local'),
+  ('97970006-9797-9797-9797-979700000006', 'tr-judge-b@test.local')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO lensers.profiles (id, user_id, handle, display_name, type)
@@ -47,13 +49,29 @@ VALUES
    'tr_owner', 'TR Owner', 'human'),
   ('97970002-9797-9797-9797-979700000002',
    '97970002-9797-9797-9797-979700000002',
-   'tr_agent', 'TR Agent', 'ai')
+   'tr_agent', 'TR Agent', 'ai'),
+  ('97970004-9797-9797-9797-979700000004',
+   '97970004-9797-9797-9797-979700000004',
+   'tr_judge_a', 'TR Judge A', 'ai'),
+  ('97970006-9797-9797-9797-979700000006',
+   '97970006-9797-9797-9797-979700000006',
+   'tr_judge_b', 'TR Judge B', 'ai')
 ON CONFLICT (id) DO NOTHING;
 
 -- AI Lenser backing the agent profile (needed by fn_create_team_run).
 INSERT INTO agents.ai_lensers (id, profile_id)
 VALUES ('97970003-9797-9797-9797-979700000003',
         '97970002-9797-9797-9797-979700000002')
+ON CONFLICT (id) DO NOTHING;
+
+-- AI Lensers backing the ai_model judge contenders in Scenario B/C
+-- (contender_ref_id is NOT NULL; these must resolve via fn_populate_contender_entity_map).
+INSERT INTO agents.ai_lensers (id, profile_id)
+VALUES
+  ('97970005-9797-9797-9797-979700000005',
+   '97970004-9797-9797-9797-979700000004'),
+  ('97970007-9797-9797-9797-979700000007',
+   '97970006-9797-9797-9797-979700000006')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO agents.policies (ai_lenser_id)
@@ -160,12 +178,12 @@ INSERT INTO battles.contenders (
   'c7000001-9797-c700-c700-c70000000001',
   current_setting('lf_test.judge_battle_id')::uuid, 'A',
   'ai_model'::battles.contender_type_enum,
-  NULL, 'Judge A', 'direct', 'accepted', now()
+  '97970005-9797-9797-9797-979700000005', 'Judge A', 'direct', 'accepted', now()
 ), (
   'c7000002-9797-c700-c700-c70000000002',
   current_setting('lf_test.judge_battle_id')::uuid, 'B',
   'ai_model'::battles.contender_type_enum,
-  NULL, 'Judge B', 'direct', 'accepted', now()
+  '97970007-9797-9797-9797-979700000007', 'Judge B', 'direct', 'accepted', now()
 )
 ON CONFLICT (id) DO NOTHING;
 
@@ -176,12 +194,20 @@ VALUES
   (current_setting('lf_test.judge_battle_id')::uuid, 'c7000002-9797-c700-c700-c70000000002', 0, 0)
 ON CONFLICT DO NOTHING;
 
--- Advance to scoring + ensure voting_closes_at is in the past.
+-- Advance draft → open → executing → voting → scoring (each step must be a
+-- legal transition per battles.trg_enforce_status_transition), ensuring
+-- voting_closes_at is in the past by the time we reach scoring.
 UPDATE battles.battles
-   SET status           = 'scoring',
+   SET status = 'open' WHERE id = current_setting('lf_test.judge_battle_id')::uuid;
+UPDATE battles.battles
+   SET status = 'executing' WHERE id = current_setting('lf_test.judge_battle_id')::uuid;
+UPDATE battles.battles
+   SET status           = 'voting',
        voting_opens_at  = now() - interval '2 hours',
        voting_closes_at = now() - interval '1 minute'
  WHERE id = current_setting('lf_test.judge_battle_id')::uuid;
+UPDATE battles.battles
+   SET status = 'scoring' WHERE id = current_setting('lf_test.judge_battle_id')::uuid;
 
 -- ── Test 6: status is scoring before verdict insertion ───────────────────────
 SELECT is(

@@ -16,6 +16,7 @@ import {
   type OpencodeConfig,
 } from '../lib/opencode-config'
 import { buildCliToolManifest } from '../lib/opencode-tool-bridge'
+import { currentScriptUrl } from '../lib/current-script-url'
 
 // `lf assist` (also the default when `lf`/`lenserfight` is run with no
 // subcommand) — an interactive agent session pre-wired with every lf
@@ -31,7 +32,7 @@ interface McpServerConfig {
 }
 
 function cliBinaryPath(): string {
-  return fileURLToPath(import.meta.url)
+  return fileURLToPath(currentScriptUrl)
 }
 
 function findPluginBundle(): string | null {

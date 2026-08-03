@@ -64,10 +64,10 @@ SELECT is(
 );
 
 -- ── Fixtures: a public ray + a private ray ────────────────────────────────────
-INSERT INTO content.tags (id, name, slug, visibility, created_at)
+INSERT INTO content.tags (id, slug, visibility, created_at)
 VALUES
-  ('c0000000-5e0a-0000-0000-000000000001', 'SEO Public Ray',  'seo-public-ray-102',  'public'::content.tag_visibility_enum,  now()),
-  ('c0000000-5e0a-0000-0000-000000000002', 'SEO Private Ray', 'seo-private-ray-102', 'private'::content.tag_visibility_enum, now())
+  ('c0000000-5e0a-0000-0000-000000000001', 'seo-public-ray-102',  'public'::content.tag_visibility_enum,  now()),
+  ('c0000000-5e0a-0000-0000-000000000002', 'seo-private-ray-102', 'private'::content.tag_visibility_enum, now())
 ON CONFLICT (id) DO NOTHING;
 
 -- 4. public ray is listed
