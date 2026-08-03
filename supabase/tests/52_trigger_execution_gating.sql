@@ -7,7 +7,7 @@
 --     provider row
 --   * every active model's provider has support_level in (runnable, byok_only)
 --   * deprecated provider Midjourney has its model row marked is_active=false
---   * catalog-only providers (deepseek, groq, etc.) have NO model rows seeded
+--   * catalog-only providers (groq, bedrock, etc.) have NO model rows seeded
 -- =============================================================================
 BEGIN;
 
@@ -61,13 +61,13 @@ SELECT is(
   'catalog-only providers must not have active models'
 );
 
--- 8. Reserved DeepSeek catalog entry has no model rows at all
+-- 8. Reserved Groq catalog entry has no model rows at all
 SELECT is(
   (SELECT COUNT(*)::integer FROM ai.models m
      JOIN ai.providers p ON p.id = m.provider_id
-   WHERE p.key = 'deepseek'),
+   WHERE p.key = 'groq'),
   0,
-  'deepseek (catalog_only) has no seeded models — gate confirmed'
+  'groq (catalog_only) has no seeded models — gate confirmed'
 );
 
 -- 9. ai.providers.is_active toggle exists and the deprecated provider is off
