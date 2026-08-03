@@ -5,6 +5,11 @@
 // infra/gateway) that gateway.ts pulls in but the daemons group does not use.
 
 jest.mock('citty', () => ({ defineCommand: (opts: unknown) => opts }));
+// import.meta.url is invalid syntax under ts-jest's commonjs module target —
+// mock the file that isolates it so ts-jest never transforms its real source.
+jest.mock('../lib/current-script-url', () => ({
+  currentScriptUrl: require('node:url').pathToFileURL(__filename).href,
+}));
 jest.mock('consola', () => ({
   __esModule: true,
   default: {

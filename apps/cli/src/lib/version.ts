@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { currentScriptUrl } from './current-script-url'
 
 /** Read the CLI package version from package.json, falling back to '0.0.0-dev'. */
 export function readCliVersion(): string {
-  const thisDir = dirname(fileURLToPath(import.meta.url))
+  const thisDir = dirname(fileURLToPath(currentScriptUrl))
   const candidates = [
     join(thisDir, 'package.json'),
     resolve(thisDir, '../package.json'),
