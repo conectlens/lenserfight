@@ -3,7 +3,7 @@ import consola from 'consola';
 import { callRpc, handleError } from '@lenserfight/cli-client';
 import { printTable, printJson, truncate } from '../utils/output';
 
-const browse = defineCommand({
+export const browse = defineCommand({
   meta: {
     name: 'lenses',
     description: 'List public lenses.',
@@ -13,6 +13,11 @@ const browse = defineCommand({
       type: 'string',
       description: 'Sort order: date | popularity | trending',
       default: 'date',
+    },
+    trending: {
+      type: 'boolean',
+      description: 'Shorthand for --sort trending',
+      default: false,
     },
     tag: {
       type: 'string',
@@ -47,8 +52,9 @@ const browse = defineCommand({
   },
   async run({ args }) {
     const VALID_SORTS = ['date', 'popularity', 'trending'];
-    if (!VALID_SORTS.includes(args.sort)) {
-      consola.error('Invalid --sort value "%s". Must be one of: %s', args.sort, VALID_SORTS.join(', '));
+    const sort = args.trending ? 'trending' : args.sort;
+    if (!VALID_SORTS.includes(sort)) {
+      consola.error('Invalid --sort value "%s". Must be one of: %s', sort, VALID_SORTS.join(', '));
       process.exitCode = 1;
       return;
     }
@@ -57,7 +63,7 @@ const browse = defineCommand({
       const lenses = await callRpc<Array<Record<string, unknown>>>(
         'fn_lenses_browse',
         {
-          p_sort: args.sort,
+          p_sort: sort,
           p_tag: args.tag || null,
           p_author: args.author || null,
           p_community: args.community || null,

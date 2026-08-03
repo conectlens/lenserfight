@@ -5,7 +5,7 @@ import React from 'react'
 import type { Contender, Submission, VoteAggregate, BattleUIPhase } from '../../types/battle.types'
 
 // Local re-export of arena components to avoid circular deps
-// These are imported from apps/arena via relative path in the feature shell
+// These are imported from apps/landing via relative path in the feature shell
 interface ContenderSlotProps {
   slot: 'A' | 'B'
   displayName: string

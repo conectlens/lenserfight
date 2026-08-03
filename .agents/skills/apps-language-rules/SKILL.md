@@ -110,7 +110,7 @@ Bu belge yakında Türkçe olarak tam içerikle güncellenecektir.
 ## Adding a new locale (beyond existing 11)
 
 1. **Seed**: Add `('code', 'Name', 'NativeName', 'ltr', true)` to `supabase/seeds/01_core_languages.sql`.
-2. **Arena**: Add `apps/arena/src/locales/<code>.json` mirroring `en.json`. Register in `apps/arena/src/i18n.ts`.
+2. **Arena**: Add `apps/landing/src/locales/<code>.json` mirroring `en.json`. Register in `apps/landing/src/i18n.ts`.
 3. **Web**: Add `apps/web/src/locales/<code>.json` mirroring `en.json`. Register in `apps/web/src/i18n.ts`.
 4. **Docs**: Add `<code>` entry to `locales{}` in `config.ts`. Create `docs/<code>/index.md` and `docs/<code>/tutorials/getting-started/overview.md`. Add `hreflang` to `head[]`. Update `inLanguage` in JSON-LD.
 5. **Full step-by-step**: see `docs/how-to/contributors/i18n-guide.md` and `.claude/skills/language-integrator/SKILL.md`.

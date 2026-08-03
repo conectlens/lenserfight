@@ -31,7 +31,7 @@ SEED_LF_PASSWORD="${SEED_LF_PASSWORD:-lenserfight-local-dev}"
 SEED_CHAINABIT_PASSWORD="${SEED_CHAINABIT_PASSWORD:-chainabit-local-dev}"
 SEED_CONECTLENS_PASSWORD="${SEED_CONECTLENS_PASSWORD:-conectlens-local-dev}"
 
-bash "$REPO_ROOT/supabase/combine-seeds.sh"
+bash "$REPO_ROOT/supabase/combine-seeds.sh" --out seed-data.sql
 
 PGOPTIONS="-c seed.lf_password=$SEED_LF_PASSWORD \
            -c seed.chainabit_password=$SEED_CHAINABIT_PASSWORD \

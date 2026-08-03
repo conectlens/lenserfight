@@ -24,7 +24,7 @@ RTL languages: Arabic (`ar`), Hebrew (`he`), Persian (`fa`), Urdu (`ur`).
 ## Architecture summary
 
 ```
-apps/arena/src/
+apps/landing/src/
   i18n.ts                        ← SUPPORTED_LANGUAGES + init — register here
   locales/
     en.json                      ← English source of truth
@@ -62,13 +62,13 @@ If `LOCALE` is missing, add inside the `VALUES (...)` block:
 ('LOCALE', 'NAME_EN', 'NAME', 'DIR', true),
 ```
 
-### 2 — Translate arena locale file
+### 2 — Translate landing locale file
 
-Read `apps/arena/src/locales/en.json` in full.
-Create `apps/arena/src/locales/LOCALE.json` mirroring every key. Translate all values.
+Read `apps/landing/src/locales/en.json` in full.
+Create `apps/landing/src/locales/LOCALE.json` mirroring every key. Translate all values.
 Do not rename or add keys. Preserve `{{placeholder}}` markers exactly.
 
-Register in `apps/arena/src/i18n.ts`:
+Register in `apps/landing/src/i18n.ts`:
 ```ts
 import LOCALE from './locales/LOCALE.json'
 
@@ -95,9 +95,9 @@ Read `apps/web/src/locales/en.json` in full.
 Create `apps/web/src/locales/LOCALE.json` using the same rules as step 2.
 Register in `apps/web/src/i18n.ts` following the identical pattern.
 
-### 4 — Translate arena legal policies (if applicable)
+### 4 — Translate landing legal policies (if applicable)
 
-Copy `apps/arena/src/locales/en/policies/` structure to `apps/arena/src/locales/LOCALE/policies/`.
+Copy `apps/landing/src/locales/en/policies/` structure to `apps/landing/src/locales/LOCALE/policies/`.
 Translate each `.md` file with legal-level precision. Preserve markdown structure exactly.
 
 ### 5 — Create docs locale root

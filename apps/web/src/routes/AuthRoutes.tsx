@@ -1,5 +1,5 @@
 import { AuthExternalRedirect } from '@lenserfight/features/auth'
-import { ARENA_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
+import { LANDING_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
 import React from 'react'
 import { Navigate, Route } from 'react-router-dom'
 
@@ -11,7 +11,7 @@ export function AuthRoutes(): React.ReactElement {
     <Route path="/auth/forgot-password" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/forgot-password`} />} />
     <Route path="/auth/reset-password" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/reset-password`} />} />
     <Route path="/auth" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/login`} />} />
-    <Route path="/welcome" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/get-started`} />} />
+    <Route path="/welcome" element={<AuthExternalRedirect to={`${LANDING_BASE_URL}/get-started`} />} />
 
     {/* Legacy path aliases */}
     <Route path="/login" element={<Navigate to="/auth/login" replace />} />

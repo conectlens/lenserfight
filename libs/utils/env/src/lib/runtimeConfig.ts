@@ -41,8 +41,8 @@ export const AUTH_BASE_URL = readPublicBaseUrl(
   import.meta.env.DEV ? DEV_AUTH_BASE_URL : 'https://auth.lenserfight.com'
 )
 
-/** Main / arena app origin for battles, get-started, etc. Override with `ARENA_URL`. */
-export const ARENA_BASE_URL = readPublicBaseUrl('ARENA_URL', 'https://lenserfight.com')
+/** Main / landing app origin for battles, get-started, etc. Override with `LANDING_URL`. */
+export const LANDING_BASE_URL = readPublicBaseUrl('LANDING_URL', 'https://lenserfight.com')
 
 /** Community web origin (return URLs, links). Override with `WEB_BASE_URL`. */
 export const WEB_BASE_URL = readPublicBaseUrl('WEB_BASE_URL', 'https://lenserfight.com')

@@ -158,7 +158,7 @@ SUPABASE_ANON_KEY=<your-anon-key-from-step-3>
 # URLs (defaults match local dev servers)
 WEB_BASE_URL=http://localhost:3000
 AUTH_BASE_URL=http://localhost:3004
-ARENA_URL=http://localhost:3001
+LANDING_URL=http://localhost:3001
 DOCS_BASE_URL=http://localhost:3002
 API_URL=http://localhost:8786
 ```
@@ -176,7 +176,7 @@ pnpm nx run web:serve
 pnpm nx run auth:serve
 
 # Arena app (battle viewing)
-pnpm nx run arena:serve
+pnpm nx run landing:serve
 
 # Documentation site
 pnpm nx run docs:serve
@@ -207,7 +207,7 @@ pnpm supabase status
 | `SUPABASE_ANON_KEY` | Supabase mode | — | From `pnpm supabase start` output |
 | `WEB_BASE_URL` | No | `http://localhost:3000` | Web app URL |
 | `AUTH_BASE_URL` | No | `http://localhost:3004` | Auth app URL |
-| `ARENA_URL` | No | `http://localhost:3001` | Arena app URL |
+| `LANDING_URL` | No | `http://localhost:3001` | Landing app URL |
 | `API_URL` | No | — | Execution API URL (Cloudflare Workers, not local) |
 
 See `.env.example` for the full list with descriptions.
@@ -220,7 +220,7 @@ See `.env.example` for the full list with descriptions.
 |---------|-------------|
 | `pnpm nx run web:serve` | Start the web app (port 3000) |
 | `pnpm nx run auth:serve` | Start the auth app (port 3004) |
-| `pnpm nx run arena:serve` | Start the arena app (port 3001) |
+| `pnpm nx run landing:serve` | Start the landing app (port 3001) |
 | `pnpm nx run docs:serve` | Start the docs site (port 3002) |
 | `pnpm nx run worker:serve` | Start the background worker |
 | `pnpm nx run cli:build` | Build the CLI |

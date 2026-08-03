@@ -5,13 +5,13 @@ import { fileURLToPath } from 'node:url'
 const DEFAULT_DATE = new Date().toISOString().split('T')[0]
 
 // Locale registry — mirrors libs/utils/locale ENABLED_LOCALES. Keep in sync;
-// the util-locale parity spec catches DB drift, and `loadArenaSeoStrings`
+// the util-locale parity spec catches DB drift, and `loadLandingSeoStrings`
 // below will throw if a translation file is missing.
-const ARENA_ENABLED_LOCALES = ['en', 'tr']
-const ARENA_DEFAULT_LOCALE = 'en'
+const LANDING_ENABLED_LOCALES = ['en', 'tr']
+const LANDING_DEFAULT_LOCALE = 'en'
 
-// Path → seo.<key> mapping (mirrors apps/arena/src/seo/RouteSEO.tsx routeMeta).
-const ARENA_SEO_KEY_BY_PATH = {
+// Path → seo.<key> mapping (mirrors apps/landing/src/seo/RouteSEO.tsx routeMeta).
+const LANDING_SEO_KEY_BY_PATH = {
   '/': 'home',
   '/about': 'about',
   '/note': 'founder_note',
@@ -20,6 +20,7 @@ const ARENA_SEO_KEY_BY_PATH = {
   '/product/cli/quickstart': 'product_cli_quickstart',
   '/product/mobile': 'product_mobile',
   '/faq': 'faq',
+  '/roadmap': 'roadmap',
   '/get-started': 'get_started',
   '/demo': 'demo',
   '/battle-showcase': 'battle_showcase',
@@ -30,15 +31,15 @@ const ARENA_SEO_KEY_BY_PATH = {
 }
 
 const __seoDir = dirname(fileURLToPath(import.meta.url))
-const __arenaLocalesDir = resolve(__seoDir, '../../apps/arena/src/locales')
+const __landingLocalesDir = resolve(__seoDir, '../../apps/landing/src/locales')
 
-const arenaSeoCache = new Map()
-function loadArenaSeoStrings(locale) {
-  if (arenaSeoCache.has(locale)) return arenaSeoCache.get(locale)
-  // New layout: apps/arena/src/locales/<locale>/seo.json
-  const namespacedPath = resolve(__arenaLocalesDir, `${locale}/seo.json`)
-  // Legacy layout fallback: apps/arena/src/locales/<locale>.json
-  const legacyPath = resolve(__arenaLocalesDir, `${locale}.json`)
+const landingSeoCache = new Map()
+function loadLandingSeoStrings(locale) {
+  if (landingSeoCache.has(locale)) return landingSeoCache.get(locale)
+  // New layout: apps/landing/src/locales/<locale>/seo.json
+  const namespacedPath = resolve(__landingLocalesDir, `${locale}/seo.json`)
+  // Legacy layout fallback: apps/landing/src/locales/<locale>.json
+  const legacyPath = resolve(__landingLocalesDir, `${locale}.json`)
   let seo = {}
   try {
     const raw = readFileSync(namespacedPath, 'utf-8')
@@ -52,8 +53,42 @@ function loadArenaSeoStrings(locale) {
       seo = {}
     }
   }
-  arenaSeoCache.set(locale, seo)
+  landingSeoCache.set(locale, seo)
   return seo
+}
+
+const landingFaqCache = new Map()
+function loadLandingFaqStrings(locale) {
+  if (landingFaqCache.has(locale)) return landingFaqCache.get(locale)
+  const faqPath = resolve(__landingLocalesDir, `${locale}/faq.json`)
+  let faq = null
+  try {
+    faq = JSON.parse(readFileSync(faqPath, 'utf-8'))
+  } catch {
+    faq = null
+  }
+  landingFaqCache.set(locale, faq)
+  return faq
+}
+
+/**
+ * Real FAQPage mainEntity (Question/Answer pairs) from the actual faq.json
+ * content, so search engines and AI answer engines can surface individual
+ * Q&As directly instead of a generic WebPage-shaped schema with no content.
+ */
+function buildFaqMainEntity(locale) {
+  const faq = loadLandingFaqStrings(locale)
+  if (!faq?.groups) return []
+  return Object.values(faq.groups).flatMap((group) =>
+    Object.values(group.entries ?? {}).map((entry) => ({
+      '@type': 'Question',
+      name: entry.title,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: entry.body,
+      },
+    })),
+  )
 }
 
 const ORGANIZATION = {
@@ -421,7 +456,7 @@ const webStaticRoutes = [
   },
 ]
 
-const arenaStaticRoutes = [
+const landingStaticRoutes = [
   {
     path: '/',
     title: 'LenserFight Arena | AI Battles, Prompts & Model Comparisons',
@@ -590,20 +625,41 @@ const arenaStaticRoutes = [
   },
   {
     path: '/faq',
-    title: 'LenserFight FAQ | AI Battles, Lenses, Agents, and Workflows',
+    title: 'LenserFight FAQ | Lenses, Workflows, AI Battles, and Agents Explained',
     description:
-      'Answers about LenserFight battles, AI lenses, Lensers, workflow automation, judging, public profiles, GitHub contribution, and local execution.',
+      'Honest answers about what\'s finished, what\'s experimental, and what\'s next: reusable Lenses, Workflow automation, AI Battles, agents, judging, and open-source access.',
     priority: '0.78',
     changefreq: 'monthly',
     schemaType: 'FAQPage',
     heading: 'LenserFight FAQ',
     sections: [
-      'Practical answers for builders evaluating AI battle systems, workflow templates, and public Lenser profiles',
+      'Practical answers for AI Builders and Vibe Coders evaluating reusable Lenses, Workflow automation, and public AI battle systems',
       'Connects product concepts to docs, GitHub contribution, local development, and public discovery',
     ],
     links: [
       { name: 'Docs', url: 'https://docs.lenserfight.com/en/' },
       { name: 'Support docs', url: 'https://docs.lenserfight.com/en/how-to/contributors/support' },
+      { name: 'Roadmap', path: '/roadmap' },
+    ],
+  },
+  {
+    path: '/roadmap',
+    title: 'LenserFight Roadmap | Workflows, Agents, Battles, and Mobile',
+    description:
+      'See what\'s shipped and what\'s next for LenserFight: Workflow management in August 2026, Agents and Battles hardening in Sept–Oct 2026, and mobile support in December 2026.',
+    priority: '0.7',
+    changefreq: 'weekly',
+    schemaType: 'WebPage',
+    heading: 'LenserFight Roadmap',
+    sections: [
+      'What\'s available today: Lenses, community, and the CLI',
+      'August 2026: Workflow management is the primary focus',
+      'September–October 2026: AI Agents and Battles hardening',
+      'December 2026: mobile support',
+    ],
+    links: [
+      { name: 'FAQ', path: '/faq' },
+      { name: 'Open an issue', url: 'https://github.com/conectlens/lenserfight/issues/new' },
     ],
   },
   {
@@ -713,7 +769,7 @@ const dynamicRoutePatterns = {
       schemaType: 'DiscussionForumPosting',
     },
   ],
-  arena: [
+  landing: [
     {
       pattern: '/battles/:slug',
       title: ({ slug }) => `${slugLabel(slug, 'AI Battle')} | LenserFight Arena`,
@@ -756,18 +812,18 @@ const apps = {
       '/workflows/*/run/',
     ],
   },
-  arena: {
+  landing: {
     name: 'LenserFight Arena',
     baseUrl: 'https://lenserfight.com',
     ogImage: 'https://lenserfight.com/og-banner.png',
-    routes: arenaStaticRoutes,
+    routes: landingStaticRoutes,
     disallow: ['/auth/', '/contact'],
-    locales: ARENA_ENABLED_LOCALES,
-    defaultLocale: ARENA_DEFAULT_LOCALE,
+    locales: LANDING_ENABLED_LOCALES,
+    defaultLocale: LANDING_DEFAULT_LOCALE,
   },
 }
 
-function localePath(locale, unprefixed, defaultLocale = ARENA_DEFAULT_LOCALE) {
+function localePath(locale, unprefixed, defaultLocale = LANDING_DEFAULT_LOCALE) {
   if (locale === defaultLocale) {
     return unprefixed === '' ? '/' : unprefixed
   }
@@ -776,8 +832,8 @@ function localePath(locale, unprefixed, defaultLocale = ARENA_DEFAULT_LOCALE) {
 }
 
 function localizeRoute(app, route, locale) {
-  const seoKey = ARENA_SEO_KEY_BY_PATH[route.path]
-  const strings = seoKey ? loadArenaSeoStrings(locale)?.[seoKey] : null
+  const seoKey = LANDING_SEO_KEY_BY_PATH[route.path]
+  const strings = seoKey ? loadLandingSeoStrings(locale)?.[seoKey] : null
   const title = strings?.title ?? route.title
   const description = strings?.description ?? route.description
   const localizedPath = localePath(locale, route.path)
@@ -813,6 +869,7 @@ function withResolvedLinks(app, route) {
     ...link,
     url: resolveLinkPath(link),
   }))
+  const faqMainEntity = route.schemaType === 'FAQPage' ? buildFaqMainEntity(route.locale ?? 'en') : []
   const schema = {
     ...createWebPageSchema({
       title: route.title,
@@ -829,6 +886,7 @@ function withResolvedLinks(app, route) {
         ),
       }
       : {}),
+    ...(faqMainEntity.length ? { mainEntity: faqMainEntity } : {}),
   }
   // Breadcrumb: built from unprefixedPath for localized routes, else route.path.
   const pathForBreadcrumb = route.unprefixedPath ?? route.path

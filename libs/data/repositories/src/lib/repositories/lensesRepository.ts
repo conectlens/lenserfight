@@ -441,6 +441,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
         hotScore: (row.hot_score as number) ?? undefined,
         primaryLanguage: (row.primary_language as string) ?? undefined,
         personalScore: (row.personal_score as number) ?? 0,
+        outputKind: (row.outputKind as LensViewModel['outputKind']) ?? null,
       }
     })
     return paginatedResponse(

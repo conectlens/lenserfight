@@ -51,7 +51,8 @@
     "gen:status-page": "node tools/gen-status-page.mjs",
     "announcement:gates": "node tools/announcement-dashboard.mjs",
     "announcement:dashboard": "bash scripts/announcement-dashboard.sh",
-    "staging-integrity": "node tools/run-staging-integrity-checklist.mjs"
+    "staging-integrity": "node tools/run-staging-integrity-checklist.mjs",
+    "hero:preview": "node scripts/generate-hero-preview.mjs"
   },
   "config": {
     "commitizen": {
@@ -165,6 +166,7 @@
     "eslint-plugin-react": "7.35.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "gifenc": "^1.0.3",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.3.0",
     "jest-environment-node": "^30.3.0",
@@ -180,6 +182,7 @@
     "nx": "22.5.4",
     "postcss": "^8.5.8",
     "prettier": "^3.8.1",
+    "sharp": "^0.33.5",
     "standard-version": "^9.5.0",
     "tailwindcss": "^4.2.2",
     "ts-jest": "^29.4.6",

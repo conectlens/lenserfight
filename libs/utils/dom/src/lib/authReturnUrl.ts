@@ -1,8 +1,8 @@
-import { ARENA_BASE_URL, AUTH_BASE_URL, WEB_BASE_URL } from '@lenserfight/utils/env'
+import { LANDING_BASE_URL, AUTH_BASE_URL, WEB_BASE_URL } from '@lenserfight/utils/env'
 
 const PROD_ORIGINS = [
   WEB_BASE_URL,
-  ARENA_BASE_URL,
+  LANDING_BASE_URL,
   'https://admin.lenserfight.com',
 ]
 

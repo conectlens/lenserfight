@@ -49,7 +49,7 @@ All reusable UI behavior must be centralized inside `libs/ui`.
 This refactor initiative targets:
 
 * `apps/web`
-* `apps/arena`
+* `apps/landing`
 
 Additional packages may also be included later.
 
@@ -185,7 +185,7 @@ Inside:
 
 ```txt
 apps/web
-apps/arena
+apps/landing
 ```
 
 ---

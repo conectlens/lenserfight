@@ -1,0 +1,75 @@
+/// <reference types='vitest' />
+import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin'
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
+import { themeInitPlugin } from '../../libs/ui/theme/src/lib/viteThemePlugin'
+
+const cookiebotPlugin = () => ({
+  name: 'inject-cookiebot',
+  transformIndexHtml: {
+    order: 'pre' as const,
+    handler(html: string, ctx: { command: string }) {
+      if (ctx.command !== 'build') return html
+      const tag =
+        '<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="d947453c-7a90-412f-9124-beaf73e5fbef" type="text/javascript"><\/script>'
+      return html.replace('</head>', `  ${tag}\n</head>`)
+    },
+  },
+})
+
+export default defineConfig(() => ({
+  root: import.meta.dirname,
+  envDir: resolve(import.meta.dirname, '../..'),
+  envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'LANDING_', 'AUTH_', 'WEB_', 'DATA_SOURCE'],
+  cacheDir: '../../node_modules/.vite/apps/landing',
+  server: {
+    port: 3001,
+    host: '0.0.0.0',
+  },
+  preview: {
+    port: 3001,
+    host: '0.0.0.0',
+  },
+  plugins: [
+    react(),
+    tailwindcss(),
+    nxViteTsPaths(),
+    nxCopyAssetsPlugin(['*.md']),
+    themeInitPlugin(),
+    cookiebotPlugin(),
+  ],
+  // Pre-bundle CJS deps with TDZ-prone init patterns — same reason as apps/web.
+  optimizeDeps: {
+    include: ['sonner', 'recharts'],
+  },
+  build: {
+    outDir: '../../dist/apps/landing',
+    emptyOutDir: true,
+    reportCompressedSize: true,
+    // 'hidden' emits maps for upload to an error tracker but omits the
+    // `//# sourceMappingURL=` footer so browsers do not fetch them. Set
+    // VITE_BUILD_SOURCEMAP=inline locally to opt in to inline maps.
+    sourcemap:
+      process.env['VITE_BUILD_SOURCEMAP'] === 'inline'
+        ? 'inline'
+        : process.env['VITE_BUILD_SOURCEMAP'] === 'true'
+          ? true
+          : 'hidden',
+    target: 'es2022',
+  },
+  test: {
+    name: 'landing',
+    watch: false,
+    globals: true,
+    environment: 'jsdom',
+    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    reporters: ['default'],
+    coverage: {
+      reportsDirectory: '../../coverage/apps/landing',
+      provider: 'v8' as const,
+    },
+  },
+}))
