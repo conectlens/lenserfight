@@ -116,7 +116,7 @@ export function BattlesFeedPage() {
         description="Battles work end-to-end, but matchmaking, voting and result flows haven't been fully tested. Please try them and report anything that feels wrong — I'd rather hear it from you than miss it."
         className="mb-4"
       />
-      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+      <div className="sticky top-[56px] z-20 bg-gray-50 dark:bg-gray-900 py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
           {/* Live quick-filter chip */}
           <button
