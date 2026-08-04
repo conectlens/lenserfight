@@ -1,5 +1,6 @@
 import { Badge, Card } from '@lenserfight/ui/components'
-import { Loader2, FileText, ImageIcon, Video, Music, File, Search } from 'lucide-react'
+import { Dialog } from '@lenserfight/ui/overlays'
+import { Loader2, FileText, ImageIcon, Video, Music, File, Search, ExternalLink } from 'lucide-react'
 import React from 'react'
 
 import { useMediaGallery, type MediaTypeFilter } from '../hooks/useMediaGallery'
@@ -86,9 +87,20 @@ function FilterBar({
 
 // ─── Media card ──────────────────────────────────────────────────────────────
 
-function MediaGridCard({ item }: { item: MediaObject }) {
+function MediaGridCard({ item, onPreview }: { item: MediaObject; onPreview: (item: MediaObject) => void }) {
   return (
-    <Card className="group flex flex-col gap-3 p-4 transition-colors hover:border-primary-yellow-500/40">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={() => onPreview(item)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onPreview(item)
+        }
+      }}
+      className="group flex cursor-pointer flex-col gap-3 p-4 text-left transition-colors hover:border-primary-yellow-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50"
+    >
       <div className="flex h-24 items-center justify-center rounded-xl bg-greyscale-100 dark:bg-greyscale-800 text-greyscale-400 group-hover:text-greyscale-600 dark:group-hover:text-greyscale-300 transition-colors">
         {MEDIA_TYPE_ICON[item.mediaType] ?? <File size={20} />}
       </div>
@@ -115,12 +127,97 @@ function MediaGridCard({ item }: { item: MediaObject }) {
   )
 }
 
+// ─── Preview modal ───────────────────────────────────────────────────────────
+
+function MediaPreviewDialog({ item, onClose }: { item: MediaObject | null; onClose: () => void }) {
+  return (
+    <Dialog
+      open={item !== null}
+      onClose={onClose}
+      title={item?.name}
+      icon={item ? MEDIA_TYPE_ICON[item.mediaType] : undefined}
+    >
+      {item && (
+        <div className="space-y-4">
+          {item.mediaType === 'image' && item.externalUrl && (
+            <img
+              src={item.externalUrl}
+              alt={item.name}
+              className="w-full rounded-xl border border-surface-border object-contain max-h-80"
+            />
+          )}
+
+          {item.mediaType === 'video' && item.externalUrl && (
+            <video
+              src={item.externalUrl}
+              controls
+              className="w-full rounded-xl border border-surface-border max-h-80"
+            >
+              <track kind="captions" />
+            </video>
+          )}
+
+          {item.mediaType === 'audio' && item.externalUrl && (
+            <audio src={item.externalUrl} controls className="w-full" />
+          )}
+
+          {(item.mediaType === 'text' || item.mediaType === 'json') && item.contentText && (
+            <div className="max-h-80 overflow-y-auto rounded-xl bg-greyscale-50 dark:bg-greyscale-900 p-3 text-xs leading-relaxed text-greyscale-700 dark:text-greyscale-300 whitespace-pre-wrap">
+              {item.contentText.length > 5000 ? item.contentText.slice(0, 5000) + '…' : item.contentText}
+            </div>
+          )}
+
+          <div className="space-y-1.5 text-xs text-greyscale-500 dark:text-greyscale-400">
+            <p>
+              <span className="font-medium text-greyscale-700 dark:text-greyscale-300">Type:</span>{' '}
+              {item.mediaType}
+            </p>
+            {item.mimeType && (
+              <p>
+                <span className="font-medium text-greyscale-700 dark:text-greyscale-300">MIME:</span>{' '}
+                {item.mimeType}
+              </p>
+            )}
+            {item.byteSize && (
+              <p>
+                <span className="font-medium text-greyscale-700 dark:text-greyscale-300">Size:</span>{' '}
+                {(item.byteSize / 1024).toFixed(1)} KB
+              </p>
+            )}
+            <p>
+              <span className="font-medium text-greyscale-700 dark:text-greyscale-300">Created:</span>{' '}
+              {new Date(item.createdAt).toLocaleString()}
+            </p>
+            <p>
+              <span className="font-medium text-greyscale-700 dark:text-greyscale-300">Visibility:</span>{' '}
+              <span className="capitalize">{item.visibility}</span>
+            </p>
+          </div>
+
+          {item.externalUrl && (
+            <a
+              href={item.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary-yellow-600 hover:text-primary-yellow-700"
+            >
+              <ExternalLink size={12} />
+              Open external URL
+            </a>
+          )}
+        </div>
+      )}
+    </Dialog>
+  )
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export const MediaGalleryPage: React.FC = () => {
   const gallery = useMediaGallery()
   // AT: media actions wired with empty lenserId — gallery hook provides the owner context
   const mediaActions = useMediaActions('')
+  const [previewItem, setPreviewItem] = React.useState<MediaObject | null>(null)
 
   return (
     <div className="space-y-6">
@@ -156,10 +253,12 @@ export const MediaGalleryPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {gallery.media.map((item) => (
-            <MediaGridCard key={item.id} item={item} />
+            <MediaGridCard key={item.id} item={item} onPreview={setPreviewItem} />
           ))}
         </div>
       )}
+
+      <MediaPreviewDialog item={previewItem} onClose={() => setPreviewItem(null)} />
     </div>
   )
 }
