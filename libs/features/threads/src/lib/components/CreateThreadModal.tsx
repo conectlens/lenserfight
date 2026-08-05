@@ -5,8 +5,8 @@ import { createPortal } from 'react-dom'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { RichMentionInput, RichMentionInputHandle } from '@lenserfight/ui/forms'
 import { SelectField } from '@lenserfight/ui/forms'
-import { lenserService, tagService } from '@lenserfight/data/repositories'
-import type { LenserSearchResult } from '@lenserfight/data/repositories'
+import { battlesRepository, lenserService, tagService } from '@lenserfight/data/repositories'
+import type { BrowseBattleRecord, LenserSearchResult } from '@lenserfight/data/repositories'
 import { TagUsage } from '@lenserfight/types'
 import { Visibility } from '@lenserfight/types'
 import { useCreateThread } from '../hooks/useCreateThread'
@@ -15,6 +15,7 @@ import type { MediaObject } from '@lenserfight/types'
 
 import { MentionAutocompleteList } from './MentionAutocompleteList'
 import { TagMentionAutocompleteList } from './TagMentionAutocompleteList'
+import { BattleMentionAutocompleteList } from './BattleMentionAutocompleteList'
 
 interface CreateThreadModalProps {
   isOpen: boolean
@@ -58,6 +59,14 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
   const [isTagMentioning, setIsTagMentioning] = useState(false)
   const [tagMenuPos, setTagMenuPos] = useState({ top: 0, left: 0 })
   const [tagActiveIndex, setTagActiveIndex] = useState(0)
+
+  // Battle ($) mention state
+  const [battleMentionQuery, setBattleMentionQuery] = useState('')
+  const [battleSuggestions, setBattleSuggestions] = useState<BrowseBattleRecord[]>([])
+  const [isBattleMentioning, setIsBattleMentioning] = useState(false)
+  const [isBattleSearchLoading, setIsBattleSearchLoading] = useState(false)
+  const [battleMenuPos, setBattleMenuPos] = useState({ top: 0, left: 0 })
+  const [battleActiveIndex, setBattleActiveIndex] = useState(0)
 
   useEffect(() => {
     if (isOpen) {
@@ -128,6 +137,41 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     }
   }, [tagMentionQuery, isTagMentioning])
 
+  // Battle mention suggestions
+  useEffect(() => {
+    if (!isBattleMentioning) {
+      setBattleSuggestions([])
+      setIsBattleSearchLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setIsBattleSearchLoading(true)
+
+    const timer = setTimeout(async () => {
+      try {
+        const results = await battlesRepository.browseBattles(
+          { q: battleMentionQuery || null },
+          undefined,
+          6
+        )
+        if (!cancelled) {
+          setBattleSuggestions(results)
+          setBattleActiveIndex(0)
+        }
+      } catch (e) {
+        if (!cancelled) console.error(e)
+      } finally {
+        if (!cancelled) setIsBattleSearchLoading(false)
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [battleMentionQuery, isBattleMentioning])
+
   const extractTagIds = (raw: string): string[] =>
     [...raw.matchAll(/#\[Tag:([^\]]+)\]/g)].map((m) => m[1])
 
@@ -190,6 +234,14 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     setTagSuggestions([])
   }
 
+  const handleBattleSelect = (battle: BrowseBattleRecord) => {
+    if (editorRef.current) {
+      editorRef.current.insertBattleMention({ id: battle.id, title: battle.title })
+    }
+    setIsBattleMentioning(false)
+    setBattleSuggestions([])
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Tag mention keyboard nav takes priority
     if (isTagMentioning) {
@@ -214,6 +266,32 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
       } else if (e.key === 'Escape') {
         e.preventDefault()
         setIsTagMentioning(false)
+      }
+      return
+    }
+
+    // Battle mention keyboard nav
+    if (isBattleMentioning) {
+      if (battleSuggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setBattleActiveIndex((prev) => (prev + 1) % battleSuggestions.length)
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setBattleActiveIndex(
+            (prev) => (prev - 1 + battleSuggestions.length) % battleSuggestions.length
+          )
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          handleBattleSelect(battleSuggestions[battleActiveIndex])
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          setIsBattleMentioning(false)
+          setBattleSuggestions([])
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        setIsBattleMentioning(false)
       }
       return
     }
@@ -276,9 +354,11 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                   setMentionQuery(query)
                   setMenuPos(coords)
                   setIsMentioning(true)
-                  // Close tag menu
+                  // Close tag/battle menus
                   setIsTagMentioning(false)
                   setTagSuggestions([])
+                  setIsBattleMentioning(false)
+                  setBattleSuggestions([])
                 }}
                 onMentionClose={() => {
                   setIsMentioning(false)
@@ -288,15 +368,31 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                   setTagMentionQuery(query)
                   setTagMenuPos(coords)
                   setIsTagMentioning(true)
-                  // Close prompt menu
+                  // Close prompt/battle menus
                   setIsMentioning(false)
                   setSuggestions([])
+                  setIsBattleMentioning(false)
+                  setBattleSuggestions([])
                 }}
                 onTagClose={() => {
                   setIsTagMentioning(false)
                   setTagSuggestions([])
                 }}
-                placeholder="What's on your mind? Type @ to mention a Lenser, # to mention or create a tag..."
+                onBattleSearch={(query, coords) => {
+                  setBattleMentionQuery(query)
+                  setBattleMenuPos(coords)
+                  setIsBattleMentioning(true)
+                  // Close prompt/tag menus
+                  setIsMentioning(false)
+                  setSuggestions([])
+                  setIsTagMentioning(false)
+                  setTagSuggestions([])
+                }}
+                onBattleClose={() => {
+                  setIsBattleMentioning(false)
+                  setBattleSuggestions([])
+                }}
+                placeholder="What's on your mind? Type @ to mention a Lenser, # for a tag, $ to mention a Battle..."
               />
 
               {isMentioning &&
@@ -323,6 +419,20 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                     onSelect={handleTagSelect}
                     createQuery={tagMentionQuery}
                     onCreate={handleTagCreate}
+                  />,
+                  document.body
+                )}
+
+              {isBattleMentioning &&
+                createPortal(
+                  <BattleMentionAutocompleteList
+                    visible={isBattleMentioning}
+                    suggestions={battleSuggestions}
+                    activeIndex={battleActiveIndex}
+                    position={battleMenuPos}
+                    onSelect={handleBattleSelect}
+                    isLoading={isBattleSearchLoading}
+                    query={battleMentionQuery}
                   />,
                   document.body
                 )}
