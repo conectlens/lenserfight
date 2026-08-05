@@ -1080,7 +1080,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   }, [])
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-tour="dashboard.battle-create.form">
       <StepWizard
         steps={wizardSteps}
         currentStep={step}

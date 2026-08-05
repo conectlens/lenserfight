@@ -290,7 +290,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                   {modelsLoading ? 'Loading' : `${filteredModels.length} visible`}
                 </Text>
               </div>
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-6 md:grid-cols-2" data-tour="dashboard.ai-catalog.grid">
                 {filteredModels.map((model) => {
                   const compareKey = `${model.provider_key}/${model.key}`
                   const selected = selectedKeys.includes(compareKey)

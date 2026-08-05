@@ -34,3 +34,4 @@ n/a
 - [ ] No secrets, private data, provider keys, customer data, or exploit details are included.
 - [ ] New agent/workflow/BYOK/provider/tool behavior documents permissions, costs, privacy, and misuse risks.
 - [ ] Public docs avoid unsupported claims such as production-ready, guaranteed, secure by default, anonymous, compliant, or zero risk.
+- [ ] New or changed routes under `apps/web/src/routes/` or new agent-workspace sections include a tour definition in `libs/features/tour/src/lib/definitions/` or an entry in that directory's coverage-spec exclusion list.

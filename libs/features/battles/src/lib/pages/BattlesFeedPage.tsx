@@ -104,6 +104,7 @@ export function BattlesFeedPage() {
               onClick={() => navigate('/battles/create')}
               title="New Battle"
               className="flex items-center gap-2 w-auto"
+              data-tour="dashboard.battles.create-button"
             >
               <PlusCircle size={18} />
               <span>New Battle</span>
@@ -186,7 +187,7 @@ export function BattlesFeedPage() {
           }
         />
       ) : (
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3" data-tour="dashboard.battles.feed">
           {sorted.map((b) => (
             <div key={b.id} className="break-inside-avoid mb-3">
               <BattleCard

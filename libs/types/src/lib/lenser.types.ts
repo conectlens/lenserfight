@@ -50,6 +50,8 @@ export interface LenserPreferences {
   hide_actions: boolean
   sidebar_collapsed?: boolean
   cron_config: Record<string, unknown>
+  /** Product-tour seen markers: tour id -> ISO timestamp of completion/dismissal. */
+  tours_seen: Record<string, string>
   country_id?: string | null
   currency?: string | null
   /** When true, the LenserFight arena soundtrack autoplays on Battle Detail pages. */

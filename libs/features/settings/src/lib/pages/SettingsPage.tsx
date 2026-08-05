@@ -392,7 +392,7 @@ export const SettingsPage: React.FC = () => {
 
       <div className="flex flex-col md:flex-row gap-12">
         {/* Sidebar */}
-        <div className="w-full md:w-64 flex-shrink-0 space-y-1">
+        <div className="w-full md:w-64 flex-shrink-0 space-y-1" data-tour="dashboard.settings.tabs">
           {validTabs.map((t) => (
             <button
               key={t}

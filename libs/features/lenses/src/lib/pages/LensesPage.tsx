@@ -200,6 +200,7 @@ export const LensesPage: React.FC = () => {
             <Button
               onClick={handleCreateClick}
               className="w-auto px-4 gap-2 flex items-center whitespace-nowrap"
+              data-tour="dashboard.lenses.create-button"
             >
               <Plus size={18} />
               <span className="hidden sm:inline">Create Lens</span>
@@ -262,10 +263,12 @@ export const LensesPage: React.FC = () => {
       </div>
 
       {/* Grid Content */}
-      <LensesGrid
-        lenses={lenses}
-        isLoading={isLoading}
-      />
+      <div data-tour="dashboard.lenses.grid">
+        <LensesGrid
+          lenses={lenses}
+          isLoading={isLoading}
+        />
+      </div>
 
       {/* Intersection Anchor & Loader */}
       <div ref={lastElementRef} className="h-4"></div>

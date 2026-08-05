@@ -92,7 +92,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
         action={
           <>
             <HelpButton path="/tutorials/walkthroughs/create-a-workflow" />
-            <Button onClick={onCreateWorkflow} className="gap-2 w-auto flex-shrink-0">
+            <Button onClick={onCreateWorkflow} className="gap-2 w-auto flex-shrink-0" data-tour="dashboard.workflows.create-button">
               <Plus size={15} /> New Workflow
             </Button>
           </>
@@ -178,7 +178,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
       )}
 
       {!isLoading && workflows.length > 0 && (
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3" data-tour="dashboard.workflows.list">
           {workflows.map((w) => (
             <div key={w.id} className="break-inside-avoid mb-3">
               <Link to={`/workflows/${w.id}`} className="block">

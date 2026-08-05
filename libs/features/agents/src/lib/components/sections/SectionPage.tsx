@@ -36,7 +36,10 @@ export const SectionPage: React.FC<SectionPageProps> = ({
   children,
 }) => (
   <section className="space-y-6">
-    <Card className="bg-gradient-to-br from-amber-50 via-white to-orange-50 border-amber-200/70 dark:from-[#1d160d] dark:via-surface-raised dark:to-[#180d08] dark:border-amber-500/20">
+    <Card
+      className="bg-gradient-to-br from-amber-50 via-white to-orange-50 border-amber-200/70 dark:from-[#1d160d] dark:via-surface-raised dark:to-[#180d08] dark:border-amber-500/20"
+      data-tour="agent.section-header"
+    >
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">

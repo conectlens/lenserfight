@@ -192,6 +192,7 @@ export const ChatPage: React.FC = () => {
         <Card 
           className="w-full p-2 pr-2 pl-4 flex items-center gap-3 relative cursor-pointer hover:border-greyscale-300 dark:hover:border-greyscale-600 transition-all shadow-neu-1 group"
           onClick={handleComposerClick}
+          data-tour="dashboard.chat.composer"
         >
           {/* Model Selector Dropdown Placeholder */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-greyscale-100 dark:border-greyscale-700 bg-greyscale-25 dark:bg-greyscale-900 text-sm font-semibold text-greyscale-700 dark:text-greyscale-300">

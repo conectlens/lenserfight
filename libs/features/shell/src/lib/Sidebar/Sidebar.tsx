@@ -283,7 +283,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto scrollbar-hide flex flex-col pt-4 pb-2">
+        <nav
+          data-tour="shell.sidebar"
+          className="flex-1 overflow-y-auto scrollbar-hide flex flex-col pt-4 pb-2"
+        >
           <div className="px-3 space-y-3">
             {navSections.map((section) => (
               <div key={section.id}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useLenserOptional } from '@lenserfight/features/profile'
+import { TourProvider } from '@lenserfight/features/tour'
 import { Footer } from '@lenserfight/ui/layout'
 import { Loader } from '@lenserfight/ui/feedback'
 import { WEB_BASE_URL } from '@lenserfight/utils/env'
@@ -123,43 +124,45 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, full
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-transparent overflow-hidden transition-colors duration-200">
-      <Sidebar
-        isOpen={sidebarOpen}
-        isMobile={isMobile}
-        onCloseMobile={() => setSidebarOpen(false)}
-        onOpenProfileSetup={handleOpenProfileSetup}
-      />
+    <TourProvider>
+      <div className="flex h-screen bg-gray-50 dark:bg-transparent overflow-hidden transition-colors duration-200">
+        <Sidebar
+          isOpen={sidebarOpen}
+          isMobile={isMobile}
+          onCloseMobile={() => setSidebarOpen(false)}
+          onOpenProfileSetup={handleOpenProfileSetup}
+        />
 
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
-        <Header onToggleSidebar={handleToggleSidebar} isSidebarOpen={sidebarOpen} />
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
+          <Header onToggleSidebar={handleToggleSidebar} isSidebarOpen={sidebarOpen} />
 
-        <main
-          ref={mainContentRef}
-          className={
-            fullscreen
-              ? 'flex-1 overflow-hidden flex flex-col'
-              : 'flex-1 overflow-y-auto scrollbar-hide flex flex-col'
-          }
-        >
-          <DashboardErrorZones>
-            <Suspense fallback={<Loader variant="centered" message="Loading..." />}>
-              {fullscreen ? (
-                children
-              ) : (
-                <>
-                  <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-900 dark:text-gray-100">
-                    {children || (
-                      <div className="text-gray-400 text-center mt-20">No content provided</div>
-                    )}
-                  </div>
-                  <Footer isDashboard={true} navBaseUrl={WEB_BASE_URL} />
-                </>
-              )}
-            </Suspense>
-          </DashboardErrorZones>
-        </main>
+          <main
+            ref={mainContentRef}
+            className={
+              fullscreen
+                ? 'flex-1 overflow-hidden flex flex-col'
+                : 'flex-1 overflow-y-auto scrollbar-hide flex flex-col'
+            }
+          >
+            <DashboardErrorZones>
+              <Suspense fallback={<Loader variant="centered" message="Loading..." />}>
+                {fullscreen ? (
+                  children
+                ) : (
+                  <>
+                    <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-900 dark:text-gray-100">
+                      {children || (
+                        <div className="text-gray-400 text-center mt-20">No content provided</div>
+                      )}
+                    </div>
+                    <Footer isDashboard={true} navBaseUrl={WEB_BASE_URL} />
+                  </>
+                )}
+              </Suspense>
+            </DashboardErrorZones>
+          </main>
+        </div>
       </div>
-    </div>
+    </TourProvider>
   )
 }
