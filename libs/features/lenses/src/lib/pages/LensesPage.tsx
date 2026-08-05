@@ -200,6 +200,7 @@ export const LensesPage: React.FC = () => {
             <Button
               onClick={handleCreateClick}
               className="w-auto px-4 gap-2 flex items-center whitespace-nowrap"
+              data-tour="dashboard.lenses.create-button"
             >
               <Plus size={18} />
               <span className="hidden sm:inline">Create Lens</span>
@@ -210,7 +211,7 @@ export const LensesPage: React.FC = () => {
       />
 
       {/* Controls Bar */}
-      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur pb-4 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+      <div className="sticky top-[56px] z-20 bg-gray-50 dark:bg-gray-900 pb-4 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         {/* Search */}
         <div className="w-full mb-3">
           <div className="relative w-full">
@@ -262,10 +263,12 @@ export const LensesPage: React.FC = () => {
       </div>
 
       {/* Grid Content */}
-      <LensesGrid
-        lenses={lenses}
-        isLoading={isLoading}
-      />
+      <div data-tour="dashboard.lenses.grid">
+        <LensesGrid
+          lenses={lenses}
+          isLoading={isLoading}
+        />
+      </div>
 
       {/* Intersection Anchor & Loader */}
       <div ref={lastElementRef} className="h-4"></div>

@@ -60,6 +60,7 @@ export function AutomationsPage() {
         <section
           aria-label="Automation rules"
           className="space-y-3"
+          data-tour="dashboard.automations.list"
         >
           <div className="flex items-center justify-between text-xs text-greyscale-500">
             <span className="inline-flex items-center gap-1.5">

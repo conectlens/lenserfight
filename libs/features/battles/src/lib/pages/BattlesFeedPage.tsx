@@ -104,6 +104,7 @@ export function BattlesFeedPage() {
               onClick={() => navigate('/battles/create')}
               title="New Battle"
               className="flex items-center gap-2 w-auto"
+              data-tour="dashboard.battles.create-button"
             >
               <PlusCircle size={18} />
               <span>New Battle</span>
@@ -116,7 +117,7 @@ export function BattlesFeedPage() {
         description="Battles work end-to-end, but matchmaking, voting and result flows haven't been fully tested. Please try them and report anything that feels wrong — I'd rather hear it from you than miss it."
         className="mb-4"
       />
-      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+      <div className="sticky top-[56px] z-20 bg-gray-50 dark:bg-gray-900 py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
           {/* Live quick-filter chip */}
           <button
@@ -186,7 +187,7 @@ export function BattlesFeedPage() {
           }
         />
       ) : (
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3" data-tour="dashboard.battles.feed">
           {sorted.map((b) => (
             <div key={b.id} className="break-inside-avoid mb-3">
               <BattleCard

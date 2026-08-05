@@ -122,7 +122,7 @@ export const TagCloudPage: React.FC = () => {
             <div className="w-4 h-4 bg-gray-400 rounded-full animate-bounce delay-150"></div>
           </div>
         ) : tags.length > 0 ? (
-          <div className="w-full animate-in fade-in zoom-in duration-700 ease-out">
+          <div className="w-full animate-in fade-in zoom-in duration-700 ease-out" data-tour="dashboard.ray.cloud">
             <TagCloud tags={tags} />
           </div>
         ) : (

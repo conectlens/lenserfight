@@ -61,7 +61,7 @@ export function WorkflowSchedulesPage() {
           />
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-surface-border">
+        <div className="mt-6 overflow-x-auto rounded-lg border border-surface-border" data-tour="dashboard.workflow-schedules.list">
           <table className="min-w-full divide-y divide-surface-border text-sm">
             <thead className="bg-surface-raised text-left text-xs uppercase tracking-wide text-greyscale-500">
               <tr>

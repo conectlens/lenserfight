@@ -2,6 +2,11 @@ import React, { useRef, useEffect } from 'react'
 import { mentionService, LenserSearchResult } from '@lenserfight/data/repositories'
 import { LensViewModel, TagUsage } from '@lenserfight/types'
 
+export interface BattleMentionTarget {
+  id: string
+  title: string
+}
+
 interface RichMentionInputProps {
   value: string // The tokenized value from parent
   onChange: (value: string) => void
@@ -9,6 +14,8 @@ interface RichMentionInputProps {
   onMentionClose: () => void
   onTagSearch?: (query: string, coords: { top: number; left: number }) => void
   onTagClose?: () => void
+  onBattleSearch?: (query: string, coords: { top: number; left: number }) => void
+  onBattleClose?: () => void
   placeholder?: string
 }
 
@@ -16,14 +23,29 @@ export interface RichMentionInputHandle {
   insertMention: (prompt: LensViewModel) => void
   insertUserMention: (user: LenserSearchResult) => void
   insertTag: (tag: TagUsage) => void
+  insertBattleMention: (battle: BattleMentionTarget) => void
   focus: () => void
 }
 
 export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMentionInputProps>(
-  ({ value, onChange, onMentionSearch, onMentionClose, onTagSearch, onTagClose, placeholder }, ref) => {
+  (
+    {
+      value,
+      onChange,
+      onMentionSearch,
+      onMentionClose,
+      onTagSearch,
+      onTagClose,
+      onBattleSearch,
+      onBattleClose,
+      placeholder,
+    },
+    ref
+  ) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const isTypingMention = useRef(false)
     const isTypingTag = useRef(false)
+    const isTypingBattle = useRef(false)
     // Initialize with empty string so that if initial value is provided, hydration triggers
     const lastKnownValue = useRef('')
 
@@ -90,6 +112,9 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
           } else if (segment.type === 'mention' && segment.entityType === 'User' && segment.id) {
             const chip = createUserChip(segment.id, segment.content || segment.id)
             containerRef.current?.appendChild(chip)
+          } else if (segment.type === 'mention' && segment.entityType === 'Battle' && segment.id) {
+            const chip = createBattleChip(segment.id, segment.content || 'Battle')
+            containerRef.current?.appendChild(chip)
           } else if (segment.type === 'mention' && segment.id) {
             const chip = createPromptChip(segment.id, segment.content || 'Unknown Prompt')
             containerRef.current?.appendChild(chip)
@@ -139,6 +164,16 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
       return chip
     }
 
+    const createBattleChip = (id: string, title: string): HTMLSpanElement => {
+      const chip = document.createElement('span')
+      chip.contentEditable = 'false'
+      chip.className =
+        'inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 font-medium text-sm select-none align-middle'
+      chip.setAttribute('data-battle-mention-id', id)
+      chip.textContent = `$${title}`
+      return chip
+    }
+
     const handleInput = () => {
       if (!containerRef.current) return
 
@@ -166,10 +201,14 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
                   left: coords.left,
                 })
                 isTypingMention.current = true
-                // Close tag menu if open
+                // Close tag/battle menus if open
                 if (isTypingTag.current) {
                   onTagClose?.()
                   isTypingTag.current = false
+                }
+                if (isTypingBattle.current) {
+                  onBattleClose?.()
+                  isTypingBattle.current = false
                 }
                 serializeContent()
                 return
@@ -202,6 +241,11 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
                     left: coords.left,
                   })
                   isTypingTag.current = true
+                  // Close battle menu if open
+                  if (isTypingBattle.current) {
+                    onBattleClose?.()
+                    isTypingBattle.current = false
+                  }
                   serializeContent()
                   return
                 } else {
@@ -215,6 +259,47 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
             } else {
               onTagClose?.()
               isTypingTag.current = false
+            }
+          }
+
+          // Check for $ trigger (battle mention)
+          if (onBattleSearch) {
+            const lastDollar = text.lastIndexOf('$', caretPos - 1)
+            if (lastDollar !== -1) {
+              const isStart = lastDollar === 0
+              const isPrecededBySpace = !isStart && /[\s\u00A0]/.test(text[lastDollar - 1])
+
+              if (isStart || isPrecededBySpace) {
+                const query = text.substring(lastDollar + 1, caretPos)
+                if (!/\s/.test(query)) {
+                  const coords = getCaretCoordinates()
+                  onBattleSearch(query, {
+                    top: coords.top + (coords.height || 20),
+                    left: coords.left,
+                  })
+                  isTypingBattle.current = true
+                  // Close mention/tag menus if open
+                  if (isTypingMention.current) {
+                    onMentionClose()
+                    isTypingMention.current = false
+                  }
+                  if (isTypingTag.current) {
+                    onTagClose?.()
+                    isTypingTag.current = false
+                  }
+                  serializeContent()
+                  return
+                } else {
+                  onBattleClose?.()
+                  isTypingBattle.current = false
+                }
+              } else {
+                onBattleClose?.()
+                isTypingBattle.current = false
+              }
+            } else {
+              onBattleClose?.()
+              isTypingBattle.current = false
             }
           }
         }
@@ -243,6 +328,9 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
           } else if (el.hasAttribute('data-tag-id')) {
             const id = el.getAttribute('data-tag-id')
             text += `#[Tag:${id}]`
+          } else if (el.hasAttribute('data-battle-mention-id')) {
+            const id = el.getAttribute('data-battle-mention-id')
+            text += `$[Battle:${id}]`
           } else if (el.tagName === 'BR') {
             text += '\n'
           } else if (el.tagName === 'DIV') {
@@ -378,10 +466,49 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
       containerRef.current.focus()
     }
 
+    const insertBattleMention = (battle: BattleMentionTarget) => {
+      if (!containerRef.current) return
+
+      const selection = window.getSelection()
+      if (!selection) return
+      const range = selection.getRangeAt(0)
+
+      const textNode = range.startContainer
+      if (textNode.nodeType === Node.TEXT_NODE) {
+        const text = textNode.textContent || ''
+        const caretPos = range.startOffset
+        const lastDollar = text.lastIndexOf('$', caretPos - 1)
+
+        if (lastDollar !== -1) {
+          range.setStart(textNode, lastDollar)
+          range.setEnd(textNode, caretPos)
+          range.deleteContents()
+        }
+      }
+
+      const chip = createBattleChip(battle.id, battle.title)
+      range.insertNode(chip)
+
+      const space = document.createTextNode('\u00A0')
+      range.setStartAfter(chip)
+      range.insertNode(space)
+
+      range.setStartAfter(space)
+      range.setEndAfter(space)
+      selection.removeAllRanges()
+      selection.addRange(range)
+
+      onBattleClose?.()
+      isTypingBattle.current = false
+      serializeContent()
+      containerRef.current.focus()
+    }
+
     React.useImperativeHandle(ref, () => ({
       insertMention,
       insertUserMention,
       insertTag,
+      insertBattleMention,
       focus: () => containerRef.current?.focus(),
     }))
 
@@ -393,7 +520,10 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all min-h-[200px] whitespace-pre-wrap overflow-y-auto max-h-[420px] empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 dark:empty:before:text-gray-500"
         data-placeholder={placeholder}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && (isTypingMention.current || isTypingTag.current)) {
+          if (
+            e.key === 'Enter' &&
+            (isTypingMention.current || isTypingTag.current || isTypingBattle.current)
+          ) {
             e.preventDefault()
           }
         }}

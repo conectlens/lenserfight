@@ -93,6 +93,7 @@ export const ConnectorsPage: React.FC = () => {
           size="sm"
           onClick={handleAddClick}
           className="mt-3 inline-flex items-center gap-2 rounded-xl border border-greyscale-200 bg-white px-4 py-2.5 text-sm font-semibold text-greyscale-800 shadow-neu-1 hover:border-primary-yellow-500/60 hover:text-primary-yellow-700 dark:border-greyscale-700 dark:bg-greyscale-800 dark:text-greyscale-100 dark:hover:text-primary-yellow-400"
+          data-tour="dashboard.connectors.add-button"
         >
           <Plus size={16} />
           Add connector

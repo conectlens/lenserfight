@@ -607,15 +607,17 @@ export const LenserProfilePage: React.FC = () => {
         />
       )}
 
-      <LenserProfileHeader
-        lenser={viewedProfile}
-        stats={stats}
-        xpSummary={xpSummary}
-        isOwner={isOwner}
-        onProfileUpdate={handleProfileUpdate}
-        relationshipState={relationshipState}
-        onManageAgents={isOwner ? () => handleTabChange('agents') : undefined}
-      />
+      <div data-tour="dashboard.profile.header">
+        <LenserProfileHeader
+          lenser={viewedProfile}
+          stats={stats}
+          xpSummary={xpSummary}
+          isOwner={isOwner}
+          onProfileUpdate={handleProfileUpdate}
+          relationshipState={relationshipState}
+          onManageAgents={isOwner ? () => handleTabChange('agents') : undefined}
+        />
+      </div>
 
       <div className="px-4 md:px-0">
         <LenserStatsRow stats={stats} xpSummary={xpSummary} />

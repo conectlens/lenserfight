@@ -69,7 +69,9 @@ export function BattleReplayPage() {
         title={`Replay: ${data.title}`}
         description="Chronological replay of contender execution events."
       />
-      <BattleReplayTimeline battleId={data.id} />
+      <div data-tour="dashboard.battle-replay.viewer">
+        <BattleReplayTimeline battleId={data.id} />
+      </div>
     </div>
   )
 }

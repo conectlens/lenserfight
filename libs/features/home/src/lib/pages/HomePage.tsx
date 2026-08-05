@@ -268,7 +268,7 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
       </section>
 
       {/* Main Feed Column */}
-      <div className="lg:col-span-8">
+      <div className="lg:col-span-8" data-tour="dashboard.home.feed">
         <div className="flex items-center justify-between mb-6">
           {showForYou ? (
             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">

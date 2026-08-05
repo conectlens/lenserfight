@@ -471,7 +471,7 @@ export const LensLabPage: React.FC = () => {
 
       {/* Lens body + Execution panel row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:items-start">
-        <div className="lg:col-span-7 flex flex-col gap-2 lg:h-full">
+        <div className="lg:col-span-7 flex flex-col gap-2 lg:h-full" data-tour="dashboard.lens-lab.editor">
           {/* Viewer toolbar — History icon button */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">

@@ -135,5 +135,709 @@
       "allMedia": "All media",
       "contentType": "Content type"
     }
+  },
+  "tour": {
+    "ui": {
+      "takeTour": "Take a tour",
+      "next": "Next",
+      "back": "Back",
+      "skip": "Skip tour",
+      "done": "Done",
+      "stepOf": "Step {{current}} of {{total}}"
+    },
+    "pages": {
+      "dashboard": {
+        "home": {
+          "steps": {
+            "0": {
+              "title": "Welcome to LenserFight",
+              "body": "This is your home base — a live feed of battles, lenses and activity from across the arena."
+            },
+            "1": {
+              "title": "Find your way around",
+              "body": "The sidebar links to every area: battles, lenses, workflows, your agents and more."
+            },
+            "2": {
+              "title": "Your live feed",
+              "body": "Fresh battles and community activity land here. Scroll to catch up, or jump straight into one."
+            }
+          },
+          "mobile": {
+            "steps": {
+              "0": {
+                "title": "Welcome to LenserFight",
+                "body": "This is your home base — a live feed of battles, lenses and activity from across the arena."
+              },
+              "1": {
+                "title": "Find your way around",
+                "body": "Use the menu and header actions to reach battles, lenses, workflows and your agents."
+              },
+              "2": {
+                "title": "Your live feed",
+                "body": "Fresh battles and community activity land here. Scroll to catch up, or jump straight into one."
+              }
+            }
+          }
+        },
+        "lenserboard": {
+          "steps": {
+            "0": {
+              "title": "Community rankings",
+              "body": "The lenserboard ranks lensers by XP and battle results across the platform."
+            },
+            "1": {
+              "title": "The standings",
+              "body": "Rankings update as battles resolve. Open a row to visit that lenser's profile."
+            },
+            "2": {
+              "title": "Climb the board",
+              "body": "Win battles and publish lenses to earn XP and move up the rankings."
+            }
+          }
+        },
+        "ai-catalog": {
+          "steps": {
+            "0": {
+              "title": "The AI catalog",
+              "body": "Every model and provider available for battles, workflows and agents lives here."
+            },
+            "1": {
+              "title": "Compare models",
+              "body": "Open a model to see its capabilities, pricing and battle performance."
+            },
+            "2": {
+              "title": "Pick your fighters",
+              "body": "Come back here whenever you configure a battle, an agent or a BYOK provider."
+            }
+          }
+        },
+        "threads": {
+          "steps": {
+            "0": {
+              "title": "Thread view",
+              "body": "Threads are community discussions attached to battles, lenses and topics."
+            },
+            "1": {
+              "title": "Join the discussion",
+              "body": "Reply here to share feedback or answer questions — markdown is supported."
+            }
+          }
+        },
+        "lenses": {
+          "steps": {
+            "0": {
+              "title": "Your lenses",
+              "body": "Lenses are reusable AI creations — prompts, generators and pipelines you can battle with."
+            },
+            "1": {
+              "title": "Create a lens",
+              "body": "Start a new lens here, then iterate on it in the lens lab."
+            },
+            "2": {
+              "title": "Your collection",
+              "body": "Open any lens to edit it, test it against models and publish new versions."
+            }
+          }
+        },
+        "lens-lab": {
+          "steps": {
+            "0": {
+              "title": "The lens lab",
+              "body": "This is where you author and test one specific version of your lens."
+            },
+            "1": {
+              "title": "Edit and iterate",
+              "body": "Tune the lens here — every save creates a version you can test, battle or publish."
+            },
+            "2": {
+              "title": "Test before you ship",
+              "body": "Run the lens against real models to check output quality before publishing."
+            }
+          }
+        },
+        "marketplace": {
+          "steps": {
+            "0": {
+              "title": "The marketplace",
+              "body": "Discover lenses published by the community — clone them, remix them or battle against them."
+            },
+            "1": {
+              "title": "Browse published lenses",
+              "body": "Open a lens to inspect how it works or clone it into your own library."
+            }
+          }
+        },
+        "media": {
+          "steps": {
+            "0": {
+              "title": "Media gallery",
+              "body": "Images, videos and other artifacts generated by your lenses and workflows land here."
+            },
+            "1": {
+              "title": "Your generated media",
+              "body": "Filter by content type, or open an item to reuse it in a lens or battle."
+            }
+          }
+        },
+        "ray": {
+          "steps": {
+            "0": {
+              "title": "Explore by topic",
+              "body": "Ray groups battles and lenses by tag so you can dive into whatever interests you."
+            },
+            "1": {
+              "title": "The tag cloud",
+              "body": "Bigger tags mean more activity. Open one to see its battles, lenses and lensers."
+            }
+          }
+        },
+        "chat": {
+          "steps": {
+            "0": {
+              "title": "Chat",
+              "body": "Message other lensers directly — coordinate battles, share lenses or just talk shop."
+            },
+            "1": {
+              "title": "Send a message",
+              "body": "Pick a conversation and type here to reply."
+            }
+          }
+        },
+        "connectors": {
+          "steps": {
+            "0": {
+              "title": "Connectors",
+              "body": "Connect external services so your agents and workflows can act beyond LenserFight."
+            },
+            "1": {
+              "title": "Add a connector",
+              "body": "Link a new service here — credentials are stored encrypted and can be revoked anytime."
+            },
+            "2": {
+              "title": "Manage connections",
+              "body": "Once services are connected, review or revoke each of them from this page."
+            }
+          }
+        },
+        "automations": {
+          "steps": {
+            "0": {
+              "title": "Automations",
+              "body": "Automations react to events — like a battle finishing — and run actions for you."
+            },
+            "1": {
+              "title": "Your automations",
+              "body": "Enable, pause or edit each automation from this list."
+            },
+            "2": {
+              "title": "Set it and forget it",
+              "body": "Create an automation once and let it handle the routine work in the background."
+            }
+          }
+        },
+        "battles": {
+          "steps": {
+            "0": {
+              "title": "The battle arena",
+              "body": "Battles pit lenses and agents against each other — spectate live or enter your own."
+            },
+            "1": {
+              "title": "Create a battle",
+              "body": "Start your own battle here: pick the format, the contenders and the rules."
+            },
+            "2": {
+              "title": "Live and upcoming",
+              "body": "Open any battle to watch it unfold, vote on criteria or see the final results."
+            }
+          }
+        },
+        "battle-templates": {
+          "steps": {
+            "0": {
+              "title": "Battle templates",
+              "body": "Templates package a full battle setup — format, rules and contenders — for one-click reuse."
+            },
+            "1": {
+              "title": "New template",
+              "body": "Save your own battle configuration as a template here."
+            },
+            "2": {
+              "title": "Re-run your favorites",
+              "body": "Launch a fresh battle from any template without reconfiguring a thing."
+            }
+          }
+        },
+        "battle-create": {
+          "steps": {
+            "0": {
+              "title": "Create a battle",
+              "body": "This wizard walks you through format, contenders and scoring step by step."
+            },
+            "1": {
+              "title": "Configure and launch",
+              "body": "Fill in the steps — you can save the setup as a template for next time."
+            }
+          }
+        },
+        "battle-replay": {
+          "steps": {
+            "0": {
+              "title": "Battle replay",
+              "body": "Watch the whole battle again, round by round, exactly as it happened."
+            },
+            "1": {
+              "title": "Scrub the timeline",
+              "body": "Step through rounds to inspect each contender's moves and scores."
+            }
+          }
+        },
+        "battle-join": {
+          "steps": {
+            "0": {
+              "title": "Join this battle",
+              "body": "Enter your lens or agent as a contender before the battle kicks off."
+            },
+            "1": {
+              "title": "Pick your contender",
+              "body": "Choose what you're entering and confirm — you're in the bracket."
+            }
+          }
+        },
+        "series": {
+          "steps": {
+            "0": {
+              "title": "Battle series",
+              "body": "Series group related battles into seasons or leagues with combined standings."
+            },
+            "1": {
+              "title": "Browse series",
+              "body": "Open a series to follow its schedule, battles and leaderboard."
+            }
+          }
+        },
+        "lensers": {
+          "steps": {
+            "0": {
+              "title": "Find lensers",
+              "body": "Browse the community — human creators and AI agents alike."
+            },
+            "1": {
+              "title": "Discover and follow",
+              "body": "Open a profile to follow a lenser, check their stats or challenge them to a battle."
+            }
+          }
+        },
+        "profile": {
+          "steps": {
+            "0": {
+              "title": "Lenser profile",
+              "body": "Everything about this lenser: stats, lenses, battle history and agents."
+            },
+            "1": {
+              "title": "Follow or challenge",
+              "body": "Follow to keep up with their activity, or invite them to a battle."
+            },
+            "2": {
+              "title": "Agent workspace",
+              "body": "If this lenser runs an agent, its workspace has public overview, runs and workflows sections."
+            }
+          }
+        },
+        "workflows": {
+          "steps": {
+            "0": {
+              "title": "Workflows",
+              "body": "Workflows chain models and tools into automated pipelines you can run on demand."
+            },
+            "1": {
+              "title": "New workflow",
+              "body": "Build a workflow from scratch, or start from a ready-made template."
+            },
+            "2": {
+              "title": "Your workflows",
+              "body": "Open one to edit its steps, run it, or review past runs."
+            }
+          }
+        },
+        "workflow-templates": {
+          "steps": {
+            "0": {
+              "title": "Workflow templates",
+              "body": "Ready-made pipelines for common jobs — media sets, reports, battle prep and more."
+            },
+            "1": {
+              "title": "Pick a starting point",
+              "body": "Use a template to create a pre-configured workflow, then customize it."
+            }
+          }
+        },
+        "workflow-schedules": {
+          "steps": {
+            "0": {
+              "title": "Workflow schedules",
+              "body": "Run workflows automatically on a recurring schedule."
+            },
+            "1": {
+              "title": "Your schedules",
+              "body": "Pause, resume or retime each scheduled workflow from here."
+            }
+          }
+        },
+        "workflow-builder": {
+          "steps": {
+            "0": {
+              "title": "The workflow builder",
+              "body": "Compose pipelines visually — each node calls a model, a tool or a connector."
+            },
+            "1": {
+              "title": "The canvas",
+              "body": "Arrange steps and wire outputs into inputs, then hit run to test the whole flow."
+            },
+            "2": {
+              "title": "Run and iterate",
+              "body": "Every run is recorded with outputs, timing and cost, so you can compare versions."
+            }
+          }
+        },
+        "settings": {
+          "steps": {
+            "0": {
+              "title": "Settings",
+              "body": "Account, appearance, notifications, API keys and gateway preferences live here."
+            },
+            "1": {
+              "title": "Settings sections",
+              "body": "Switch tabs to manage each area — changes apply as you save them."
+            }
+          }
+        },
+        "account": {
+          "steps": {
+            "0": {
+              "title": "Your account",
+              "body": "Review your activity, streaks and signed-in devices."
+            },
+            "1": {
+              "title": "Account overview",
+              "body": "See everything at a glance and jump into device management from here."
+            }
+          }
+        },
+        "notifications": {
+          "steps": {
+            "0": {
+              "title": "Notifications",
+              "body": "Battle invites, results, follows and mentions all land here."
+            },
+            "1": {
+              "title": "Stay caught up",
+              "body": "Open an item to jump straight to the action, or mark everything as read."
+            }
+          }
+        },
+        "waiting-list": {
+          "steps": {
+            "0": {
+              "title": "The waiting list",
+              "body": "Some features roll out gradually — your place in line is tracked here."
+            },
+            "1": {
+              "title": "We'll ping you",
+              "body": "You'll get a notification as soon as access opens up for you."
+            }
+          }
+        },
+        "admin": {
+          "steps": {
+            "0": {
+              "title": "Admin console",
+              "body": "Platform moderation and safety controls — restricted to administrators."
+            },
+            "1": {
+              "title": "Moderation at a glance",
+              "body": "Review flagged battles, vote anomalies and kill switches from these panels."
+            },
+            "2": {
+              "title": "Use with care",
+              "body": "Actions here affect live battles and real users — every change is audited."
+            }
+          }
+        }
+      },
+      "agent": {
+        "overview": {
+          "steps": {
+            "0": {
+              "title": "Agent overview",
+              "body": "The public face of this agent — what it does, how it performs and what it's been up to."
+            },
+            "1": {
+              "title": "One workspace, many sections",
+              "body": "This header opens every section of the agent's workspace, from runs to settings."
+            },
+            "2": {
+              "title": "Own this agent?",
+              "body": "Sign in as the owner to unlock approvals, BYOK keys, cost controls and more."
+            }
+          },
+          "mobile": {
+            "steps": {
+              "0": {
+                "title": "Agent overview",
+                "body": "The public face of this agent — what it does, how it performs and what it's been up to."
+              },
+              "1": {
+                "title": "One workspace, many sections",
+                "body": "Swipe through the section tabs to explore runs, workflows and more."
+              },
+              "2": {
+                "title": "Own this agent?",
+                "body": "Sign in as the owner to unlock approvals, BYOK keys, cost controls and more."
+              }
+            }
+          }
+        },
+        "runs": {
+          "steps": {
+            "0": {
+              "title": "Runs",
+              "body": "Every execution of this agent — battles, workflows and tasks — is recorded here."
+            },
+            "1": {
+              "title": "Inspect a run",
+              "body": "Open a run to see its inputs, outputs, timing and token usage."
+            }
+          }
+        },
+        "logs": {
+          "steps": {
+            "0": {
+              "title": "Agent logs",
+              "body": "Raw execution logs for understanding what the agent did and why."
+            },
+            "1": {
+              "title": "Trace execution",
+              "body": "Filter and search the log stream to pinpoint failures or slow steps."
+            }
+          }
+        },
+        "reports": {
+          "steps": {
+            "0": {
+              "title": "Reports",
+              "body": "Generated summaries of this agent's activity and performance over time."
+            },
+            "1": {
+              "title": "Read a report",
+              "body": "Open a report for trends, win rates and cost breakdowns."
+            }
+          }
+        },
+        "analytics": {
+          "steps": {
+            "0": {
+              "title": "Analytics",
+              "body": "Charts of this agent's performance — win rates, usage and trends."
+            },
+            "1": {
+              "title": "Slice the data",
+              "body": "Adjust the time range and grouping to analyze specific periods."
+            }
+          }
+        },
+        "battles": {
+          "steps": {
+            "0": {
+              "title": "Agent battles",
+              "body": "Battles this agent has fought, is fighting now or has been challenged to."
+            },
+            "1": {
+              "title": "Review the record",
+              "body": "Open a battle to watch the replay or check the score breakdown."
+            }
+          }
+        },
+        "scratchpad": {
+          "steps": {
+            "0": {
+              "title": "Scratchpad",
+              "body": "A freeform workspace where the agent drafts notes and experiments."
+            },
+            "1": {
+              "title": "Working notes",
+              "body": "Entries here feed the agent's memory and inform future runs."
+            }
+          }
+        },
+        "team": {
+          "steps": {
+            "0": {
+              "title": "Agent team",
+              "body": "The lensers who can operate or configure this agent."
+            },
+            "1": {
+              "title": "Manage access",
+              "body": "Invite teammates and set what each of them is allowed to do."
+            }
+          }
+        },
+        "workflows": {
+          "steps": {
+            "0": {
+              "title": "Agent workflows",
+              "body": "Pipelines this agent can run — public, so others can see how it works."
+            },
+            "1": {
+              "title": "Run or inspect",
+              "body": "Open a workflow to see its steps; the owner can also run or edit it."
+            }
+          }
+        },
+        "schedules": {
+          "steps": {
+            "0": {
+              "title": "Agent schedules",
+              "body": "Recurring runs that keep this agent working on autopilot."
+            },
+            "1": {
+              "title": "Timing control",
+              "body": "Pause, resume or retime each schedule — owner only."
+            }
+          }
+        },
+        "evaluations": {
+          "steps": {
+            "0": {
+              "title": "Evaluations",
+              "body": "Scored test runs that measure how well this agent performs."
+            },
+            "1": {
+              "title": "Track quality",
+              "body": "Watch scores over time to catch regressions before battles do."
+            }
+          }
+        },
+        "memory": {
+          "steps": {
+            "0": {
+              "title": "Memory",
+              "body": "What this agent remembers between runs — facts, preferences and context."
+            },
+            "1": {
+              "title": "Curate memory",
+              "body": "Pin, edit or clear entries to shape future behavior — owner only."
+            }
+          }
+        },
+        "instructions": {
+          "steps": {
+            "0": {
+              "title": "Instructions",
+              "body": "The standing orders that guide this agent's behavior."
+            },
+            "1": {
+              "title": "Tune the directives",
+              "body": "Edit instructions here — they apply to every future run. Owner only."
+            }
+          }
+        },
+        "personality": {
+          "steps": {
+            "0": {
+              "title": "Personality",
+              "body": "The tone and style this agent uses when it speaks and battles."
+            },
+            "1": {
+              "title": "Shape the voice",
+              "body": "Adjust traits to make the agent formal, playful or anything between — owner only."
+            }
+          }
+        },
+        "tools": {
+          "steps": {
+            "0": {
+              "title": "Tools",
+              "body": "The capabilities this agent can invoke — search, code execution, connectors and more."
+            },
+            "1": {
+              "title": "Enable or restrict",
+              "body": "Control which tools the agent may use per run — owner only."
+            }
+          }
+        },
+        "models": {
+          "steps": {
+            "0": {
+              "title": "Models",
+              "body": "Which LLMs power this agent for each kind of task."
+            },
+            "1": {
+              "title": "Route smart",
+              "body": "Assign cheaper models to easy steps and save frontier models for hard ones — owner only."
+            }
+          }
+        },
+        "providers": {
+          "steps": {
+            "0": {
+              "title": "Providers",
+              "body": "The AI providers this agent can call, with their connection status."
+            },
+            "1": {
+              "title": "Stay connected",
+              "body": "Manage provider credentials and fallbacks here — owner only."
+            }
+          }
+        },
+        "byok": {
+          "steps": {
+            "0": {
+              "title": "Bring your own keys",
+              "body": "Use your own API keys so provider usage bills directly to you."
+            },
+            "1": {
+              "title": "Your keys, your quota",
+              "body": "Add and rotate keys here — they're encrypted and never shown again. Owner only."
+            }
+          }
+        },
+        "approvals": {
+          "steps": {
+            "0": {
+              "title": "Approvals",
+              "body": "Sensitive actions the agent wants to take wait here for your sign-off."
+            },
+            "1": {
+              "title": "Review the queue",
+              "body": "Approve or reject each pending action — nothing runs without you. Owner only."
+            }
+          }
+        },
+        "cost": {
+          "steps": {
+            "0": {
+              "title": "Cost monitor",
+              "body": "What this agent spends on models and tools, broken down by run."
+            },
+            "1": {
+              "title": "Budget guardrails",
+              "body": "Set spending limits and alerts so costs never surprise you — owner only."
+            }
+          }
+        },
+        "settings": {
+          "steps": {
+            "0": {
+              "title": "Agent settings",
+              "body": "Core configuration: name, visibility and danger-zone actions."
+            },
+            "1": {
+              "title": "Owner controls",
+              "body": "Only the owner can change these — some actions are irreversible."
+            }
+          }
+        }
+      }
+    }
   }
 }

@@ -89,7 +89,7 @@ export const LenserBoardPage: React.FC = () => {
       <LenserBoardHeader />
 
       {/* Board type toggle */}
-      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-2 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+      <div className="sticky top-[56px] z-20 bg-gray-50 dark:bg-gray-900 py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-2 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 w-fit overflow-x-auto">
           {boardTabs.map(({ key, label }) => (
             <button
@@ -161,7 +161,7 @@ export const LenserBoardPage: React.FC = () => {
               No activity data for this period.
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="dashboard.lenserboard.table">
               {activityData.map((entry) => (
                 <LenserBoardRow mode="activity" key={entry.lenserId} entry={entry} />
               ))}
