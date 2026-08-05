@@ -1,3 +1,7 @@
+## 1.1.6 (2026-08-05)
+
+This was a version bump only for cli to align it with other projects, there were no code changes.
+
 ## 1.1.5 (2026-08-03)
 
 This was a version bump only for cli to align it with other projects, there were no code changes.
