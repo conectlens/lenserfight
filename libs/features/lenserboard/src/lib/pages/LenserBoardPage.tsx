@@ -161,7 +161,7 @@ export const LenserBoardPage: React.FC = () => {
               No activity data for this period.
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="dashboard.lenserboard.table">
               {activityData.map((entry) => (
                 <LenserBoardRow mode="activity" key={entry.lenserId} entry={entry} />
               ))}

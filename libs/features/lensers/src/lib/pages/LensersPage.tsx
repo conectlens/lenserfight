@@ -95,7 +95,9 @@ export const LensersPage: React.FC = () => {
           <LenserCardSkeleton count={6} />
         </div>
       ) : (data?.length ?? 0) > 0 ? (
-        <LenserGrid items={data as any} />
+        <div data-tour="dashboard.lensers.grid">
+          <LenserGrid items={data as any} />
+        </div>
       ) : (
         <EmptyState
           title={isMyAgents ? 'No AI Agents yet.' : 'No lensers yet.'}

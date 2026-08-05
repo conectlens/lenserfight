@@ -47,7 +47,7 @@ export function BattleTemplatesPage() {
           description="Start from a community-tested template, or use one as the seed for a new battle."
         />
         {isAuthenticated && (
-          <Button size="sm" onClick={() => navigate('/battles/templates/new')}>
+          <Button size="sm" onClick={() => navigate('/battles/templates/new')} data-tour="dashboard.battle-templates.new-button">
             <Plus size={14} className="mr-1" />
             Create Template
           </Button>

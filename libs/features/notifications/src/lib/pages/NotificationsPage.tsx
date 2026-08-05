@@ -108,7 +108,7 @@ export function NotificationsPage() {
       </div>
 
       {/* List */}
-      <div className="rounded-2xl border border-surface-border overflow-hidden">
+      <div className="rounded-2xl border border-surface-border overflow-hidden" data-tour="dashboard.notifications.list">
         {isLoading && (
           <div className="px-5 py-12 text-center text-sm text-greyscale-400">Loading…</div>
         )}

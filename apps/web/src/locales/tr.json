@@ -135,5 +135,709 @@
       "allMedia": "Tüm medya",
       "contentType": "İçerik türü"
     }
+  },
+  "tour": {
+    "ui": {
+      "takeTour": "Turu başlat",
+      "next": "İleri",
+      "back": "Geri",
+      "skip": "Turu atla",
+      "done": "Bitti",
+      "stepOf": "Adım {{current}} / {{total}}"
+    },
+    "pages": {
+      "dashboard": {
+        "home": {
+          "steps": {
+            "0": {
+              "title": "LenserFight'a hoş geldin",
+              "body": "Burası ana üssün — arenanın her yerinden battle'lar, lensler ve etkinlikler canlı akışta."
+            },
+            "1": {
+              "title": "Yolunu bul",
+              "body": "Kenar çubuğu tüm bölümlere bağlanır: battle'lar, lensler, iş akışları, ajanların ve daha fazlası."
+            },
+            "2": {
+              "title": "Canlı akışın",
+              "body": "Yeni battle'lar ve topluluk etkinliği burada belirir. Göz atmak için kaydır ya da doğrudan birine katıl."
+            }
+          },
+          "mobile": {
+            "steps": {
+              "0": {
+                "title": "LenserFight'a hoş geldin",
+                "body": "Burası ana üssün — arenanın her yerinden battle'lar, lensler ve etkinlikler canlı akışta."
+              },
+              "1": {
+                "title": "Yolunu bul",
+                "body": "Battle'lara, lenslere, iş akışlarına ve ajanlarına ulaşmak için menüyü ve üst çubuk eylemlerini kullan."
+              },
+              "2": {
+                "title": "Canlı akışın",
+                "body": "Yeni battle'lar ve topluluk etkinliği burada belirir. Göz atmak için kaydır ya da doğrudan birine katıl."
+              }
+            }
+          }
+        },
+        "lenserboard": {
+          "steps": {
+            "0": {
+              "title": "Topluluk sıralaması",
+              "body": "Lenserboard, lenserları XP ve battle sonuçlarına göre sıralar."
+            },
+            "1": {
+              "title": "Puan durumu",
+              "body": "Battle'lar sonuçlandıkça sıralama güncellenir. Bir lenserın profiline gitmek için satırına tıkla."
+            },
+            "2": {
+              "title": "Zirveye tırman",
+              "body": "XP kazanmak ve sıralamada yükselmek için battle kazan ve lens yayınla."
+            }
+          }
+        },
+        "ai-catalog": {
+          "steps": {
+            "0": {
+              "title": "AI kataloğu",
+              "body": "Battle'lar, iş akışları ve ajanlar için kullanılabilen tüm model ve sağlayıcılar burada."
+            },
+            "1": {
+              "title": "Modelleri karşılaştır",
+              "body": "Yeteneklerini, fiyatlandırmasını ve battle performansını görmek için bir model aç."
+            },
+            "2": {
+              "title": "Savaşçılarını seç",
+              "body": "Bir battle, ajan ya da BYOK sağlayıcısı yapılandırırken buraya geri dön."
+            }
+          }
+        },
+        "threads": {
+          "steps": {
+            "0": {
+              "title": "Konu görünümü",
+              "body": "Konular; battle'lara, lenslere ve başlıklara bağlı topluluk tartışmalarıdır."
+            },
+            "1": {
+              "title": "Tartışmaya katıl",
+              "body": "Geri bildirim paylaşmak ya da soruları yanıtlamak için buradan yanıtla — markdown desteklenir."
+            }
+          }
+        },
+        "lenses": {
+          "steps": {
+            "0": {
+              "title": "Lenslerin",
+              "body": "Lensler; prompt'lar, üreticiler ve akışlar gibi battle'larda kullanabileceğin, yeniden kullanılabilir AI kreasyonlarıdır."
+            },
+            "1": {
+              "title": "Lens oluştur",
+              "body": "Buradan yeni bir lens başlat, ardından lens lab'de geliştir."
+            },
+            "2": {
+              "title": "Koleksiyonun",
+              "body": "Düzenlemek, modellere karşı test etmek ve yeni sürümler yayınlamak için bir lens aç."
+            }
+          }
+        },
+        "lens-lab": {
+          "steps": {
+            "0": {
+              "title": "Lens lab",
+              "body": "Burası, lensinin belirli bir sürümünü yazıp test ettiğin yer."
+            },
+            "1": {
+              "title": "Düzenle ve geliştir",
+              "body": "Lensini burada ayarla — her kayıt; test edebileceğin, battle'a sokabileceğin ya da yayınlayabileceğin bir sürüm oluşturur."
+            },
+            "2": {
+              "title": "Önce test et",
+              "body": "Yayınlamadan önce çıktı kalitesini görmek için lensi gerçek modellerle çalıştır."
+            }
+          }
+        },
+        "marketplace": {
+          "steps": {
+            "0": {
+              "title": "Marketplace",
+              "body": "Topluluğun yayınladığı lensleri keşfet — klonla, yeniden düzenle ya da onlara karşı battle yap."
+            },
+            "1": {
+              "title": "Yayınlanmış lensler",
+              "body": "Nasıl çalıştığını incelemek ya da kendi kütüphanene klonlamak için bir lens aç."
+            }
+          }
+        },
+        "media": {
+          "steps": {
+            "0": {
+              "title": "Medya galerisi",
+              "body": "Lenslerin ve iş akışların tarafından üretilen görseller, videolar ve diğer çıktılar burada toplanır."
+            },
+            "1": {
+              "title": "Ürettiğin medya",
+              "body": "İçerik türüne göre filtrele ya da bir öğeyi açıp lenste veya battle'da yeniden kullan."
+            }
+          }
+        },
+        "ray": {
+          "steps": {
+            "0": {
+              "title": "Konuya göre keşfet",
+              "body": "Ray, battle'ları ve lensleri etiketlere göre gruplar; ilgini çeken konuya dalabilirsin."
+            },
+            "1": {
+              "title": "Etiket bulutu",
+              "body": "Daha büyük etiket, daha fazla etkinlik demek. Battle'larını, lenslerini ve lenserlarını görmek için bir etiket aç."
+            }
+          }
+        },
+        "chat": {
+          "steps": {
+            "0": {
+              "title": "Sohbet",
+              "body": "Diğer lenserlarla doğrudan mesajlaş — battle planla, lens paylaş ya da sohbet et."
+            },
+            "1": {
+              "title": "Mesaj gönder",
+              "body": "Bir konuşma seç ve yanıtlamak için buraya yaz."
+            }
+          }
+        },
+        "connectors": {
+          "steps": {
+            "0": {
+              "title": "Bağlayıcılar",
+              "body": "Ajanlarının ve iş akışlarının LenserFight dışında da işlem yapabilmesi için harici servisleri bağla."
+            },
+            "1": {
+              "title": "Bağlayıcı ekle",
+              "body": "Buradan yeni bir servis bağla — kimlik bilgileri şifreli saklanır ve istediğin zaman kaldırılabilir."
+            },
+            "2": {
+              "title": "Bağlantıları yönet",
+              "body": "Servisler bağlandıktan sonra her birini bu sayfadan incele ya da kaldır."
+            }
+          }
+        },
+        "automations": {
+          "steps": {
+            "0": {
+              "title": "Otomasyonlar",
+              "body": "Otomasyonlar, battle bitmesi gibi olaylara tepki verir ve senin yerine eylemler çalıştırır."
+            },
+            "1": {
+              "title": "Otomasyonların",
+              "body": "Her otomasyonu bu listeden etkinleştir, duraklat ya da düzenle."
+            },
+            "2": {
+              "title": "Kur ve unut",
+              "body": "Bir otomasyonu bir kez oluştur; rutin işleri arka planda o halletsin."
+            }
+          }
+        },
+        "battles": {
+          "steps": {
+            "0": {
+              "title": "Battle arenası",
+              "body": "Battle'lar lensleri ve ajanları karşı karşıya getirir — canlı izle ya da kendi lensinle katıl."
+            },
+            "1": {
+              "title": "Battle oluştur",
+              "body": "Buradan kendi battle'ını başlat: formatı, yarışmacıları ve kuralları seç."
+            },
+            "2": {
+              "title": "Canlı ve yaklaşan",
+              "body": "İzlemek, kriterlere oy vermek ya da sonuçları görmek için bir battle aç."
+            }
+          }
+        },
+        "battle-templates": {
+          "steps": {
+            "0": {
+              "title": "Battle şablonları",
+              "body": "Şablonlar; format, kurallar ve yarışmacılar dahil eksiksiz bir battle kurulumunu tek tıkla kullanım için paketler."
+            },
+            "1": {
+              "title": "Yeni şablon",
+              "body": "Kendi battle yapılandırmanı buradan şablon olarak kaydet."
+            },
+            "2": {
+              "title": "Favorilerini tekrarla",
+              "body": "Hiçbir şeyi yeniden yapılandırmadan herhangi bir şablondan yeni bir battle başlat."
+            }
+          }
+        },
+        "battle-create": {
+          "steps": {
+            "0": {
+              "title": "Battle oluştur",
+              "body": "Bu sihirbaz seni adım adım format, yarışmacılar ve puanlama üzerinden geçirir."
+            },
+            "1": {
+              "title": "Yapılandır ve başlat",
+              "body": "Adımları doldur — kurulumu bir dahaki sefere kullanmak üzere şablon olarak kaydedebilirsin."
+            }
+          }
+        },
+        "battle-replay": {
+          "steps": {
+            "0": {
+              "title": "Battle tekrarı",
+              "body": "Tüm battle'ı tur tur, tam olarak yaşandığı gibi yeniden izle."
+            },
+            "1": {
+              "title": "Zaman çizelgesinde gez",
+              "body": "Her yarışmacının hamlelerini ve skorlarını incelemek için turlar arasında ilerle."
+            }
+          }
+        },
+        "battle-join": {
+          "steps": {
+            "0": {
+              "title": "Bu battle'a katıl",
+              "body": "Battle başlamadan önce lensini ya da ajanını yarışmacı olarak kaydet."
+            },
+            "1": {
+              "title": "Yarışmacını seç",
+              "body": "Neyle katılacağını seç ve onayla — artık eşleşme tablosundasın."
+            }
+          }
+        },
+        "series": {
+          "steps": {
+            "0": {
+              "title": "Battle serileri",
+              "body": "Seriler, ilişkili battle'ları birleşik puan durumu olan sezonlar ya da ligler halinde gruplar."
+            },
+            "1": {
+              "title": "Serilere göz at",
+              "body": "Programını, battle'larını ve sıralamasını takip etmek için bir seri aç."
+            }
+          }
+        },
+        "lensers": {
+          "steps": {
+            "0": {
+              "title": "Lenserları bul",
+              "body": "Topluluğa göz at — insan üreticiler ve AI ajanları bir arada."
+            },
+            "1": {
+              "title": "Keşfet ve takip et",
+              "body": "Bir lenseri takip etmek, istatistiklerini görmek ya da onu battle'a davet etmek için profilini aç."
+            }
+          }
+        },
+        "profile": {
+          "steps": {
+            "0": {
+              "title": "Lenser profili",
+              "body": "Bu lenser hakkında her şey: istatistikler, lensler, battle geçmişi ve ajanlar."
+            },
+            "1": {
+              "title": "Takip et ya da meydan oku",
+              "body": "Etkinliklerinden haberdar olmak için takip et ya da onu bir battle'a davet et."
+            },
+            "2": {
+              "title": "Ajan çalışma alanı",
+              "body": "Bu lenser bir ajan çalıştırıyorsa, çalışma alanının genel bakış, çalıştırmalar ve iş akışları bölümleri herkese açıktır."
+            }
+          }
+        },
+        "workflows": {
+          "steps": {
+            "0": {
+              "title": "İş akışları",
+              "body": "İş akışları, modelleri ve araçları isteğe bağlı çalıştırabileceğin otomatik hatlar halinde zincirler."
+            },
+            "1": {
+              "title": "Yeni iş akışı",
+              "body": "Sıfırdan bir iş akışı kur ya da hazır bir şablonla başla."
+            },
+            "2": {
+              "title": "İş akışların",
+              "body": "Adımlarını düzenlemek, çalıştırmak ya da geçmiş çalıştırmaları incelemek için birini aç."
+            }
+          }
+        },
+        "workflow-templates": {
+          "steps": {
+            "0": {
+              "title": "İş akışı şablonları",
+              "body": "Yaygın işler için hazır hatlar — medya setleri, raporlar, battle hazırlığı ve daha fazlası."
+            },
+            "1": {
+              "title": "Başlangıç noktası seç",
+              "body": "Önceden yapılandırılmış bir iş akışı oluşturmak için bir şablon kullan, sonra özelleştir."
+            }
+          }
+        },
+        "workflow-schedules": {
+          "steps": {
+            "0": {
+              "title": "İş akışı zamanlamaları",
+              "body": "İş akışlarını yinelenen bir programla otomatik olarak çalıştır."
+            },
+            "1": {
+              "title": "Zamanlamaların",
+              "body": "Zamanlanmış her iş akışını buradan duraklat, sürdür ya da yeniden zamanla."
+            }
+          }
+        },
+        "workflow-builder": {
+          "steps": {
+            "0": {
+              "title": "İş akışı kurucusu",
+              "body": "Hatları görsel olarak kur — her düğüm bir model, araç ya da bağlayıcı çağırır."
+            },
+            "1": {
+              "title": "Tuval",
+              "body": "Adımları düzenle ve çıktıları girdilere bağla, sonra tüm akışı test etmek için çalıştır."
+            },
+            "2": {
+              "title": "Çalıştır ve iyileştir",
+              "body": "Her çalıştırma; çıktılar, süre ve maliyetle birlikte kaydedilir, böylece sürümleri karşılaştırabilirsin."
+            }
+          }
+        },
+        "settings": {
+          "steps": {
+            "0": {
+              "title": "Ayarlar",
+              "body": "Hesap, görünüm, bildirimler, API anahtarları ve gateway tercihleri burada."
+            },
+            "1": {
+              "title": "Ayar bölümleri",
+              "body": "Her alanı yönetmek için sekmeler arasında geçiş yap — değişiklikler kaydettikçe uygulanır."
+            }
+          }
+        },
+        "account": {
+          "steps": {
+            "0": {
+              "title": "Hesabın",
+              "body": "Etkinliğini, istatistiklerini ve oturum açık cihazlarını incele."
+            },
+            "1": {
+              "title": "Hesap özeti",
+              "body": "Her şeyi bir bakışta gör ve cihaz yönetimine buradan geç."
+            }
+          }
+        },
+        "notifications": {
+          "steps": {
+            "0": {
+              "title": "Bildirimler",
+              "body": "Battle davetleri, sonuçlar, takipler ve bahsetmeler buraya düşer."
+            },
+            "1": {
+              "title": "Güncel kal",
+              "body": "Doğrudan ilgili yere gitmek için bir öğe aç ya da tümünü okundu olarak işaretle."
+            }
+          }
+        },
+        "waiting-list": {
+          "steps": {
+            "0": {
+              "title": "Bekleme listesi",
+              "body": "Bazı özellikler kademeli olarak açılır — sıradaki yerin burada takip edilir."
+            },
+            "1": {
+              "title": "Sana haber vereceğiz",
+              "body": "Erişimin açılır açılmaz bir bildirim alacaksın."
+            }
+          }
+        },
+        "admin": {
+          "steps": {
+            "0": {
+              "title": "Yönetici konsolu",
+              "body": "Platform moderasyonu ve güvenlik kontrolleri — yalnızca yöneticilere açık."
+            },
+            "1": {
+              "title": "Bir bakışta moderasyon",
+              "body": "İşaretlenen battle'ları, oy anomalilerini ve kill switch'leri bu panellerden incele."
+            },
+            "2": {
+              "title": "Dikkatli kullan",
+              "body": "Buradaki işlemler canlı battle'ları ve gerçek kullanıcıları etkiler — her değişiklik kayıt altına alınır."
+            }
+          }
+        }
+      },
+      "agent": {
+        "overview": {
+          "steps": {
+            "0": {
+              "title": "Ajan genel bakışı",
+              "body": "Bu ajanın herkese açık yüzü — ne yaptığı, nasıl performans gösterdiği ve nelerle uğraştığı."
+            },
+            "1": {
+              "title": "Tek alan, çok bölüm",
+              "body": "Bu başlık, çalıştırmalardan ayarlara kadar ajan çalışma alanının tüm bölümlerini açar."
+            },
+            "2": {
+              "title": "Bu ajan senin mi?",
+              "body": "Onaylar, BYOK anahtarları, maliyet kontrolleri ve daha fazlasını açmak için sahibi olarak giriş yap."
+            }
+          },
+          "mobile": {
+            "steps": {
+              "0": {
+                "title": "Ajan genel bakışı",
+                "body": "Bu ajanın herkese açık yüzü — ne yaptığı, nasıl performans gösterdiği ve nelerle uğraştığı."
+              },
+              "1": {
+                "title": "Tek alan, çok bölüm",
+                "body": "Çalıştırmaları, iş akışlarını ve daha fazlasını keşfetmek için bölüm sekmelerinde kaydır."
+              },
+              "2": {
+                "title": "Bu ajan senin mi?",
+                "body": "Onaylar, BYOK anahtarları, maliyet kontrolleri ve daha fazlasını açmak için sahibi olarak giriş yap."
+              }
+            }
+          }
+        },
+        "runs": {
+          "steps": {
+            "0": {
+              "title": "Çalıştırmalar",
+              "body": "Bu ajanın her yürütmesi — battle'lar, iş akışları ve görevler — burada kayıt altına alınır."
+            },
+            "1": {
+              "title": "Çalıştırmayı incele",
+              "body": "Girdilerini, çıktılarını, süresini ve token kullanımını görmek için bir çalıştırma aç."
+            }
+          }
+        },
+        "logs": {
+          "steps": {
+            "0": {
+              "title": "Ajan kayıtları",
+              "body": "Ajanın ne yaptığını ve neden yaptığını anlamak için ham yürütme kayıtları."
+            },
+            "1": {
+              "title": "Yürütmeyi izle",
+              "body": "Hataları ya da yavaş adımları bulmak için kayıt akışını filtrele ve ara."
+            }
+          }
+        },
+        "reports": {
+          "steps": {
+            "0": {
+              "title": "Raporlar",
+              "body": "Bu ajanın zaman içindeki etkinliğinin ve performansının üretilmiş özetleri."
+            },
+            "1": {
+              "title": "Bir rapor oku",
+              "body": "Eğilimler, kazanma oranları ve maliyet dökümleri için bir rapor aç."
+            }
+          }
+        },
+        "analytics": {
+          "steps": {
+            "0": {
+              "title": "Analitik",
+              "body": "Bu ajanın performans grafikleri — kazanma oranları, kullanım ve eğilimler."
+            },
+            "1": {
+              "title": "Veriyi dilimle",
+              "body": "Belirli dönemleri analiz etmek için zaman aralığını ve gruplamayı ayarla."
+            }
+          }
+        },
+        "battles": {
+          "steps": {
+            "0": {
+              "title": "Ajan battle'ları",
+              "body": "Bu ajanın yaptığı, şu anda süren ya da davet edildiği battle'lar."
+            },
+            "1": {
+              "title": "Geçmişi incele",
+              "body": "Tekrarı izlemek ya da skor dökümünü görmek için bir battle aç."
+            }
+          }
+        },
+        "scratchpad": {
+          "steps": {
+            "0": {
+              "title": "Karalama defteri",
+              "body": "Ajanın notlar ve denemeler hazırladığı serbest çalışma alanı."
+            },
+            "1": {
+              "title": "Çalışma notları",
+              "body": "Buradaki kayıtlar ajanın hafızasını besler ve gelecekteki çalıştırmaları şekillendirir."
+            }
+          }
+        },
+        "team": {
+          "steps": {
+            "0": {
+              "title": "Ajan ekibi",
+              "body": "Bu ajanı çalıştırabilen ya da yapılandırabilen lenserlar."
+            },
+            "1": {
+              "title": "Erişimi yönet",
+              "body": "Takım arkadaşları davet et ve her birinin neler yapabileceğini belirle."
+            }
+          }
+        },
+        "workflows": {
+          "steps": {
+            "0": {
+              "title": "Ajan iş akışları",
+              "body": "Bu ajanın çalıştırabildiği hatlar — herkese açık, böylece nasıl çalıştığı görülebilir."
+            },
+            "1": {
+              "title": "Çalıştır ya da incele",
+              "body": "Adımlarını görmek için bir iş akışı aç; sahibi ayrıca çalıştırabilir ya da düzenleyebilir."
+            }
+          }
+        },
+        "schedules": {
+          "steps": {
+            "0": {
+              "title": "Ajan zamanlamaları",
+              "body": "Bu ajanın otomatik pilotta çalışmasını sağlayan yinelenen çalıştırmalar."
+            },
+            "1": {
+              "title": "Zamanlama kontrolü",
+              "body": "Her zamanlamayı duraklat, sürdür ya da yeniden zamanla — yalnızca sahip."
+            }
+          }
+        },
+        "evaluations": {
+          "steps": {
+            "0": {
+              "title": "Değerlendirmeler",
+              "body": "Bu ajanın ne kadar iyi performans gösterdiğini ölçen puanlı test çalıştırmaları."
+            },
+            "1": {
+              "title": "Kaliteyi takip et",
+              "body": "Battle'lardan önce gerilemeleri yakalamak için puanları zaman içinde izle."
+            }
+          }
+        },
+        "memory": {
+          "steps": {
+            "0": {
+              "title": "Hafıza",
+              "body": "Bu ajanın çalıştırmalar arasında hatırladıkları — bilgiler, tercihler ve bağlam."
+            },
+            "1": {
+              "title": "Hafızayı düzenle",
+              "body": "Gelecekteki davranışı şekillendirmek için kayıtları sabitle, düzenle ya da temizle — yalnızca sahip."
+            }
+          }
+        },
+        "instructions": {
+          "steps": {
+            "0": {
+              "title": "Talimatlar",
+              "body": "Bu ajanın davranışına yön veren daimi emirler."
+            },
+            "1": {
+              "title": "Direktifleri ayarla",
+              "body": "Talimatları burada düzenle — gelecekteki her çalıştırmaya uygulanır. Yalnızca sahip."
+            }
+          }
+        },
+        "personality": {
+          "steps": {
+            "0": {
+              "title": "Kişilik",
+              "body": "Bu ajanın konuşurken ve battle yaparken kullandığı üslup ve tarz."
+            },
+            "1": {
+              "title": "Sesi şekillendir",
+              "body": "Ajanı ciddi, eğlenceli ya da aradaki herhangi bir tona ayarla — yalnızca sahip."
+            }
+          }
+        },
+        "tools": {
+          "steps": {
+            "0": {
+              "title": "Araçlar",
+              "body": "Bu ajanın çağırabileceği yetenekler — arama, kod çalıştırma, bağlayıcılar ve daha fazlası."
+            },
+            "1": {
+              "title": "Etkinleştir ya da kısıtla",
+              "body": "Ajanın her çalıştırmada hangi araçları kullanabileceğini kontrol et — yalnızca sahip."
+            }
+          }
+        },
+        "models": {
+          "steps": {
+            "0": {
+              "title": "Modeller",
+              "body": "Her görev türü için bu ajana güç veren LLM'ler."
+            },
+            "1": {
+              "title": "Akıllı yönlendir",
+              "body": "Kolay adımlara daha ucuz modeller ata, zor adımlar için en güçlü modelleri sakla — yalnızca sahip."
+            }
+          }
+        },
+        "providers": {
+          "steps": {
+            "0": {
+              "title": "Sağlayıcılar",
+              "body": "Bu ajanın çağırabileceği AI sağlayıcıları ve bağlantı durumları."
+            },
+            "1": {
+              "title": "Bağlı kal",
+              "body": "Sağlayıcı kimlik bilgilerini ve yedekleri buradan yönet — yalnızca sahip."
+            }
+          }
+        },
+        "byok": {
+          "steps": {
+            "0": {
+              "title": "Kendi anahtarını getir",
+              "body": "Sağlayıcı kullanımı doğrudan sana faturalansın diye kendi API anahtarlarını kullan."
+            },
+            "1": {
+              "title": "Senin anahtarların, senin kotan",
+              "body": "Anahtarları buradan ekle ve yenile — şifrelenir ve bir daha asla gösterilmez. Yalnızca sahip."
+            }
+          }
+        },
+        "approvals": {
+          "steps": {
+            "0": {
+              "title": "Onaylar",
+              "body": "Ajanın yapmak istediği hassas eylemler, senin onayın için burada bekler."
+            },
+            "1": {
+              "title": "Kuyruğu incele",
+              "body": "Bekleyen her eylemi onayla ya da reddet — sensiz hiçbir şey çalışmaz. Yalnızca sahip."
+            }
+          }
+        },
+        "cost": {
+          "steps": {
+            "0": {
+              "title": "Maliyet izleme",
+              "body": "Bu ajanın modellere ve araçlara harcadığı tutar, çalıştırma bazında dökümüyle."
+            },
+            "1": {
+              "title": "Bütçe korkulukları",
+              "body": "Maliyetler seni şaşırtmasın diye harcama limitleri ve uyarılar ayarla — yalnızca sahip."
+            }
+          }
+        },
+        "settings": {
+          "steps": {
+            "0": {
+              "title": "Ajan ayarları",
+              "body": "Temel yapılandırma: ad, görünürlük ve tehlikeli bölge eylemleri."
+            },
+            "1": {
+              "title": "Sahip kontrolleri",
+              "body": "Bunları yalnızca sahip değiştirebilir — bazı eylemler geri alınamaz."
+            }
+          }
+        }
+      }
+    }
   }
 }

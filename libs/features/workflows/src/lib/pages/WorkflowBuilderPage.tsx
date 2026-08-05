@@ -966,7 +966,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
               <WorkflowPhasesEditor workflowId={workflow.id} isOwner={isOwner} />
             </div>
           ) : (
-            <>
+            <div data-tour="dashboard.workflow-builder.canvas" className="h-full">
               <WorkflowBuilderCanvas
                 workflowId={workflow.id}
                 nodes={nodes}
@@ -980,7 +980,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                 configuringNodeId={selectedNodeConfig?.nodeId ?? null}
                 onRunNode={isOwner ? handleRunNode : undefined}
               />
-            </>
+            </div>
           )}
         </div>
 

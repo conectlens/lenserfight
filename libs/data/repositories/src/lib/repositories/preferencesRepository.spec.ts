@@ -116,4 +116,32 @@ describe('SupabasePreferencesRepository', () => {
       }
     })
   })
+
+  // ---------------------------------------------------------------------------
+  // markTourSeen
+  // ---------------------------------------------------------------------------
+  describe('markTourSeen', () => {
+    it('calls fn_lensers_mark_tour_seen with p_tour_id', async () => {
+      await repo.markTourSeen('web.onboarding')
+      expect(mockRpc).toHaveBeenCalledWith('fn_lensers_mark_tour_seen', {
+        p_tour_id: 'web.onboarding',
+      })
+    })
+
+    it('rethrows non-NetworkError exceptions', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('invalid tour id') })
+      await expect(repo.markTourSeen('Bad Tour!')).rejects.toThrow('invalid tour id')
+    })
+
+    it('suppresses NetworkError exceptions silently', async () => {
+      mockRpc.mockRejectedValue(new Error('NetworkError: connection refused'))
+      await expect(repo.markTourSeen('web.onboarding')).resolves.toBeUndefined()
+    })
+
+    it('skips RPC when no session exists', async () => {
+      mockCachedSession.mockReturnValue(null)
+      await repo.markTourSeen('web.onboarding')
+      expect(mockRpc).not.toHaveBeenCalled()
+    })
+  })
 })

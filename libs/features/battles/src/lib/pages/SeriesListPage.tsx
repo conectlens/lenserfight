@@ -38,7 +38,7 @@ export function SeriesListPage() {
           />
         </div>
       ) : (
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2" data-tour="dashboard.series.list">
           {series.map((item) => (
             <article
               key={item.series_id}

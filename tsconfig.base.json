@@ -33,6 +33,7 @@
       "@lenserfight/features/agents": ["libs/features/agents/src/index.ts"],
       "@lenserfight/features/artifact-lifecycle": ["libs/features/artifact-lifecycle/src/index.ts"],
       "@lenserfight/features/tags": ["libs/features/tags/src/index.ts"],
+      "@lenserfight/features/tour": ["libs/features/tour/src/index.ts"],
       "@lenserfight/utils/number": ["libs/utils/number/src/index.ts"],
       "@lenserfight/utils/dom": ["libs/utils/dom/src/index.ts"],
       "@lenserfight/utils/keychain": ["libs/utils/keychain/src/index.ts"],

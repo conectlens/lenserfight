@@ -251,7 +251,7 @@ export const MediaGalleryPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" data-tour="dashboard.media.gallery">
           {gallery.media.map((item) => (
             <MediaGridCard key={item.id} item={item} onPreview={setPreviewItem} />
           ))}

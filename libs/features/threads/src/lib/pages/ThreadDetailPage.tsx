@@ -196,7 +196,7 @@ export const ThreadDetailPage: React.FC = () => {
       <div className="mt-8 border-t border-gray-100 pt-8">
         <h3 className="sr-only">Discussion</h3>
 
-        <div className="mb-8">
+        <div className="mb-8" data-tour="dashboard.threads.composer">
           <ReplyComposer
             onSubmit={async (content) => {
               await addReply(content)

@@ -60,7 +60,7 @@ export function AdminDashboardPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-tour="dashboard.admin.cards">
           <WorkerHealthPanel workers={workers} isLoading={workersLoading} />
           <DLQPanel
             entries={dlqEntries}

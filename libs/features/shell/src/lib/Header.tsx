@@ -7,6 +7,7 @@ import {
 } from '@lenserfight/features/profile'
 import { ShareModal, useShareContext } from '@lenserfight/features/share'
 import { useChainabitConnection } from '@lenserfight/features/store'
+import { TourTriggerButton } from '@lenserfight/features/tour'
 import { ChainabitModal } from '@lenserfight/ui/modals'
 import { ActionMenu, Breadcrumbs, Button } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
@@ -66,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   return (
     <header className="sticky top-0 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm transition-all duration-200 w-full border-b border-gray-200/50 dark:border-gray-700">
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div data-tour="shell.breadcrumbs" className="flex items-center gap-4 flex-1 min-w-0">
           <button
             onClick={onToggleSidebar}
             className="p-2 -ml-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -77,7 +78,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <Breadcrumbs />
         </div>
 
-        <div className="flex items-center flex-shrink-0 pl-2 gap-1">
+        <div
+          data-tour="shell.header-actions"
+          className="flex items-center flex-shrink-0 pl-2 gap-1"
+        >
           {lenser?.is_super_admin && (
             <button
               onClick={() => navigate('/admin')}
@@ -89,6 +93,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           )}
 
           <LocaleLanguageSelect className="mr-1" value={locale} onChange={setLocale} />
+
+          <TourTriggerButton />
 
           <a
             href={githubUrl}

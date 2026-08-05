@@ -34,11 +34,13 @@ export function JoinBattlePage() {
               <p className="text-sm text-muted-foreground mt-1">{battle.title}</p>
             )}
           </div>
-          <JoinBattleWizard
-            battleId={battle?.id ?? ''}
-            battleSlug={slug}
-            onClose={() => navigate(`/battles/${slug}`)}
-          />
+          <div data-tour="dashboard.battle-join.form">
+            <JoinBattleWizard
+              battleId={battle?.id ?? ''}
+              battleSlug={slug}
+              onClose={() => navigate(`/battles/${slug}`)}
+            />
+          </div>
         </>
       )}
     </div>
