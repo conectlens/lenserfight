@@ -24,6 +24,12 @@ interface BatchResolvedUser {
   display_name: string
 }
 
+interface BatchResolvedBattle {
+  id: string
+  title: string
+  slug: string
+}
+
 /**
  * Batch-fetches lens titles for all Prompt/Lens mention IDs in a single RPC round-trip.
  */
@@ -56,6 +62,32 @@ async function batchResolveUsers(ids: string[]): Promise<Map<string, BatchResolv
 }
 
 /**
+ * Resolves battle mention IDs via the existing per-battle RPC (fn_get_battle),
+ * same as the tag resolution below — thread posts typically carry only a
+ * handful of battle mentions, so N+1 here is negligible and avoids a new RPC.
+ */
+async function batchResolveBattles(ids: string[]): Promise<Map<string, BatchResolvedBattle>> {
+  const uniqueIds = [...new Set(ids)]
+  if (uniqueIds.length === 0) return new Map()
+  const { battlesRepository } = await import('../repositories/battlesRepository')
+  const entries = await Promise.all(
+    uniqueIds.map(async (id) => {
+      try {
+        const battle = await battlesRepository.getBattleById(id)
+        return [id, battle] as const
+      } catch {
+        return [id, null] as const
+      }
+    })
+  )
+  const map = new Map<string, BatchResolvedBattle>()
+  for (const [id, battle] of entries) {
+    if (battle) map.set(id, { id: battle.id, title: battle.title, slug: battle.slug })
+  }
+  return map
+}
+
+/**
  * Service responsible for hydrating mention tokens with actual entity data.
  * Uses a single batch RPC call (fn_resolve_mentions) for lens mentions instead
  * of N+1 getLensDetail calls. Tags are resolved concurrently (lightweight).
@@ -78,9 +110,15 @@ export const mentionService = {
       .filter((s) => s.type === 'mention' && s.entityType === 'User')
       .map((s) => (s as { id: string }).id)
 
+    // Collect battle mention IDs
+    const battleIds = segments
+      .filter((s) => s.type === 'mention' && s.entityType === 'Battle')
+      .map((s) => (s as { id: string }).id)
+
     // Start all resolutions concurrently
     const lensMapPromise = batchResolveLenses(lensIds)
     const userMapPromise = batchResolveUsers(userIds)
+    const battleMapPromise = batchResolveBattles(battleIds)
 
     // Resolve unique tag IDs concurrently
     const uniqueTagIds = [...new Set(
@@ -97,7 +135,11 @@ export const mentionService = {
       })
     )
     const tagMap = new Map(tagEntries)
-    const [lensMap, userMap] = await Promise.all([lensMapPromise, userMapPromise])
+    const [lensMap, userMap, battleMap] = await Promise.all([
+      lensMapPromise,
+      userMapPromise,
+      battleMapPromise,
+    ])
 
     return segments.map((segment): ResolvedSegment => {
       if (segment.type === 'text') {
@@ -164,6 +206,27 @@ export const mentionService = {
             content: 'Unknown Lenser',
             id: segment.id,
             entityType: 'User',
+            isValid: false,
+          }
+        }
+
+        if (segment.entityType === 'Battle') {
+          const battle = battleMap.get(segment.id)
+          if (battle) {
+            return {
+              type: 'mention',
+              content: battle.title,
+              id: segment.id,
+              entityType: 'Battle',
+              link: `/battles/${battle.slug}`,
+              isValid: true,
+            }
+          }
+          return {
+            type: 'mention',
+            content: 'Unknown Battle',
+            id: segment.id,
+            entityType: 'Battle',
             isValid: false,
           }
         }

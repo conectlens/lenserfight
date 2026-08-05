@@ -1,4 +1,4 @@
-export type MentionType = 'Lens' | 'Prompt' | 'User' | 'Thread'
+export type MentionType = 'Lens' | 'Prompt' | 'User' | 'Thread' | 'Battle'
 
 export interface MentionToken {
   type: 'mention'
@@ -21,8 +21,9 @@ export interface TextToken {
 export type ContentSegment = MentionToken | TagToken | TextToken
 
 export class MentionParser {
-  // Regex captures: 1=Type, 2=ID
-  private static readonly TOKEN_PATTERN = /@\[(Prompt|User|Thread):([a-zA-Z0-9-]+)\]/g
+  // Regex captures: 1=Type, 2=ID. Battle mentions use a $ prefix so they
+  // don't collide with @ (user/lens) or # (tag) triggers.
+  private static readonly TOKEN_PATTERN = /(?:@|\$)\[(Prompt|User|Thread|Battle):([a-zA-Z0-9-]+)\]/g
   private static readonly TAG_TOKEN_PATTERN = /#\[Tag:([a-zA-Z0-9-]+)\]/g
 
   /**
@@ -32,8 +33,9 @@ export class MentionParser {
   static parseSegments(content: string): ContentSegment[] {
     if (!content) return []
 
-    // Combined regex that matches both @[...] and #[Tag:...] tokens
-    const combined = /(@\[(Prompt|User|Thread):([a-zA-Z0-9-]+)\])|(#\[Tag:([a-zA-Z0-9-]+)\])/g
+    // Combined regex that matches both @|$[...] mentions and #[Tag:...] tags
+    const combined =
+      /((?:@|\$)\[(Prompt|User|Thread|Battle):([a-zA-Z0-9-]+)\])|(#\[Tag:([a-zA-Z0-9-]+)\])/g
 
     const segments: ContentSegment[] = []
     let lastIndex = 0
@@ -101,5 +103,12 @@ export class MentionParser {
    */
   static createUserToken(id: string): string {
     return `@[User:${id}]`
+  }
+
+  /**
+   * Generates a battle mention token string.
+   */
+  static createBattleToken(id: string): string {
+    return `$[Battle:${id}]`
   }
 }

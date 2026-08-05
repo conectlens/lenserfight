@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('@lenserfight/data/repositories', () => ({
   lenserService: { searchLensers: vi.fn().mockResolvedValue([]) },
   tagService: { searchTags: vi.fn().mockResolvedValue([]), processUserInput: vi.fn() },
+  battlesRepository: { browseBattles: vi.fn().mockResolvedValue([]) },
 }))
 
 vi.mock('../hooks/useCreateThread', () => ({
@@ -45,6 +46,10 @@ vi.mock('./MentionAutocompleteList', () => ({
 
 vi.mock('./TagMentionAutocompleteList', () => ({
   TagMentionAutocompleteList: () => null,
+}))
+
+vi.mock('./BattleMentionAutocompleteList', () => ({
+  BattleMentionAutocompleteList: () => null,
 }))
 
 import { CreateThreadModal } from './CreateThreadModal'
