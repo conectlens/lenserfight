@@ -32,7 +32,7 @@ import {
 } from '@lenserfight/utils/date'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitBranch, HelpCircle, Info, Layers, Swords } from 'lucide-react'
+import { GitBranch, HelpCircle, Info, Layers, Search, Swords } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -280,6 +280,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // Step 1 — source selection (lazy-init from URL)
   const [workflowScope, setWorkflowScope] = useState<'mine' | 'popular'>('mine')
+  const [workflowSearchQuery, setWorkflowSearchQuery] = useState('')
+  const [lensSearchQuery, setLensSearchQuery] = useState('')
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(() =>
     readSearchParam(searchParams, 'workflow_id')
   )
@@ -585,6 +587,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     staleTime: 1000 * 60,
   })
   const myLenses: LensViewModel[] = (lensesData?.data ?? []) as LensViewModel[]
+  const filteredLenses = lensSearchQuery.trim()
+    ? myLenses.filter((lens) =>
+        lens.title.toLowerCase().includes(lensSearchQuery.trim().toLowerCase())
+      )
+    : myLenses
 
   // ── AI generation (delegated to the shared GenerateWithAIButton) ───────────
   const battleAiContext = useMemo(
@@ -1080,7 +1087,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   }, [])
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-tour="dashboard.battle-create.form">
       <StepWizard
         steps={wizardSteps}
         currentStep={step}
@@ -1126,6 +1133,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   workflowScope === 'mine' ? loadingWorkflows : loadingPopularWorkflows
                 const list =
                   workflowScope === 'mine' ? (workflows as WorkflowRecord[]) : popularWorkflows
+                const filteredList = workflowSearchQuery.trim()
+                  ? list.filter((wf) =>
+                      wf.title.toLowerCase().includes(workflowSearchQuery.trim().toLowerCase())
+                    )
+                  : list
                 return (
                   <div className="space-y-3">
                     <SegmentedControl
@@ -1137,9 +1149,18 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       onChange={(v) => {
                         setWorkflowScope(v as 'mine' | 'popular')
                         setSelectedWorkflowId(null)
+                        setWorkflowSearchQuery('')
                       }}
                       size="sm"
                     />
+                    {!isLoading && list.length > 0 && (
+                      <Input
+                        value={workflowSearchQuery}
+                        onChange={(e) => setWorkflowSearchQuery(e.target.value)}
+                        placeholder="Search workflows by title…"
+                        startAdornment={<Search size={14} className="text-greyscale-400" />}
+                      />
+                    )}
                     <div className="space-y-2">
                       {isLoading &&
                         Array.from({ length: 4 }).map((_, i) => (
@@ -1155,8 +1176,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                             : 'No popular workflows yet. Check back later.'}
                         </p>
                       )}
+                      {!isLoading && list.length > 0 && filteredList.length === 0 && (
+                        <p className="py-8 text-center text-sm text-greyscale-400">
+                          No workflows match "{workflowSearchQuery.trim()}".
+                        </p>
+                      )}
                       {!isLoading &&
-                        list.map((wf) => (
+                        filteredList.map((wf) => (
                           <Button
                             key={wf.id}
                             type="button"
@@ -1199,6 +1225,15 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             {/* ── Step 1: Lens picker ───────────────────────────────── */}
             {step === 1 && taskSource === 'lens' && (
               <div className="space-y-2">
+                {!loadingLenses && myLenses.length > 0 && (
+                  <Input
+                    value={lensSearchQuery}
+                    onChange={(e) => setLensSearchQuery(e.target.value)}
+                    placeholder="Search lenses by title…"
+                    startAdornment={<Search size={14} className="text-greyscale-400" />}
+                    className="mb-1"
+                  />
+                )}
                 {loadingLenses &&
                   Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
@@ -1208,8 +1243,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                     No lenses found. Create a lens first.
                   </p>
                 )}
+                {!loadingLenses && myLenses.length > 0 && filteredLenses.length === 0 && (
+                  <p className="py-8 text-center text-sm text-greyscale-400">
+                    No lenses match "{lensSearchQuery.trim()}".
+                  </p>
+                )}
                 {!loadingLenses &&
-                  myLenses.map((lens) => (
+                  filteredLenses.map((lens) => (
                     <Button
                       key={lens.id}
                       type="button"
