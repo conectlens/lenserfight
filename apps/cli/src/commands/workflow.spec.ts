@@ -49,6 +49,8 @@ jest.mock('../lib/data-services/ai-generate', () => ({
 import { callRpc } from '@lenserfight/cli-client'
 import consola from 'consola'
 
+import { WORKFLOW_NODE_CATALOG, getWorkflowNodeCatalogEntry } from '@lenserfight/infra/execution/catalog'
+
 import { generateCreation, resolveProfileId } from '../lib/data-services/ai-generate'
 import { parseAutomationDocument } from '../utils/automation-objects'
 import { printJson, printTable } from '../utils/output'
@@ -68,13 +70,22 @@ const consolaSuccess = (consola as unknown as { success: jest.Mock }).success
 type AnyCmd = { subCommands?: Record<string, AnyCmd>; run?: (ctx: any) => Promise<void> }
 
 let workflowCmd: AnyCmd
+let LOCAL_EXECUTABLE_NODE_TYPES: readonly string[]
 
 beforeAll(async () => {
-  workflowCmd = (await import('./workflow')).default as AnyCmd
+  const mod = await import('./workflow')
+  workflowCmd = mod.default as AnyCmd
+  LOCAL_EXECUTABLE_NODE_TYPES = mod.LOCAL_EXECUTABLE_NODE_TYPES
 })
 
 beforeEach(() => {
   jest.clearAllMocks()
+  process.exitCode = 0
+})
+
+afterEach(() => {
+  // Guard against a test that sets process.exitCode = 1 (e.g. an error path)
+  // leaking into the real Jest process exit code when it's the last test to run.
   process.exitCode = 0
 })
 
@@ -331,5 +342,86 @@ describe('workflow generate', () => {
       expect.objectContaining({ p_title: 'Flow' }),
       expect.objectContaining({ requireAuth: true }),
     )
+  })
+})
+
+describe('EXECUTABLE_NODE_TYPES catalog drift guard', () => {
+  it('every locally-executable node type exists in the canonical catalog', () => {
+    for (const type of LOCAL_EXECUTABLE_NODE_TYPES) {
+      expect(getWorkflowNodeCatalogEntry(type)).toBeDefined()
+    }
+  })
+})
+
+describe('workflow node-types', () => {
+  let nodeTypesCmd: AnyCmd
+
+  beforeAll(() => {
+    nodeTypesCmd = workflowCmd.subCommands?.['node-types'] as AnyCmd
+  })
+
+  it('lists every catalog node type as a table by default', async () => {
+    await nodeTypesCmd?.run?.({ args: { category: '', json: false } })
+
+    expect(mockPrintTable).toHaveBeenCalledWith(
+      ['Type', 'Category', 'Name', 'Description'],
+      expect.any(Array),
+    )
+    const [, rows] = mockPrintTable.mock.calls[0]
+    expect(rows).toHaveLength(WORKFLOW_NODE_CATALOG.length)
+  })
+
+  it('filters by category', async () => {
+    await nodeTypesCmd?.run?.({ args: { category: 'trigger', json: false } })
+
+    const [, rows] = mockPrintTable.mock.calls[0]
+    const expectedCount = WORKFLOW_NODE_CATALOG.filter((e) => e.category === 'trigger').length
+    expect(rows).toHaveLength(expectedCount)
+    expect(expectedCount).toBeGreaterThan(0)
+  })
+
+  it('outputs JSON matching the catalog when --json is set', async () => {
+    await nodeTypesCmd?.run?.({ args: { category: '', json: true } })
+
+    expect(mockPrintJson).toHaveBeenCalled()
+    const [jsonArg] = mockPrintJson.mock.calls[0] as [Array<{ type: string }>]
+    expect(jsonArg).toHaveLength(WORKFLOW_NODE_CATALOG.length)
+    expect(jsonArg.map((e) => e.type).sort()).toEqual(WORKFLOW_NODE_CATALOG.map((e) => e.type).sort())
+  })
+
+  it('warns when a filter matches nothing', async () => {
+    await nodeTypesCmd?.run?.({ args: { category: 'not-a-real-category', json: false } })
+
+    expect(consolaWarn).toHaveBeenCalled()
+    expect(mockPrintTable).not.toHaveBeenCalled()
+  })
+})
+
+describe('workflow node-type', () => {
+  let nodeTypeCmd: AnyCmd
+
+  beforeAll(() => {
+    nodeTypeCmd = workflowCmd.subCommands?.['node-type'] as AnyCmd
+  })
+
+  it('describes a known node type', async () => {
+    await nodeTypeCmd?.run?.({ args: { type: 'lens_execute', json: false } })
+
+    expect(consolaSuccess).toHaveBeenCalledWith('%s (%s)', expect.any(String), 'lens_execute')
+    expect(process.exitCode).toBe(0)
+  })
+
+  it('outputs the full catalog entry as JSON when --json is set', async () => {
+    await nodeTypeCmd?.run?.({ args: { type: 'lens_execute', json: true } })
+
+    expect(mockPrintJson).toHaveBeenCalledWith(getWorkflowNodeCatalogEntry('lens_execute'))
+  })
+
+  it('exits non-zero with a clear error for an unknown type', async () => {
+    await nodeTypeCmd?.run?.({ args: { type: 'not_a_real_node_type', json: false } })
+
+    expect(consolaError).toHaveBeenCalledWith('Unknown node type: %s', 'not_a_real_node_type')
+    expect(process.exitCode).toBe(1)
+    expect(mockPrintJson).not.toHaveBeenCalled()
   })
 })
