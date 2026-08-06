@@ -1,4 +1,5 @@
 import { render } from 'ink'
+
 import { Dashboard, type DashboardAction } from './Dashboard'
 import { fetchDashboardData } from './useDashboardData'
 

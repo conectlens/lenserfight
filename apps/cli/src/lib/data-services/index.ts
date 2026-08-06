@@ -31,3 +31,26 @@ export {
   type AgentTeamRunRow,
   type KillAgentWorkersResult,
 } from './agent-runs'
+export {
+  listApprovalRequests,
+  getApprovalRequest,
+  countPendingApprovals,
+  type ApprovalRequestRow,
+  type ListApprovalsOptions,
+} from './approvals'
+export {
+  listSchedules,
+  getScheduleById,
+  getScheduleRunHistory,
+  listFailingSchedules,
+  type WorkflowScheduleRow,
+  type ScheduleRunRow,
+} from './schedules'
+export {
+  listMemoryProfiles,
+  readMemoryEntries,
+  searchMemoryEntries,
+  type MemoryProfileRow,
+  type MemoryEntryRow,
+  type MemorySearchRow,
+} from './memory'

@@ -311,11 +311,22 @@ lf init --mode local  # initialize in local mode
 
 ## Dashboard
 
-Running `lf` with no arguments opens the LenserFight TUI dashboard — CLI identity and
-version, auth/profile state, backend health, a recent-activity log, and a searchable
-command palette (press `:`) for discovering and running any `lf` command. Every command
-dispatched from the palette keeps its own `--confirm`/safety gate exactly as it behaves
-from a terminal — the dashboard is a thin launcher, not a separate execution path.
+Running `lf` with no arguments opens the LenserFight TUI dashboard: a persistent sidebar
+for Agents, Workflows, Execute, Battles, Schedules, Memory, Lensers, Approvals,
+Configuration, and Logs; a central workspace with searchable/sortable/paginated tables,
+progress views, and structured detail cards (no raw JSON unless you explicitly open it);
+and a contextual detail panel for metadata, bindings, and actions.
+
+- `1`–`9` jump directly to a section; `Tab` moves focus between the sidebar and the
+  workspace; arrow keys + `Enter` navigate the sidebar or select a row.
+- `:` opens the raw command bar (same as before — type any `lf` command and run it
+  in place). `Ctrl+K` opens a fuzzy palette that also jumps to any dashboard section.
+- `?` opens a searchable shortcut reference, global plus whatever the focused screen adds.
+- Destructive row actions (pause/resume/approve/reject/delete/...) show an in-dashboard
+  confirmation dialog before dispatching — no surprise mutations.
+- Every dispatched command runs in-process through the same routing, arg parsing, and
+  `--confirm`/safety gate as running it directly from a terminal — the dashboard is a
+  thin, stateful launcher, not a separate execution path.
 
 ```bash
 lf              # opens the dashboard
@@ -340,6 +351,13 @@ The CLI test suite uses Jest with citty and consola mocked. Running the full sui
 
 ```bash
 pnpm nx run cli:test --testFile=apps/cli/src/commands/battle.spec.ts
+```
+
+The interactive dashboard (`src/tui/ink/**`) is Ink/React and runs under a separate,
+ESM-only Jest project since Ink and `ink-testing-library` are pure ESM:
+
+```bash
+pnpm nx run cli:test-ink
 ```
 
 ---

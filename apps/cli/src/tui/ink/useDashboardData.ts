@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
 import { stripAnsi } from '@lenserfight/cli-client'
-import { getActiveProfileName } from '../../utils/profiles'
-import { probeBackendHealth } from '../../lib/health-probe'
+import { useEffect, useState } from 'react'
+
 import { formatAgentWorkspaceBanner } from '../../commands/agents'
-import { fetchRecentLogs, type ActionLogRow } from '../dashboard'
+import { probeBackendHealth } from '../../lib/health-probe'
+import { getActiveProfileName } from '../../utils/profiles'
 import { getRecentCommands, type RecentCommandEntry } from '../command-dispatch'
+import { fetchRecentLogs, type ActionLogRow } from '../dashboard'
 
 export interface DashboardData {
   profile: string
