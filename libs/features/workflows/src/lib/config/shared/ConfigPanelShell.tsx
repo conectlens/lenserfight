@@ -37,7 +37,12 @@ export function ConfigPanelShell({
           </p>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <WorkflowNodeDocsButton nodeType={nodeType} size="md" tooltipPosition="bottom" />
+          <WorkflowNodeDocsButton
+            nodeType={nodeType}
+            size="md"
+            tooltipPosition="bottom"
+            dataTour="dashboard.workflow-builder.node-docs"
+          />
           <Button
             variant="ghost"
             size="sm"

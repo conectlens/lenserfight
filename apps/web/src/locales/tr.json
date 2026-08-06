@@ -487,15 +487,51 @@
           "steps": {
             "0": {
               "title": "İş akışı kurucusu",
-              "body": "Hatları görsel olarak kur — her düğüm bir model, araç ya da bağlayıcı çağırır."
+              "body": "Otomasyonları burada görsel olarak oluşturursun: solda düğüm paleti, ortada tuval, her düğüm için bir yapılandırma paneli ve sağda çalıştırma ile doğrulama araçları. Şimdi her bölümü sırayla inceleyelim."
             },
             "1": {
               "title": "Tuval",
               "body": "Adımları düzenle ve çıktıları girdilere bağla, sonra tüm akışı test etmek için çalıştır."
             },
             "2": {
-              "title": "Çalıştır ve iyileştir",
-              "body": "Her çalıştırma; çıktılar, süre ve maliyetle birlikte kaydedilir, böylece sürümleri karşılaştırabilirsin."
+              "title": "Tetikleyiciler iş akışını başlatır",
+              "body": "Bir tetikleyici, çalıştırmanın nasıl başlayacağına karar verir — Manuel, Webhook, Zamanlanmış, Olay ya da Form Girdisi. Diğer düğümler gibi yapılandırılır; henüz biri yoksa bu uyarı bandı sana bir tane eklemeni hatırlatır."
+            },
+            "3": {
+              "title": "İş akışı düzeyinde girdiler",
+              "body": "Kök bir düğümde (gelen bağlantısı olmayan) tanımlanan girdiler, akış her çalıştığında sorulur; böylece sonraki düğümler bunlara referans verebilir."
+            },
+            "4": {
+              "title": "Düğüm paleti",
+              "body": "Kendi Lens'lerini ve popüler herkese açık Lens'leri burada gözden geçir. Her kart tuval üzerinde bir düğüm olur; düğümler arasındaki bağlantılar hangi verinin nereye akacağını belirler."
+            },
+            "5": {
+              "title": "Bir Lens neyi sağlar",
+              "body": "Lens tabanlı bir düğüm, o Lens'in isteğini bir modele karşı çalıştırır. Bir düğümün yapılandırma panelini açtığında tam olarak hangi Lens ve sürümün kullanıldığını görürsün."
+            },
+            "6": {
+              "title": "Bir düğümü yapılandırmak",
+              "body": "Zorunlu ve isteğe bağlı alanlar Lens'in sürüm parametrelerinden gelir, her birinin kendi varsayılan değeri vardır. Bir değer gir, bir girdiden ya da önceki düğümden bağla, ya da varsayılanı olduğu gibi bırak."
+            },
+            "7": {
+              "title": "Düğüm dokümantasyonu",
+              "body": "Yardımcı düğümler, tuvalden ayrılmadan referans bilgilerini — zorunlu alanlar, biçimler ve örnekler — açan bir dokümantasyon simgesi gösterir."
+            },
+            "8": {
+              "title": "Çalıştırmadan önce doğrula",
+              "body": "Gerçek bir çalıştırmaya harcama yapmadan önce grafiği eksik alanlar veya hatalı eşlemeler için kontrol etmek üzere bir deneme çalıştırması yap. Hatalar tam olarak sorumlu düğümü ve alanı işaret eder."
+            },
+            "9": {
+              "title": "İş akışını çalıştırmak",
+              "body": "Bir fonlama kaynağı ve model seç, sonra buradan çalıştır. İlerleme, nihai çıktı ve başarısız bir çalıştırma için kurtarma seçenekleri bu panelde görünür."
+            },
+            "10": {
+              "title": "Çalıştırma geçmişi",
+              "body": "Geçmişteki her çalıştırma — durumu, süresi ve düğüm bazında sonuçlarıyla birlikte — burada listelenir; böylece sonuçları inceleyebilir veya karşılaştırabilirsin."
+            },
+            "11": {
+              "title": "Tarayıcının ötesinde",
+              "body": "Aynı iş akışı, izinlerine bağlı olarak CLI'dan (workflow run / validate / create) veya MCP araçlarıyla da çalıştırılabilir, doğrulanabilir ve incelenebilir."
             }
           }
         },

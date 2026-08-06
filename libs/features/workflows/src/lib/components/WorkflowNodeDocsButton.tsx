@@ -11,6 +11,8 @@ interface WorkflowNodeDocsButtonProps {
   size?: 'sm' | 'md'
   tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
   className?: string
+  /** Optional tour spotlight anchor, set by callers that want this instance targetable. */
+  dataTour?: string
 }
 
 /**
@@ -26,6 +28,7 @@ export function WorkflowNodeDocsButton({
   size = 'sm',
   tooltipPosition = 'top',
   className,
+  dataTour,
 }: WorkflowNodeDocsButtonProps) {
   const entry = getWorkflowNodeCatalogEntry(nodeType)
   const [open, setOpen] = useState(false)
@@ -44,6 +47,7 @@ export function WorkflowNodeDocsButton({
           type="button"
           variant="ghost"
           size="sm"
+          data-tour={dataTour}
           className={`!h-5 !w-5 !rounded-md !p-0 !text-greyscale-400 hover:!text-sky-500 ${className ?? ''}`}
           aria-label={`View ${entry.displayName} documentation`}
           title={`View ${entry.displayName} documentation`}
