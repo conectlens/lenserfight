@@ -922,11 +922,13 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Lens palette sidebar — hidden in Phases mode */}
         {builderMode === 'canvas' && (
-          <WorkflowLensPalette
-            onDragStart={() => undefined}
-            collapsed={paletteCollapsed}
-            onToggleCollapse={() => setPaletteCollapsed((v) => !v)}
-          />
+          <div data-tour="dashboard.workflow-builder.palette" className="contents">
+            <WorkflowLensPalette
+              onDragStart={() => undefined}
+              collapsed={paletteCollapsed}
+              onToggleCollapse={() => setPaletteCollapsed((v) => !v)}
+            />
+          </div>
         )}
 
         {/* Canvas or Phases editor — fills remaining space */}
@@ -940,7 +942,10 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
           />
           {/* No-trigger warning banner — non-blocking, shown while editing */}
           {!hasTriggerNode && nodes.length > 0 && isOwner && (
-            <div className="flex items-center gap-2 border-b border-amber-400/30 bg-amber-50/80 px-4 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+            <div
+              data-tour="dashboard.workflow-builder.trigger-banner"
+              className="flex items-center gap-2 border-b border-amber-400/30 bg-amber-50/80 px-4 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
+            >
               <AlertTriangle size={13} className="flex-shrink-0" />
               <span>
                 No trigger node — add a <span className="font-semibold">Manual Trigger</span>,{' '}
@@ -986,25 +991,30 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
 
         {/* Node config panel — GRASP Polymorphism dispatcher (Lens vs Utility) */}
         {selectedNodeConfig && (
-          <WorkflowNodeConfigDispatcher
-            nodeId={selectedNodeConfig.nodeId}
-            lensId={selectedNodeConfig.lensId}
-            versionId={selectedNodeConfig.versionId}
-            nodeLabel={selectedNodeConfig.nodeLabel}
-            currentUserId={user?.id}
-            currentConfig={selectedCurrentConfig}
-            nodes={nodes}
-            edges={edges}
-            nodeResults={activeNodeResults}
-            onSave={handleSaveNodeConfig}
-            onClose={() => setSelectedNodeConfig(null)}
-            onEditLens={handleEditLens}
-          />
+          <div data-tour="dashboard.workflow-builder.node-config" className="contents">
+            <WorkflowNodeConfigDispatcher
+              nodeId={selectedNodeConfig.nodeId}
+              lensId={selectedNodeConfig.lensId}
+              versionId={selectedNodeConfig.versionId}
+              nodeLabel={selectedNodeConfig.nodeLabel}
+              currentUserId={user?.id}
+              currentConfig={selectedCurrentConfig}
+              nodes={nodes}
+              edges={edges}
+              nodeResults={activeNodeResults}
+              onSave={handleSaveNodeConfig}
+              onClose={() => setSelectedNodeConfig(null)}
+              onEditLens={handleEditLens}
+            />
+          </div>
         )}
 
         {/* Run results panel — slides in from the right */}
         {showRunPanel && !selectedNodeConfig && (
-          <aside className="flex flex-col w-100 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
+          <aside
+            data-tour="dashboard.workflow-builder.run-panel"
+            className="flex flex-col w-100 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden"
+          >
             {/* Panel header with tabs */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
               <div className="flex items-center gap-1">
@@ -1095,20 +1105,22 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       onModelChange={handleModelChange}
                     />
                   </div>
-                  <WorkflowRootInputsPanel
-                    nodes={nodes}
-                    edges={edges}
-                    onSubmit={(rootInputs) => handleExecuteClick(rootInputs)}
-                    isRunning={starting || isRunning}
-                    canExecute={canExecute}
-                    executeHint={
-                      cloudByokNeedsExecutor
-                        ? 'Cloud BYOK is not supported for workflow runs in production yet. Switch to Platform credits or a Local key.'
-                        : undefined
-                    }
-                    nodeConfigOverrides={nodeConfigs}
-                    currentUserId={user?.id}
-                  />
+                  <div data-tour="dashboard.workflow-builder.inputs" className="contents">
+                    <WorkflowRootInputsPanel
+                      nodes={nodes}
+                      edges={edges}
+                      onSubmit={(rootInputs) => handleExecuteClick(rootInputs)}
+                      isRunning={starting || isRunning}
+                      canExecute={canExecute}
+                      executeHint={
+                        cloudByokNeedsExecutor
+                          ? 'Cloud BYOK is not supported for workflow runs in production yet. Switch to Platform credits or a Local key.'
+                          : undefined
+                      }
+                      nodeConfigOverrides={nodeConfigs}
+                      currentUserId={user?.id}
+                    />
+                  </div>
                   {/* Recovery banner — shown when the run terminated with failure */}
                   {runId &&
                     !isRunning &&
@@ -1166,7 +1178,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
               ) : runPanelTab === 'schedule' ? (
                 <WorkflowCronPanel workflowId={workflowId} isOwner={isOwner} />
               ) : (
-                <>
+                <div data-tour="dashboard.workflow-builder.run-history" className="contents">
                   <WorkflowRunHistoryPanel
                     workflowId={workflowId}
                     activeRunId={selectedHistoryRunId}
@@ -1190,7 +1202,7 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
                       }
                     />
                   )}
-                </>
+                </div>
               )}
             </div>
           </aside>
@@ -1198,7 +1210,10 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
 
         {/* Dry-run results panel — ephemeral test mode, no history or schedule */}
         {showDryRunPanel && !selectedNodeConfig && (
-          <aside className="flex flex-col w-100 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
+          <aside
+            data-tour="dashboard.workflow-builder.dry-run"
+            className="flex flex-col w-100 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden"
+          >
             {/* Panel header */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
               <div className="flex items-center gap-2">

@@ -487,15 +487,51 @@
           "steps": {
             "0": {
               "title": "The workflow builder",
-              "body": "Compose pipelines visually — each node calls a model, a tool or a connector."
+              "body": "This is where you build automations visually: a node palette on the left, the canvas in the middle, a configuration panel per node, and run and validation tools on the right. Let's walk through each part."
             },
             "1": {
               "title": "The canvas",
               "body": "Arrange steps and wire outputs into inputs, then hit run to test the whole flow."
             },
             "2": {
-              "title": "Run and iterate",
-              "body": "Every run is recorded with outputs, timing and cost, so you can compare versions."
+              "title": "Triggers start the workflow",
+              "body": "A trigger decides how a run begins — Manual, Webhook, Schedule, Event or Form Input. It's configured like any other node; until one exists, this banner reminds you to add one."
+            },
+            "3": {
+              "title": "Workflow-level inputs",
+              "body": "Inputs on a root node (one with no incoming connections) are asked for whenever the workflow runs, so downstream nodes can reference them."
+            },
+            "4": {
+              "title": "The node palette",
+              "body": "Browse your Lenses and popular public Lenses here. Each card becomes a node on the canvas; connections between nodes control which data flows where."
+            },
+            "5": {
+              "title": "What a Lens contributes",
+              "body": "A Lens-backed node runs that Lens's prompt against a model. Opening a node's configuration panel shows exactly which Lens and version it uses."
+            },
+            "6": {
+              "title": "Configuring a node",
+              "body": "Required and optional fields come from the Lens's version parameters, each with its own default. Fill in a value, wire it from an input or an upstream node, or leave the default."
+            },
+            "7": {
+              "title": "Node documentation",
+              "body": "Utility nodes expose a docs icon that opens their reference — required fields, formats and examples — without leaving the canvas."
+            },
+            "8": {
+              "title": "Validate before you run",
+              "body": "Run a dry run to check the graph for missing fields or bad mappings before spending anything on a real execution. Errors point at the exact node and field responsible."
+            },
+            "9": {
+              "title": "Running the workflow",
+              "body": "Pick a funding source and model, then execute from here. Progress, final output and recovery options for a failed run all appear in this panel."
+            },
+            "10": {
+              "title": "Run history",
+              "body": "Every past run — its status, duration and node-by-node results — is listed here so you can inspect or compare outcomes."
+            },
+            "11": {
+              "title": "Beyond the browser",
+              "body": "The same workflow can also be run, validated and inspected from the CLI (workflow run / validate / create) or through MCP tools, subject to your permissions."
             }
           }
         },
