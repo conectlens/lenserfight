@@ -107,7 +107,7 @@ UPDATE agents.tools_registry
 
 ## Unresolved questions
 
-- Does `request_template` need a documented interpolation mini-language (e.g. `{{input.foo}}`) before the dispatcher issue starts, or can that be decided inside that issue? Leaning toward: decide in the dispatcher issue, since it's an execution-time concern, not a storage concern.
+- Does `request_template` need a documented interpolation mini-language (e.g. `&#123;&#123;input.foo&#125;&#125;`) before the dispatcher issue starts, or can that be decided inside that issue? Leaning toward: decide in the dispatcher issue, since it's an execution-time concern, not a storage concern.
 - Should `auth_param_name` support a value *prefix* (e.g. `Bearer `) as a separate column, or is that expected to live inside the stored secret itself? Left open; doesn't block the migration in issue #460 since it's an additive column either way.
 
 ## Implementation notes
