@@ -126,10 +126,16 @@ function AppShellInner({ onAction, interactive = true, pollMs, initialData }: Ap
 
   const dispatchCommand = (argv: string[]) => onAction({ type: 'command', argv })
 
-  // Always-on hard-quit — never gated, matches the original single-screen dashboard's Ctrl+C behavior.
-  useInput((input, key) => {
-    if (key.ctrl && input === 'c') onAction({ type: 'quit', code: 130 })
-  })
+  // Always-on hard-quit when interactive — matches the original single-screen
+  // dashboard's Ctrl+C behavior. Gated on `interactive`: ink's useInput calls
+  // setRawMode internally, which throws when stdin doesn't support raw mode
+  // (the non-TTY static-render path from dashboard.ts's renderInkStatic()).
+  useInput(
+    (input, key) => {
+      if (key.ctrl && input === 'c') onAction({ type: 'quit', code: 130 })
+    },
+    { isActive: interactive },
+  )
 
   useInput(
     (input, key) => {
@@ -193,7 +199,7 @@ function AppShellInner({ onAction, interactive = true, pollMs, initialData }: Ap
         }
       }
     },
-    { isActive: !overlayActive && !textInputActive },
+    { isActive: interactive && !overlayActive && !textInputActive },
   )
 
   const contentWidth = Math.max(40, size.columns - (sidebarCollapsed ? 6 : 24))
@@ -231,7 +237,7 @@ function AppShellInner({ onAction, interactive = true, pollMs, initialData }: Ap
   }, [currentView.id, screenFocused, contentWidth, showDetail])
 
   if (!onboardingDone) {
-    return <OnboardingScreen onDone={() => setOnboardingDone(true)} />
+    return <OnboardingScreen onDone={() => setOnboardingDone(true)} interactive={interactive} />
   }
 
   return (

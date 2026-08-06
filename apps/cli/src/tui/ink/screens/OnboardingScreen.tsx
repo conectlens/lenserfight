@@ -9,10 +9,11 @@ import { LoadingIndicator } from '../shared/LoadingIndicator'
 
 interface OnboardingScreenProps {
   onDone: () => void
+  interactive?: boolean
 }
 
 /** First-run welcome screen. Shown once (gated in AppShell on the onboarding snapshot), reachable again from Home. */
-export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
+export function OnboardingScreen({ onDone, interactive = true }: OnboardingScreenProps) {
   const { data: journey, loading } = useAsyncData(fetchJourneyState, ['onboarding'])
 
   const dismiss = () => {
@@ -21,9 +22,16 @@ export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
     onDone()
   }
 
-  useInput(() => {
-    dismiss()
-  })
+  // Gated on `interactive`: ink's useInput calls setRawMode internally, which
+  // throws when stdin doesn't support raw mode (the non-TTY static-render
+  // path — dashboard.ts's renderInkStatic() paints one frame and never waits
+  // for a keypress, so there's nothing to dismiss on anyway).
+  useInput(
+    () => {
+      dismiss()
+    },
+    { isActive: interactive },
+  )
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="magentaBright" paddingX={2} paddingY={1}>
