@@ -5,6 +5,12 @@ import { type WorkflowFrontmatter } from '@lenserfight/types'
 
 import { callRpc, handleError } from '@lenserfight/cli-client'
 import { composeWorkflowPayload } from '@lenserfight/api/export-payloads'
+import {
+  WORKFLOW_NODE_CATALOG,
+  getWorkflowNodeCatalogEntry,
+  type WorkflowCatalogNodeType,
+  type WorkflowNodeCategory,
+} from '@lenserfight/infra/execution/catalog'
 import { cliRpcCaller, runCliExport, writeExportOutput } from '../utils/export-runtime'
 import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate'
 import {
@@ -17,9 +23,17 @@ import { makeLifecycleCommand, runLifecycleAction } from '../utils/lifecycle'
 import { A, sym } from '@lenserfight/cli-client'
 import { resolveWorkflowId } from '../utils/workflow-ref'
 
-// Node types that can execute in the current CLI context.
-// All other types require the full hosted DAG runner.
-const EXECUTABLE_NODE_TYPES = new Set([
+// Node types that can execute in the current CLI context (local, dependency-free
+// simulation — no hosted DAG runner, network access, or external side effects).
+// All other catalog types require the full hosted DAG runner.
+//
+// This is CLI-specific knowledge, not something the canonical catalog tracks as a
+// single field (category and sideEffectPolicy don't line up 1:1 with this set —
+// e.g. battle/storage nodes are side-effect-free by category default but still
+// need the hosted runner). Typing the list against `WorkflowCatalogNodeType`
+// (imported from the catalog) means a renamed or removed catalog type fails
+// `nx typecheck cli` instead of silently going stale.
+export const LOCAL_EXECUTABLE_NODE_TYPES: readonly WorkflowCatalogNodeType[] = [
   'lens',
   'lens_execute',
   'prompt_template',
@@ -36,7 +50,9 @@ const EXECUTABLE_NODE_TYPES = new Set([
   'manual_trigger',
   'event_trigger',
   'schedule_trigger',
-])
+]
+
+const EXECUTABLE_NODE_TYPES = new Set<string>(LOCAL_EXECUTABLE_NODE_TYPES)
 
 function classifyStep(type: string): 'executable' | 'design-only' {
   return EXECUTABLE_NODE_TYPES.has(type) ? 'executable' : 'design-only'
@@ -593,6 +609,123 @@ const exportWorkflow = defineCommand({
   },
 })
 
+// ---------------------------------------------------------------------------
+// CN: workflow node-types / node-type (canonical catalog discovery)
+// ---------------------------------------------------------------------------
+
+const nodeTypes = defineCommand({
+  meta: {
+    name: 'node-types',
+    description: 'List workflow node types from the canonical catalog.',
+  },
+  args: {
+    category: {
+      type: 'string',
+      description: 'Filter by category (lens, trigger, logic, data, ai_primitive, battle, storage, communication, integration, media, utility)',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const category = args.category || undefined
+    const entries = category
+      ? WORKFLOW_NODE_CATALOG.filter((entry) => entry.category === (category as WorkflowNodeCategory))
+      : WORKFLOW_NODE_CATALOG
+
+    if (args.json) {
+      printJson(
+        entries.map((entry) => ({
+          type: entry.type,
+          category: entry.category,
+          displayName: entry.displayName,
+          description: entry.description,
+          capabilities: entry.capabilities,
+        }))
+      )
+      return
+    }
+
+    if (entries.length === 0) {
+      consola.warn('No node types found for category "%s".', category)
+      return
+    }
+
+    printTable(
+      ['Type', 'Category', 'Name', 'Description'],
+      entries.map((entry) => [entry.type, entry.category, entry.displayName, truncate(entry.description, 60)])
+    )
+    consola.info('%d node type(s).', entries.length)
+  },
+})
+
+const nodeType = defineCommand({
+  meta: {
+    name: 'node-type',
+    description: 'Describe one workflow node type from the canonical catalog.',
+  },
+  args: {
+    type: {
+      type: 'positional',
+      description: 'Node type identifier (e.g. lens_execute, schedule_trigger)',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const entry = getWorkflowNodeCatalogEntry(args.type)
+    if (!entry) {
+      consola.error('Unknown node type: %s', args.type)
+      consola.info('Run `lf workflow node-types` to list valid types.')
+      process.exitCode = 1
+      return
+    }
+
+    if (args.json) {
+      printJson(entry)
+      return
+    }
+
+    consola.success('%s (%s)', entry.displayName, entry.type)
+    consola.info('Category: %s', entry.category)
+    consola.info('Description: %s', entry.description)
+    consola.info('')
+
+    consola.info('Required config:')
+    if (entry.requiredConfig.length) {
+      printTable(
+        ['Key', 'Kind', 'Description'],
+        entry.requiredConfig.map((f) => [f.key, f.kind, f.description])
+      )
+    } else {
+      consola.info('  (none)')
+    }
+    consola.info('')
+
+    consola.info('Optional config:')
+    if (entry.optionalConfig.length) {
+      printTable(
+        ['Key', 'Kind', 'Default', 'Description'],
+        entry.optionalConfig.map((f) => [f.key, f.kind, JSON.stringify(f.defaultValue ?? null), f.description])
+      )
+    } else {
+      consola.info('  (none)')
+    }
+    consola.info('')
+
+    consola.info('Default config: %s', JSON.stringify(entry.defaultConfig))
+    consola.info('Example config: %s', JSON.stringify(entry.exampleConfig.config))
+    consola.info('Docs: %s', entry.docsLink)
+  },
+})
+
 export default defineCommand({
   meta: {
     name: 'workflow',
@@ -612,5 +745,7 @@ export default defineCommand({
     pin: lifecycleCommand('pin', 'Pin a workflow to your saved artifacts.'),
     unpin: lifecycleCommand('unpin', 'Remove your saved pin from a workflow.'),
     trigger,
+    'node-types': nodeTypes,
+    'node-type': nodeType,
   },
 })

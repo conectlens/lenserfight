@@ -1,17 +1,17 @@
 ---
 title: Workflow Tools — MCP Server
-description: Reference for all 11 workflow tools in the LenserFight MCP server, including complete graph creation and validation.
+description: Reference for all 13 workflow tools in the LenserFight MCP server, including complete graph creation and validation.
 ---
 
 # Workflow Tools
 
-The MCP server provides **11 tools** for managing workflows and their runs. Workflows connect triggers, reusable Lenses, deterministic tools, and configured connectors.
+The MCP server provides **13 tools** for managing workflows, their runs, and the canonical node catalog. Workflows connect triggers, reusable Lenses, deterministic tools, and configured connectors.
 
 Tools follow the `verb_noun` naming convention (`list_workflows`, `get_workflow`, `run_workflow`).
 
 | Class               | Count | What it does                                               |
 | ------------------- | ----- | ---------------------------------------------------------- |
-| [Read](#read)       | 8     | List, fetch, explain, validate, poll, read logs, summarize |
+| [Read](#read)       | 10    | List, fetch, explain, validate, poll, read logs, summarize, discover node types |
 | [Write](#write)     | 1     | Create a workflow definition                               |
 | [Execute](#execute) | 2     | Start a run or retry a failed run                          |
 
@@ -86,6 +86,34 @@ Return the visibility-gated workflow, nodes, and edges. Credential references ar
 ### `describe_workflow`
 
 Return a compact explanation of triggers, Lens/tool nodes, parameter assignments, and connections.
+
+### `list_workflow_node_types`
+
+List every node type in the canonical node catalog — the same catalog `create_workflow` step `node_type` values are validated against. Optionally filter by category.
+
+**Parameters**
+
+| Name       | Type   | Required | Description                                                                                                              |
+| ---------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `category` | string | No       | Filter to one category: `lens`, `trigger`, `logic`, `data`, `ai_primitive`, `battle`, `storage`, `communication`, `integration`, `media`, `utility` |
+
+**Returns** `{ items, total, categories }` — `items` is `[{ type, category, display_name, description, capabilities }]`; `categories` is the full valid category list, so an unrecognized filter can self-correct without a second round trip.
+
+An unmatched category returns an empty `items` list rather than an error.
+
+### `describe_workflow_node_type`
+
+Fetch the full catalog entry for one node type: required/optional config fields with defaults, input/output contracts, an example configuration, and its documentation link. Call `list_workflow_node_types` first to discover valid `type` values.
+
+**Parameters**
+
+| Name   | Type   | Required | Description                                                        |
+| ------ | ------ | -------- | -------------------------------------------------------------------- |
+| `type` | string | Yes      | Node type identifier from the catalog (e.g. `lens_execute`, `schedule_trigger`) |
+
+**Returns** `{ type, display_name, description, category, aliases, capabilities, inputs, outputs, required_config, optional_config, default_config, example_config, accepts_input_types, produces_output_type, supported_funding_modes, supported_execution_environments, retry_behavior, error_behavior, side_effect_policy, example_use_case, docs_link }`
+
+**Error codes** `NOT_FOUND`
 
 ### `validate_workflow`
 

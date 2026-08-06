@@ -68,6 +68,7 @@
       "@lenserfight/infra/byok": ["libs/infra/byok/src/index.ts"],
       "@lenserfight/infra/cost": ["libs/infra/cost/src/index.ts"],
       "@lenserfight/infra/execution": ["libs/infra/execution/src/index.ts"],
+      "@lenserfight/infra/execution/catalog": ["libs/infra/execution/src/lib/catalog/index.ts"],
       "@lenserfight/infra/gateway": ["libs/infra/gateway/src/index.ts"],
       "@lenserfight/infra/moderation": ["libs/infra/moderation/src/index.ts"],
       "@lenserfight/infra/storage": ["libs/infra/storage/src/index.ts"],

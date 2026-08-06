@@ -7,17 +7,10 @@ import { fail, ok } from '../../types.js'
 import { registerMcpTool } from '../register-tool.js'
 import { getToolMeta } from '../tool-metadata.js'
 import { p } from '../tool-params.js'
+import { TRIGGER_NODE_TYPE_SET as TRIGGER_TYPES } from './workflow-trigger-node-types.js'
 
 const meta = getToolMeta('validate_workflow')
 const TOOL = meta.name
-
-const TRIGGER_TYPES = new Set([
-  'manual_trigger',
-  'event_trigger',
-  'form_input_trigger',
-  'webhook_trigger',
-  'schedule_trigger',
-])
 
 interface ValidationIssue {
   code: string

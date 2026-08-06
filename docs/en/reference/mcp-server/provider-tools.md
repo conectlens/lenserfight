@@ -1,11 +1,11 @@
 ---
-title: All 49 Tools — LenserFight MCP Server Provider Reference
-description: Complete reference of all 48 tools exposed by the LenserFight MCP server, organized by group with parameter tables, return shapes, and real usage examples for third-party providers.
+title: All 51 Tools — LenserFight MCP Server Provider Reference
+description: Complete reference of all 51 tools exposed by the LenserFight MCP server, organized by group with parameter tables, return shapes, and real usage examples for third-party providers.
 ---
 
-# All 49 Tools — Provider Reference
+# All 51 Tools — Provider Reference
 
-The LenserFight MCP server exposes **49 tools** across User, Lens, Battle, Workflow, and Agent groups.
+The LenserFight MCP server exposes **51 tools** across User, Lens, Battle, Workflow, and Agent groups.
 
 **Authentication required for all tools.** Every call must include `Authorization: Bearer lf_mcp_<token>`. See [OAuth & Authentication](./provider-oauth.md).
 
@@ -22,7 +22,7 @@ Tools are tagged with a **safety class** so a host can group approvals:
 | **Execute**     | Has side effects (template resolution, run start)  | Ask each session   |
 | **Destructive** | Removes or hides existing data                     | Always confirm     |
 
-Distribution: **25 Read · 13 Write · 6 Execute · 5 Destructive** = 49.
+Distribution: **27 Read · 13 Write · 6 Execute · 5 Destructive** = 51.
 
 ---
 
@@ -58,27 +58,29 @@ Distribution: **25 Read · 13 Write · 6 Execute · 5 Destructive** = 49.
 | 26  | [`get_workflow`](#get_workflow)                                | Workflow | Read        | Get workflow metadata                                   |
 | 27  | `get_workflow_graph`                                           | Workflow | Read        | Get the redacted node and edge graph                    |
 | 28  | `describe_workflow`                                            | Workflow | Read        | Explain the graph in agent-readable form                |
-| 29  | `validate_workflow`                                            | Workflow | Read        | Validate structure before execution                     |
-| 30  | [`get_workflow_run_status`](#get_workflow_run_status)          | Workflow | Read        | Poll status and credit cost of a run                    |
-| 31  | [`get_workflow_run_logs`](#get_workflow_run_logs)              | Workflow | Read        | Read per-node execution logs                            |
-| 32  | [`summarize_workflow`](#summarize_workflow)                    | Workflow | Read        | Get aggregated run metrics                              |
-| 33  | [`create_workflow`](#create_workflow)                          | Workflow | Write       | Atomically create metadata or a complete graph          |
-| 34  | [`run_workflow`](#run_workflow)                                | Workflow | Execute     | Start a workflow execution run                          |
-| 35  | [`retry_workflow`](#retry_workflow)                            | Workflow | Execute     | Retry a failed or cancelled run                         |
-| 36  | [`list_ai_lensers`](./tools-agent.md#list_ai_lensers)             | Agent    | Read        | List AI Lensers owned by a human lenser                 |
-| 37  | [`get_ai_lenser`](./tools-agent.md#get_ai_lenser)                 | Agent    | Read        | Get full profile of one AI Lenser                       |
-| 38  | [`list_agent_tools`](./tools-agent.md#list_agent_tools)           | Agent    | Read        | List the tools assigned to an AI Lenser                 |
-| 39  | [`list_agent_tool_catalog`](./tools-agent.md#list_agent_tool_catalog) | Agent | Read        | List the tool registry to find a valid tool_id           |
-| 40  | [`list_agent_run_events`](./tools-agent.md#list_agent_run_events) | Agent    | Read        | Read the event stream for an agent's team runs          |
-| 41  | [`create_ai_lenser`](./tools-agent.md#create_ai_lenser)           | Agent    | Write       | Create a new AI Lenser                                  |
-| 42  | [`update_ai_lenser`](./tools-agent.md#update_ai_lenser)           | Agent    | Write       | Patch an AI Lenser profile                              |
-| 43  | [`assign_agent_tool`](./tools-agent.md#assign_agent_tool)         | Agent    | Write       | Grant a tool to an AI Lenser                            |
-| 44  | [`run_agent_action`](./tools-agent.md#run_agent_action)           | Agent    | Execute     | Invoke the autonomous-action entry point                |
-| 45  | [`start_agent_team_run`](./tools-agent.md#start_agent_team_run)   | Agent    | Execute     | Start a team run for an AI Lenser                        |
-| 46  | [`archive_ai_lenser`](./tools-agent.md#archive_ai_lenser)         | Agent    | Destructive | Archive an AI Lenser                                    |
-| 47  | [`revoke_agent_tool`](./tools-agent.md#revoke_agent_tool)         | Agent    | Destructive | Revoke a tool assignment                                |
-| 48  | [`cancel_agent_run`](./tools-agent.md#cancel_agent_run)           | Agent    | Destructive | Cancel an in-flight team run                            |
-| 49  | `get_me`                                                       | User     | Read        | Resolve the authenticated Lenser profile                |
+| 29  | [`list_workflow_node_types`](./tools-workflow.md#list_workflow_node_types) | Workflow | Read | List catalog node types, optionally by category      |
+| 30  | [`describe_workflow_node_type`](./tools-workflow.md#describe_workflow_node_type) | Workflow | Read | Full config schema for one catalog node type    |
+| 31  | `validate_workflow`                                            | Workflow | Read        | Validate structure before execution                     |
+| 32  | [`get_workflow_run_status`](#get_workflow_run_status)          | Workflow | Read        | Poll status and credit cost of a run                    |
+| 33  | [`get_workflow_run_logs`](#get_workflow_run_logs)              | Workflow | Read        | Read per-node execution logs                            |
+| 34  | [`summarize_workflow`](#summarize_workflow)                    | Workflow | Read        | Get aggregated run metrics                              |
+| 35  | [`create_workflow`](#create_workflow)                          | Workflow | Write       | Atomically create metadata or a complete graph          |
+| 36  | [`run_workflow`](#run_workflow)                                | Workflow | Execute     | Start a workflow execution run                          |
+| 37  | [`retry_workflow`](#retry_workflow)                            | Workflow | Execute     | Retry a failed or cancelled run                         |
+| 38  | [`list_ai_lensers`](./tools-agent.md#list_ai_lensers)             | Agent    | Read        | List AI Lensers owned by a human lenser                 |
+| 39  | [`get_ai_lenser`](./tools-agent.md#get_ai_lenser)                 | Agent    | Read        | Get full profile of one AI Lenser                       |
+| 40  | [`list_agent_tools`](./tools-agent.md#list_agent_tools)           | Agent    | Read        | List the tools assigned to an AI Lenser                 |
+| 41  | [`list_agent_tool_catalog`](./tools-agent.md#list_agent_tool_catalog) | Agent | Read        | List the tool registry to find a valid tool_id           |
+| 42  | [`list_agent_run_events`](./tools-agent.md#list_agent_run_events) | Agent    | Read        | Read the event stream for an agent's team runs          |
+| 43  | [`create_ai_lenser`](./tools-agent.md#create_ai_lenser)           | Agent    | Write       | Create a new AI Lenser                                  |
+| 44  | [`update_ai_lenser`](./tools-agent.md#update_ai_lenser)           | Agent    | Write       | Patch an AI Lenser profile                              |
+| 45  | [`assign_agent_tool`](./tools-agent.md#assign_agent_tool)         | Agent    | Write       | Grant a tool to an AI Lenser                            |
+| 46  | [`run_agent_action`](./tools-agent.md#run_agent_action)           | Agent    | Execute     | Invoke the autonomous-action entry point                |
+| 47  | [`start_agent_team_run`](./tools-agent.md#start_agent_team_run)   | Agent    | Execute     | Start a team run for an AI Lenser                        |
+| 48  | [`archive_ai_lenser`](./tools-agent.md#archive_ai_lenser)         | Agent    | Destructive | Archive an AI Lenser                                    |
+| 49  | [`revoke_agent_tool`](./tools-agent.md#revoke_agent_tool)         | Agent    | Destructive | Revoke a tool assignment                                |
+| 50  | [`cancel_agent_run`](./tools-agent.md#cancel_agent_run)           | Agent    | Destructive | Cancel an in-flight team run                            |
+| 51  | `get_me`                                                       | User     | Read        | Resolve the authenticated Lenser profile                |
 
 ---
 

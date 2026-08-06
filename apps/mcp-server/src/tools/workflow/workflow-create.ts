@@ -9,6 +9,7 @@ import { registerMcpTool } from '../register-tool.js'
 import { getToolMeta } from '../tool-metadata.js'
 import { p } from '../tool-params.js'
 
+import { TRIGGER_NODE_TYPES } from './workflow-trigger-node-types.js'
 import { validateWorkflowGraph } from './workflow-validate.js'
 
 const meta = getToolMeta('create_workflow')
@@ -20,13 +21,9 @@ const stepKey = z
   .max(64)
   .regex(/^[a-z][a-z0-9_-]*$/, 'Use a readable lowercase key such as start or research_step.')
 
-const triggerType = z.enum([
-  'manual_trigger',
-  'event_trigger',
-  'form_input_trigger',
-  'webhook_trigger',
-  'schedule_trigger',
-])
+// Cast is safe: the catalog always has at least one `trigger`-category entry
+// (enforced by catalog-runner-coverage.spec.ts's "all 11 categories present" check).
+const triggerType = z.enum(TRIGGER_NODE_TYPES as [string, ...string[]])
 
 const connectorSchema = z.object({
   provider: z.string().min(1).max(64).describe('Connector provider, for example notion or github.'),
