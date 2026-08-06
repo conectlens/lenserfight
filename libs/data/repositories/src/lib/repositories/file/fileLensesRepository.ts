@@ -260,7 +260,7 @@ export class FileLensesRepository implements LensesRepositoryPort {
     return []
   }
 
-  async getMyLenses(offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensRecord[]>> {
+  async getMyLenses(offset = 0, limit = 20, _tagSlug: string | null = null): Promise<ApiResponseEnvelope<LensRecord[]>> {
     return this.getAll(offset, limit)
   }
 
