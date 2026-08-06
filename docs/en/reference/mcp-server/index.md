@@ -78,5 +78,4 @@ Every tool delegates to a Supabase RPC (e.g. `fn_mcp_lens_list`, `fn_battles_sub
 ## Source
 
 - App: [`apps/mcp-server`](https://github.com/conectlens/lenserfight/tree/main/apps/mcp-server)
-- Edge function: [`supabase/functions/lenserfight-mcp`](https://github.com/conectlens/lenserfight/tree/main/supabase/functions/lenserfight-mcp)
 - Local registration: [`.mcp.json`](https://github.com/conectlens/lenserfight/blob/main/.mcp.json)
