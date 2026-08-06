@@ -14,6 +14,10 @@ dist
 dist-ssr
 *.local
 
+# Generated audit/report output (e.g. tools/cli-release/cli-full-audit.mjs) —
+# local-only, never committed.
+/artifacts/
+
 # `lf opencode` generated config/manifest — machine-local absolute paths, regenerate with --force
 .opencode/
 
