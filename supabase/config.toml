@@ -463,6 +463,9 @@ verify_jwt = false
 [functions.poll-async-executions]
 verify_jwt = false
 
+[functions.dispatch-tool-invocations]
+verify_jwt = false
+
 [functions.generate-battle-og-image]
 verify_jwt = false
 
