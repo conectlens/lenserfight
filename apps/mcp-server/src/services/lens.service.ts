@@ -96,7 +96,7 @@ export const lensService = {
       p_title: args.title,
       p_template_body: args.template_body,
       p_visibility: args.visibility,
-      p_params: JSON.stringify(args.params),
+      p_params: args.params,
       p_parent_lens_id: args.parent_lens_id ?? null,
     })) as unknown as RpcResult<unknown>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
@@ -108,7 +108,7 @@ export const lensService = {
       p_lens_id: args.lens_id,
       p_template_body: args.template_body ?? null,
       p_visibility: args.visibility ?? null,
-      p_params: args.params ? JSON.stringify(args.params) : null,
+      p_params: args.params ?? null,
     })) as unknown as RpcResult<unknown>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
     return data;

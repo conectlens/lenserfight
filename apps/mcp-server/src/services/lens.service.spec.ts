@@ -40,14 +40,14 @@ describe('lensService', () => {
   });
 
   describe('create / update', () => {
-    it('create stringifies params', async () => {
+    it('create forwards params as a native array (jsonb, not double-encoded)', async () => {
       const { sb, rpc } = makeSb({ data: { id: 'l1' } });
       await lensService.create(sb, {
         title: 'T', template_body: 'B', visibility: 'public',
         params: [{ label: 'L', optional: false }],
       });
       expect(rpc).toHaveBeenCalledWith('fn_create_lens', expect.objectContaining({
-        p_params: JSON.stringify([{ label: 'L', optional: false }]),
+        p_params: [{ label: 'L', optional: false }],
         p_parent_lens_id: null,
       }));
     });
