@@ -53,8 +53,13 @@ export interface ResolveTemplateResult {
 
 function mapError(message: string | undefined): McpError | null {
   if (!message) return null;
-  if (message.includes('access_denied')) return new McpError('FORBIDDEN', 'You do not have access to this lens');
-  if (message.includes('lens_not_found')) return new McpError('NOT_FOUND', 'Lens not found');
+  const lower = message.toLowerCase();
+  if (lower.includes('access_denied') || lower.includes('permission denied')) {
+    return new McpError('FORBIDDEN', 'You do not have access to this lens');
+  }
+  if (lower.includes('lens_not_found') || lower.includes('lens not found')) {
+    return new McpError('NOT_FOUND', 'Lens not found');
+  }
   return null;
 }
 

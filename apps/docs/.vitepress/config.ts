@@ -370,6 +370,7 @@ const EN_REFERENCE_SIDEBAR = [
           { text: 'Overview', link: '/en/reference/mcp-server/index' },
           { text: 'Setup', link: '/en/reference/mcp-server/setup' },
           { text: 'Authentication', link: '/en/reference/mcp-server/authentication' },
+          { text: 'Thread Tools', link: '/en/reference/mcp-server/tools-thread' },
           { text: 'Lens Tools', link: '/en/reference/mcp-server/tools-lens' },
           { text: 'Battle Tools', link: '/en/reference/mcp-server/tools-battle' },
           { text: 'Workflow Tools', link: '/en/reference/mcp-server/tools-workflow' },

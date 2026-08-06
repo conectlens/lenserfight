@@ -75,6 +75,7 @@ const TOP_LEVEL_COMMANDS = [
   'tag',
   'team',
   'template',
+  'thread',
   'tool',
   'top',
   'update',

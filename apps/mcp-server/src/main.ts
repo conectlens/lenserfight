@@ -7,6 +7,7 @@ import { registerBattleTools } from './tools/battle/index.js';
 import { registerWorkflowTools } from './tools/workflow/index.js';
 import { registerAgentTools } from './tools/agent/index.js';
 import { registerUserTools } from './tools/user/index.js';
+import { registerThreadTools } from './tools/thread/index.js';
 import { bootStdio } from './transport/stdio.js';
 import { bootHttp } from './transport/http.js';
 
@@ -21,6 +22,7 @@ export function buildServer(sb: SupabaseClient, lenserId?: string, userId?: stri
   registerWorkflowTools(server, sb, lenserId, userId);
   registerAgentTools(server, sb, lenserId, userId);
   registerUserTools(server, sb, lenserId);
+  registerThreadTools(server, sb);
 
   return server;
 }

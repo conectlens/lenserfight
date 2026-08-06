@@ -117,6 +117,21 @@ describe('agentService', () => {
     });
   });
 
+  describe('listToolCatalog', () => {
+    it('calls fn_list_tools_registry and wraps items+total', async () => {
+      const sb = makeSb({ data: [{ id: 't1', key: 'web_search' }] });
+      const result = await agentService.listToolCatalog(asClient(sb), { owner_lenser_id: 'owner-1' });
+      expect(sb.rpc).toHaveBeenCalledWith('fn_list_tools_registry', { p_owner_lenser_id: 'owner-1' });
+      expect(result).toEqual({ items: [{ id: 't1', key: 'web_search' }], total: 1 });
+    });
+
+    it('returns an empty list when data is null', async () => {
+      const sb = makeSb({ data: null });
+      const result = await agentService.listToolCatalog(asClient(sb), { owner_lenser_id: 'owner-1' });
+      expect(result).toEqual({ items: [], total: 0 });
+    });
+  });
+
   describe('assignTool / revokeTool', () => {
     it('assign forwards all four params', async () => {
       const sb = makeSb({ data: { id: 'asg1' } });
@@ -140,7 +155,7 @@ describe('agentService', () => {
   });
 
   describe('runAction', () => {
-    it('routes via .schema("agents")', async () => {
+    it('calls fn_agent_action on the default (public) schema, never sb.schema("agents")', async () => {
       const sb = makeSb({ data: { result: 'success' } });
       await agentService.runAction(asClient(sb), {
         ai_lenser_id: 'a',
@@ -149,7 +164,7 @@ describe('agentService', () => {
         context_id: 'b1',
         metadata: { x: 1 },
       });
-      expect(sb.schema).toHaveBeenCalledWith('agents');
+      expect(sb.schema).not.toHaveBeenCalled();
       expect(sb.rpc).toHaveBeenCalledWith('fn_agent_action', {
         p_ai_lenser_id: 'a',
         p_action_type: 'vote',
@@ -161,11 +176,11 @@ describe('agentService', () => {
   });
 
   describe('startTeamRun', () => {
-    it('returns team_run_id when data is a uuid string', async () => {
+    it('returns team_run_id when data is a uuid string, never using sb.schema("agents")', async () => {
       const sb = makeSb({ data: 'run-1' });
       const r = await agentService.startTeamRun(asClient(sb), { ai_lenser_id: 'a', workflow_id: 'w', inputs: {}, policy: 'auto' });
       expect(r).toEqual({ team_run_id: 'run-1' });
-      expect(sb.schema).toHaveBeenCalledWith('agents');
+      expect(sb.schema).not.toHaveBeenCalled();
     });
 
     it('throws NOT_FOUND when data is null', async () => {

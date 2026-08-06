@@ -14,6 +14,41 @@ const TOOL_CATALOG = {
     annotations: readOnly,
   },
 
+  // --- Thread ---
+  list_my_threads: {
+    name: 'list_my_threads',
+    title: 'List My Threads',
+    description:
+      'List the authenticated user\'s personalized thread feed, newest activity first. Returns title, content, author profile, tags, reaction totals, and reply count per thread. Requires an authenticated lenser session — returns an empty list otherwise. Use get_thread for one thread\'s full detail, or create_thread to post a new one.',
+    annotations: readOnly,
+  },
+  get_thread: {
+    name: 'get_thread',
+    title: 'Get Thread',
+    description:
+      'Fetch one thread owned by the authenticated user, including its title and content. Owner-only — returns NOT_FOUND for threads you do not own, even if they are public (use list_my_threads or the web feed for other authors\' public threads). Use before update_thread or delete_thread.',
+    annotations: readOnly,
+  },
+  create_thread: {
+    name: 'create_thread',
+    title: 'Create Thread',
+    description:
+      'Create a content-feed thread posted as the authenticated user. Authorship is resolved server-side from the caller\'s session — it is never the MCP client or an unrelated agent identity. visibility public/community threads become visible in vw_content_threads_public and other read surfaces once published; private threads are visible only via get_thread or list_my_threads.',
+  },
+  update_thread: {
+    name: 'update_thread',
+    title: 'Update Thread',
+    description:
+      'Update a thread you own. Pass title and/or content to edit the text (both are rewritten together — omitted fields keep their current value), and/or visibility to change who can see it. All fields are optional but at least one must be supplied. Silently no-ops if the thread is not owned by the authenticated user.',
+  },
+  delete_thread: {
+    name: 'delete_thread',
+    title: 'Delete Thread',
+    description:
+      'Permanently delete a thread you own. Requires confirm true. Silently no-ops if the thread does not exist or is not owned by the authenticated user — call get_thread first to confirm ownership when that distinction matters.',
+    annotations: destructive,
+  },
+
   // --- Lens ---
   list_lenses: {
     name: 'list_lenses',
@@ -311,11 +346,18 @@ const TOOL_CATALOG = {
       'List tools assigned to an AI Lenser (what it may invoke during a team run). Supports keyset pagination via cursor (last tool_assignment id). Use before assign_agent_tool or revoke_agent_tool.',
     annotations: readOnly,
   },
+  list_agent_tool_catalog: {
+    name: 'list_agent_tool_catalog',
+    title: 'List Agent Tool Catalog',
+    description:
+      'List the tool definitions registered under a human lenser: id, key, name, description, category, and risk flags. owner_lenser_id defaults to the authenticated user. Call this to find a valid tool_id before assign_agent_tool or revoke_agent_tool — those calls fail if tool_id does not reference a row here.',
+    annotations: readOnly,
+  },
   assign_agent_tool: {
     name: 'assign_agent_tool',
     title: 'Assign Agent Tool',
     description:
-      'Grant a tool to an AI Lenser. Default allows invocation; pass allowed false to register a known-but-denied entry. Optional profile_id binds a specific tool configuration preset.',
+      'Grant a tool to an AI Lenser. tool_id must reference a row from list_agent_tool_catalog. Default allows invocation; pass allowed false to register a known-but-denied entry. Optional profile_id binds a specific tool configuration preset.',
   },
   revoke_agent_tool: {
     name: 'revoke_agent_tool',
@@ -328,7 +370,7 @@ const TOOL_CATALOG = {
     name: 'start_agent_team_run',
     title: 'Start Agent Team Run',
     description:
-      'Start a team run for an AI Lenser against a workflow. Returns team_run_id for polling via list_agent_run_events. Policy auto runs immediately; policy manual creates a pending-approval run. Note: underlying RPC may require service-role access on some deployments; user-scoped HTTP sessions can receive permission errors.',
+      'Start a team run for an AI Lenser against a workflow. Returns team_run_id for polling via list_agent_run_events. Policy auto runs immediately; policy manual creates a pending-approval run. Requires the caller to own or co-own the AI Lenser.',
     annotations: openWorld,
   },
   cancel_agent_run: {
