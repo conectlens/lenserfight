@@ -250,6 +250,20 @@ const TOOL_CATALOG = {
       'Return a compact, structured explanation of how a workflow is wired: a prose summary, its trigger nodes, each node (type, bound lens, model, parameter overrides), and the connections (source output key → target parameter label, merge strategy, whether conditional). Built for quickly understanding or explaining a workflow without parsing the raw graph. Visibility-gated to public or owned workflows.',
     annotations: readOnly,
   },
+  list_workflow_node_types: {
+    name: 'list_workflow_node_types',
+    title: 'List Workflow Node Types',
+    description:
+      'List every node type in the canonical workflow node catalog: type, category, display name, description, and capabilities. Optionally filter by category (lens, trigger, logic, data, ai_primitive, battle, storage, communication, integration, media, utility). Use before create_workflow to discover valid step node_type values, or call describe_workflow_node_type for one type\'s full configuration schema. This lists catalog node *types* — for one workflow instance\'s actual graph, use describe_workflow or get_workflow_graph instead.',
+    annotations: readOnly,
+  },
+  describe_workflow_node_type: {
+    name: 'describe_workflow_node_type',
+    title: 'Describe Workflow Node Type',
+    description:
+      'Fetch the full canonical catalog entry for one workflow node type: required and optional configuration fields with defaults, input/output contracts, an example configuration, and its documentation link. Returns NOT_FOUND for a type that is not registered in the catalog. Call list_workflow_node_types first to discover valid type values. This describes a catalog node *type* — for one workflow instance\'s actual graph, use describe_workflow instead.',
+    annotations: readOnly,
+  },
   validate_workflow: {
     name: 'validate_workflow',
     title: 'Validate Workflow',

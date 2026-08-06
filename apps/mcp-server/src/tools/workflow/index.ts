@@ -3,9 +3,11 @@ import { SupabaseClient } from '@supabase/supabase-js'
 
 import { registerWorkflowCreate } from './workflow-create.js'
 import { registerWorkflowDescribe } from './workflow-describe.js'
+import { registerWorkflowDescribeNodeType } from './workflow-describe-node-type.js'
 import { registerWorkflowGetGraph } from './workflow-get-graph.js'
 import { registerWorkflowGet } from './workflow-get.js'
 import { registerWorkflowList } from './workflow-list.js'
+import { registerWorkflowListNodeTypes } from './workflow-list-node-types.js'
 import { registerWorkflowRetry } from './workflow-retry.js'
 import { registerWorkflowRunLogs } from './workflow-run-logs.js'
 import { registerWorkflowRunStatus } from './workflow-run-status.js'
@@ -24,6 +26,8 @@ export function registerWorkflowTools(
   registerWorkflowGet(server, sb)
   registerWorkflowGetGraph(server, sb)
   registerWorkflowDescribe(server, sb)
+  registerWorkflowListNodeTypes(server, sb)
+  registerWorkflowDescribeNodeType(server, sb)
   registerWorkflowCreate(server, sb, lenserId)
   registerWorkflowRun(server, sb)
   registerWorkflowRunStatus(server, sb)
