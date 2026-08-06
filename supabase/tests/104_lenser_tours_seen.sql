@@ -56,7 +56,7 @@ SELECT col_default_is(
   'lensers',
   'preferences',
   'tours_seen',
-  $$'{}'::jsonb$$,
+  '{}',
   'lensers.preferences.tours_seen should default to empty jsonb object'
 );
 
