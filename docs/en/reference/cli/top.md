@@ -143,6 +143,7 @@ lf top 2>/dev/null
 
 - [`lf doctor`](/en/reference/cli/doctor) — point-in-time environment health checks
 - [`lf status`](/en/reference/cli/status) — auth, config, and journey progress
+- [Operate LenserFight from the TUI dashboard](/en/how-to/operations/cli-dashboard) — main `lf` command dashboard
 - [`lf battle run`](/en/reference/cli/battle#lf-battle-run) — local battle execution (`lf top battle` shows load during runs)
 - [`lf execution list`](/en/reference/cli/execution) — programmatic run state for scripting
 

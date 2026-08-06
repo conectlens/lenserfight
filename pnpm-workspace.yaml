@@ -20,15 +20,10 @@ allowBuilds:
   detox: true # native mobile e2e harness (apps/mobile)
   dtrace-provider: true
   esbuild: true # downloads the platform binary; builds break without it
-  msgpackr-extract: true # native msgpack codec pulled in by @opencode-ai/sdk
   nx: true # native Nx bindings
   protobufjs: true
   sharp: true # native libvips binary — used by scripts/generate-hero-preview.mjs to encode animated WebP
   unrs-resolver: true # native resolver used by the eslint import plugin
-
-minimumReleaseAgeExclude:
-  - '@opencode-ai/plugin@1.18.11'
-  - '@opencode-ai/sdk@1.18.11'
 
 # Security floors. Several of these had drifted below their advisory's patched
 # version while `pnpm audit` was disabled — with no audit running, nothing

@@ -110,4 +110,4 @@ lf execute team dispatch …
 lf execute team list
 ```
 
-See also [lf configure](./configure.md).
+See also [lf configure](./configure.md) and [CLI dashboard](/en/how-to/operations/cli-dashboard.md).

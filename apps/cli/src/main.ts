@@ -28,18 +28,18 @@ const agentDeprecatedCommand = () =>
     return m.default
   })
 
-// Default action: `lf` with no subcommand launches the assist agent session.
+// Default action: `lf` with no subcommand opens the first-party TUI dashboard.
 // citty parses --help/--version before run() fires, so those still short-circuit.
 async function defaultRun(ctx: { rawArgs?: string[] }) {
-  const { launchAssist, force, passthroughArgs } = resolveRootInvocation(ctx.rawArgs ?? [])
-  if (!launchAssist) return // citty already handed off to a subcommand
-  const { runAssist } = await import('./commands/assist')
-  await runAssist({ force, passthroughArgs })
+  const { launchDashboard } = resolveRootInvocation(ctx.rawArgs ?? [])
+  if (!launchDashboard) return // citty already handed off to a subcommand
+  const { runDashboard } = await import('./tui/dashboard')
+  await runDashboard()
 }
 
-// Exported (not just invoked below) so `assist.ts` can import the already-
-// evaluated command tree in-process for introspection — ES modules only
-// evaluate once per process, so this re-import never re-triggers runMain().
+// Exported (not just invoked below) so command-inventory.ts can import the
+// already-evaluated command tree in-process for introspection — ES modules
+// only evaluate once per process, so this re-import never re-triggers runMain().
 export const main = defineCommand({
   meta: {
     name: 'lenserfight',
@@ -60,11 +60,6 @@ export const main = defineCommand({
     debug: {
       type: 'boolean',
       description: 'Enable verbose debug diagnostics on stderr',
-      default: false,
-    },
-    force: {
-      type: 'boolean',
-      description: 'For the default assist session: replace .opencode/opencode.json instead of updating it',
       default: false,
     },
   },
@@ -149,7 +144,6 @@ export const main = defineCommand({
     configure: () => import('./commands/configure').then((m) => m.default),
     'kill-switch': () => import('./commands/kill-switch').then((m) => m.default),
     'dark-launch': () => import('./commands/dark-launch').then((m) => m.default),
-    assist: () => import('./commands/assist').then((m) => m.default),
     budget: () => import('./commands/budget').then((m) => m.default),
     platform: () => import('./commands/platform').then((m) => m.default),
     policy: () => import('./commands/policy').then((m) => m.default),

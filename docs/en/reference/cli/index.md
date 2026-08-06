@@ -2,7 +2,7 @@
 
 The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding, lens authoring, runners, battles, invites, and platform operations.
 
-> **Assist:** Running `lf` with no subcommand launches an interactive agent session (`lf assist`) with every command available to it as a tool. It is the recommended starting point for exploration. Pass `--help` to skip it and print top-level help instead.
+> **Interactive TUI:** Running `lf` with no subcommand opens the interactive [TUI dashboard](/en/how-to/operations/cli-dashboard) — health status, recent agent activity, and a `:` command bar with live autocomplete over every command. It is the recommended starting point for exploration. Pass `--help` to skip the TUI and print top-level help instead.
 
 ## System requirements
 
@@ -18,7 +18,7 @@ The CLI is distributed as an **ES Module**. Attempting to run it on Node.js < 22
 - [Installation](installation.md) ← all platforms, build-from-source, CI
 - [Cross-Platform Compatibility](compatibility.md) ← Windows, Linux, CI, Docker, NO_COLOR
 - [Developer Onboarding](/en/tutorials/getting-started/developer-onboarding) ← zero to first battle
-- [Getting Started Tutorial](../../tutorials/cli/cli-getting-started.md)
+- [Getting Started Tutorial](/en/tutorials/cli/cli-getting-started)
 - [Quickstart](/en/tutorials/getting-started/quickstart)
 - [Local Database Setup](/en/reference/database/local-setup)
 - [Run Commands](/en/reference/cli/run)
