@@ -1,3 +1,17 @@
+## 1.2.0 (2026-08-06)
+
+### 🚀 Features
+
+- **cli:** restore ink TUI dashboard and remove OpenCode integration ([239d54cfe](https://github.com/conectlens/lenserfight/commit/239d54cfe))
+- **cli:** expose canonical workflow node-type catalog via workflow node-types/node-type ([9f9c92a28](https://github.com/conectlens/lenserfight/commit/9f9c92a28))
+- **cli,mcp-server:** add thread create/list/get/update/delete tools ([#442](https://github.com/conectlens/lenserfight/issues/442))
+- **cli,mcp-server:** add thread create/list/get/update/delete tools ([#442](https://github.com/conectlens/lenserfight/issues/442))
+
+### ❤️ Thank You
+
+- Lenser
+- ÖMER FARUK COŞKUN
+
 ## Unreleased
 
 ### ⚠️  Breaking Changes
