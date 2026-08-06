@@ -37,17 +37,27 @@ describe('lensService', () => {
       const { sb } = makeSb({ error: { message: 'lens_not_found' } });
       await expect(lensService.get(sb, 'l1')).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
+
+    it('maps the human-readable "Lens not found: <id>" message from fn_update_lens to NOT_FOUND', async () => {
+      const { sb } = makeSb({ error: { message: 'Lens not found: l1' } });
+      await expect(lensService.update(sb, { lens_id: 'l1' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    it('maps the human-readable "Permission denied" message from fn_update_lens to FORBIDDEN', async () => {
+      const { sb } = makeSb({ error: { message: 'Permission denied: you do not own this lens' } });
+      await expect(lensService.update(sb, { lens_id: 'l1' })).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    });
   });
 
   describe('create / update', () => {
-    it('create stringifies params', async () => {
+    it('create forwards params as a native array (jsonb, not double-encoded)', async () => {
       const { sb, rpc } = makeSb({ data: { id: 'l1' } });
       await lensService.create(sb, {
         title: 'T', template_body: 'B', visibility: 'public',
         params: [{ label: 'L', optional: false }],
       });
       expect(rpc).toHaveBeenCalledWith('fn_create_lens', expect.objectContaining({
-        p_params: JSON.stringify([{ label: 'L', optional: false }]),
+        p_params: [{ label: 'L', optional: false }],
         p_parent_lens_id: null,
       }));
     });

@@ -29,6 +29,30 @@ export const WORKFLOW_TOURS: TourDefinition[] = [
     [
       {},
       { target: '[data-tour="dashboard.workflow-builder.canvas"]', skipIfTargetMissing: true },
+      {
+        target: '[data-tour="dashboard.workflow-builder.trigger-banner"]',
+        skipIfTargetMissing: true,
+      },
+      { target: '[data-tour="dashboard.workflow-builder.inputs"]', skipIfTargetMissing: true },
+      { target: '[data-tour="dashboard.workflow-builder.palette"]', skipIfTargetMissing: true },
+      {
+        target: '[data-tour="dashboard.workflow-builder.node-config"]',
+        skipIfTargetMissing: true,
+      },
+      {
+        target: '[data-tour="dashboard.workflow-builder.node-config"]',
+        skipIfTargetMissing: true,
+      },
+      {
+        target: '[data-tour="dashboard.workflow-builder.node-docs"]',
+        skipIfTargetMissing: true,
+      },
+      { target: '[data-tour="dashboard.workflow-builder.dry-run"]', skipIfTargetMissing: true },
+      { target: '[data-tour="dashboard.workflow-builder.run-panel"]', skipIfTargetMissing: true },
+      {
+        target: '[data-tour="dashboard.workflow-builder.run-history"]',
+        skipIfTargetMissing: true,
+      },
       {},
     ],
   ),

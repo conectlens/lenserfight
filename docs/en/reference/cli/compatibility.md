@@ -38,7 +38,7 @@ The CLI and its dependencies (most notably `citty`) are distributed as **ES Modu
 
 ### TTY detection
 
-Color output and the interactive `lf assist` session are enabled only when `process.stdout.isTTY` is `true`. When stdout is piped or redirected (e.g., `lf lenses | grep foo`), all ANSI sequences are stripped automatically.
+Color output and the interactive [TUI dashboard](/en/how-to/operations/cli-dashboard) are enabled only when `process.stdout.isTTY` is `true`. When stdout is piped or redirected (e.g., `lf lenses | grep foo`), all ANSI sequences are stripped automatically and bare `lf` renders a single static frame instead of the interactive dashboard.
 
 ### NO_COLOR standard
 

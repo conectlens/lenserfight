@@ -53,8 +53,13 @@ export interface ResolveTemplateResult {
 
 function mapError(message: string | undefined): McpError | null {
   if (!message) return null;
-  if (message.includes('access_denied')) return new McpError('FORBIDDEN', 'You do not have access to this lens');
-  if (message.includes('lens_not_found')) return new McpError('NOT_FOUND', 'Lens not found');
+  const lower = message.toLowerCase();
+  if (lower.includes('access_denied') || lower.includes('permission denied')) {
+    return new McpError('FORBIDDEN', 'You do not have access to this lens');
+  }
+  if (lower.includes('lens_not_found') || lower.includes('lens not found')) {
+    return new McpError('NOT_FOUND', 'Lens not found');
+  }
   return null;
 }
 
@@ -96,7 +101,7 @@ export const lensService = {
       p_title: args.title,
       p_template_body: args.template_body,
       p_visibility: args.visibility,
-      p_params: JSON.stringify(args.params),
+      p_params: args.params,
       p_parent_lens_id: args.parent_lens_id ?? null,
     })) as unknown as RpcResult<unknown>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
@@ -108,7 +113,7 @@ export const lensService = {
       p_lens_id: args.lens_id,
       p_template_body: args.template_body ?? null,
       p_visibility: args.visibility ?? null,
-      p_params: args.params ? JSON.stringify(args.params) : null,
+      p_params: args.params ?? null,
     })) as unknown as RpcResult<unknown>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
     return data;

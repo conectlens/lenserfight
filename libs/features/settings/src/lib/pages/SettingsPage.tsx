@@ -2,7 +2,7 @@ import { feedbackService, lenserService, socialLinksService } from '@lenserfight
 import { useNotifications } from '@lenserfight/features/notifications'
 import { useAuth } from '@lenserfight/features/auth'
 import { InputField, SelectField } from '@lenserfight/ui/forms'
-import { useWallet } from '@lenserfight/features/store'
+import { useWallet, useChainabitCapabilities } from '@lenserfight/features/store'
 import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
 import { Feedback, ProductTag, FeedbackStatus, SocialLink, SocialPlatform } from '@lenserfight/types'
 import { Avatar, Button, Card, DangerZone, HelpButton, Table, Column } from '@lenserfight/ui/components'
@@ -173,6 +173,8 @@ export const SettingsPage: React.FC = () => {
   })
 
   const { balance: walletBalance } = useWallet()
+  const { state: chainabitState, reconnect: reconnectChainabit } = useChainabitCapabilities()
+  const hasChainabitAccount = chainabitState === 'connected' || chainabitState === 'no_credits'
 
   useEffect(() => {
     if (lenser) {
@@ -472,14 +474,26 @@ export const SettingsPage: React.FC = () => {
                         : '—'}{' '}
                       <span className="text-sm font-normal text-gray-400">cr</span>
                     </span>
-                    <a
-                      href="https://app.chainabit.com/billing?utm_source=lenserfight&utm_medium=settings&utm_campaign=topup"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline whitespace-nowrap"
-                    >
-                      Add credits
-                    </a>
+                    {hasChainabitAccount ? (
+                      <a
+                        href="https://app.chainabit.com/billing?utm_source=lenserfight&utm_medium=settings&utm_campaign=topup"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline whitespace-nowrap"
+                      >
+                        Add credits
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={chainabitState === 'loading'}
+                        onClick={reconnectChainabit}
+                        title="Connect your Chainabit account to add credits"
+                        className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:no-underline"
+                      >
+                        Add credits
+                      </button>
+                    )}
                   </div>
                 </div>
 

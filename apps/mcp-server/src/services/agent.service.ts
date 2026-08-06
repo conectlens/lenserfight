@@ -10,6 +10,9 @@ export interface ListAgentsResult { items: unknown[]; total: number }
 export interface ListAgentToolsArgs { ai_lenser_id: string; limit: number; cursor: string | null }
 export interface ListAgentToolsResult { items: Row[]; total: number; next_cursor: string | null }
 
+export interface ListToolCatalogArgs { owner_lenser_id: string }
+export interface ListToolCatalogResult { items: Row[]; total: number }
+
 export interface CreateAiLenserArgs {
   owner_lenser_id: string;
   handle: string;
@@ -121,6 +124,15 @@ export const agentService = {
     return { items, total: items.length, next_cursor };
   },
 
+  async listToolCatalog(sb: SupabaseClient, args: ListToolCatalogArgs): Promise<ListToolCatalogResult> {
+    const { data, error } = (await sb.rpc('fn_list_tools_registry' as never, {
+      p_owner_lenser_id: args.owner_lenser_id,
+    })) as unknown as RpcResult<Row[]>;
+    if (error) throw mapKnownError(error.message) ?? new McpError('DB_ERROR', error.message);
+    const items = data ?? [];
+    return { items, total: items.length };
+  },
+
   async assignTool(sb: SupabaseClient, args: AssignToolArgs): Promise<unknown> {
     const { data, error } = (await sb.rpc('fn_assign_tool' as never, {
       p_ai_lenser_id: args.ai_lenser_id,
@@ -142,28 +154,24 @@ export const agentService = {
   },
 
   async runAction(sb: SupabaseClient, args: RunAgentActionArgs): Promise<unknown> {
-    const { data, error } = (await sb
-      .schema('agents' as never)
-      .rpc('fn_agent_action' as never, {
-        p_ai_lenser_id: args.ai_lenser_id,
-        p_action_type: args.action_type,
-        p_context_type: args.context_type,
-        p_context_id: args.context_id,
-        p_metadata: args.metadata,
-      })) as unknown as RpcResult<unknown>;
+    const { data, error } = (await sb.rpc('fn_agent_action' as never, {
+      p_ai_lenser_id: args.ai_lenser_id,
+      p_action_type: args.action_type,
+      p_context_type: args.context_type,
+      p_context_id: args.context_id,
+      p_metadata: args.metadata,
+    })) as unknown as RpcResult<unknown>;
     if (error) throw mapKnownError(error.message) ?? new McpError('DB_ERROR', error.message);
     return data;
   },
 
   async startTeamRun(sb: SupabaseClient, args: StartTeamRunArgs): Promise<{ team_run_id: string }> {
-    const { data, error } = (await sb
-      .schema('agents' as never)
-      .rpc('fn_start_team_run' as never, {
-        p_ai_lenser_id: args.ai_lenser_id,
-        p_workflow_id: args.workflow_id,
-        p_inputs: args.inputs,
-        p_policy: args.policy,
-      })) as unknown as RpcResult<string>;
+    const { data, error } = (await sb.rpc('fn_start_team_run' as never, {
+      p_ai_lenser_id: args.ai_lenser_id,
+      p_workflow_id: args.workflow_id,
+      p_inputs: args.inputs,
+      p_policy: args.policy,
+    })) as unknown as RpcResult<string>;
     if (error) throw mapKnownError(error.message) ?? new McpError('DB_ERROR', error.message);
     if (!data) throw new McpError('NOT_FOUND', 'Failed to start team run — agent or workflow missing');
     return { team_run_id: data };

@@ -1,10 +1,9 @@
-## 1.1.6 (2026-08-05)
+## Unreleased
 
-This was a version bump only for cli to align it with other projects, there were no code changes.
+### ⚠️  Breaking Changes
 
-## 1.1.5 (2026-08-03)
-
-This was a version bump only for cli to align it with other projects, there were no code changes.
+- **cli:** restore the first-party TUI dashboard as the default `lf` behavior, remove `lf assist` and the OpenCode integration
+  `lf` with no subcommand opens the Ink TUI dashboard again instead of launching `lf assist`. `assist`, `.opencode/opencode.json` generation, and the OpenCode plugin bridge (`libs/adapters/opencode`) are removed. Agent-driven workflows should use the MCP server integration (`apps/mcp-server`) instead.
 
 ## 1.1.4 (2026-08-03)
 

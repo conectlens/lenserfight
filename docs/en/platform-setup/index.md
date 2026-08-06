@@ -45,7 +45,7 @@ Every time `saveConfig` writes a project config, it also registers the workspace
 }
 ```
 
-This lets `lf` discover all projects on the device without scanning the filesystem.
+This lets the TUI dashboard (`lf`) discover all projects on the device without scanning the filesystem.
 
 ## Markdown and JSON automation objects
 

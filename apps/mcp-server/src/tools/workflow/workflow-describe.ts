@@ -6,17 +6,10 @@ import { ok, fail } from '../../types.js';
 import { p } from '../tool-params.js';
 import { workflowService, type WorkflowGraph } from '../../services/workflow.service.js';
 import { McpError } from '../../services/mcp-error.js';
+import { TRIGGER_NODE_TYPE_SET as TRIGGER_TYPES } from './workflow-trigger-node-types.js';
 
 const meta = getToolMeta('describe_workflow');
 const TOOL = meta.name;
-
-const TRIGGER_TYPES = new Set([
-  'manual_trigger',
-  'event_trigger',
-  'form_input_trigger',
-  'webhook_trigger',
-  'schedule_trigger',
-]);
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === 'object' ? (v as Record<string, unknown>) : {};

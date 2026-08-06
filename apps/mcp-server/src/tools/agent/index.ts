@@ -6,6 +6,7 @@ import { registerAgentCreate } from './agent-create.js';
 import { registerAgentUpdate } from './agent-update.js';
 import { registerAgentArchive } from './agent-archive.js';
 import { registerAgentListTools } from './agent-list-tools.js';
+import { registerAgentListToolCatalog } from './agent-list-tool-catalog.js';
 import { registerAgentAssignTool } from './agent-assign-tool.js';
 import { registerAgentRevokeTool } from './agent-revoke-tool.js';
 import { registerAgentRunAction } from './agent-run-action.js';
@@ -26,6 +27,7 @@ export function registerAgentTools(
   registerAgentUpdate(server, sb);
   registerAgentArchive(server, sb);
   registerAgentListTools(server, sb);
+  registerAgentListToolCatalog(server, sb, lenserId);
   registerAgentAssignTool(server, sb);
   registerAgentRevokeTool(server, sb);
   registerAgentRunAction(server, sb);
