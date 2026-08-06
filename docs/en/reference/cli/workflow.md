@@ -22,6 +22,8 @@ Manage file-based and cloud Workflows. Use `lf workflow run` for local simulatio
 | [`pin`](#lifecycle-subcommands) | Pin a workflow to your saved artifacts |
 | [`unpin`](#lifecycle-subcommands) | Remove your saved pin from a workflow |
 | [`trigger`](#lf-workflow-trigger) | Manage workflow triggers (cron, event, webhook, manual) |
+| [`node-types`](#lf-workflow-node-types) | List workflow node types from the canonical catalog |
+| [`node-type`](#lf-workflow-node-type) | Describe one workflow node type from the canonical catalog |
 
 ---
 
@@ -217,6 +219,72 @@ lf workflow trigger list <id> [--json]
 ```
 
 Lists all triggers attached to the workflow, including trigger type, enabled state, and last fired time.
+
+---
+
+## `lf workflow node-types`
+
+List workflow node types from the canonical catalog — the single source of truth also used by the workflow builder and MCP `list_workflow_node_types`.
+
+```bash
+lf workflow node-types [--category <category>] [--json]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `--category` | string | `''` | Filter to one category: `lens`, `trigger`, `logic`, `data`, `ai_primitive`, `battle`, `storage`, `communication`, `integration`, `media`, `utility` |
+| `--json` | boolean | `false` | Output as JSON |
+
+### Examples
+
+```bash
+# All node types as a table
+lf workflow node-types
+
+# Only trigger node types
+lf workflow node-types --category trigger
+
+# JSON output for scripting
+lf workflow node-types --json | jq '.[].type'
+```
+
+---
+
+## `lf workflow node-type`
+
+Describe one workflow node type from the canonical catalog: required and optional configuration fields with defaults, input/output contracts, an example configuration, and its documentation link.
+
+```bash
+lf workflow node-type <type> [--json]
+```
+
+### Arguments
+
+| Argument | Type | Required | Description |
+|---|---|---|---|
+| `type` | positional | yes | Node type identifier (e.g. `lens_execute`, `schedule_trigger`) |
+
+### Flags
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `--json` | boolean | `false` | Output the full catalog entry as JSON |
+
+### Examples
+
+```bash
+lf workflow node-type lens_execute
+lf workflow node-type schedule_trigger --json | jq '.requiredConfig'
+```
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Node type found and described |
+| `1` | Unknown node type |
 
 ---
 
