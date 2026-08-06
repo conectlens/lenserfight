@@ -51,7 +51,7 @@ function normalizeTarballPath(path) {
 }
 
 function assertCleanPackageFiles(files) {
-  const allowed = new Set(['package.json', 'main.js', 'lf-plugin.js', 'README.md', 'LICENSE']);
+  const allowed = new Set(['package.json', 'main.js', 'README.md', 'LICENSE']);
   const forbiddenPatterns = [
     /(^|\/)\.env($|[./])/i,
     /(^|\/)\.npmrc$/i,
@@ -103,11 +103,6 @@ try {
   assert(existsSync(packageDir), `Package directory does not exist: ${packageDir}`);
   assert(existsSync(packageJsonPath), 'Built package.json is missing');
   assert(existsSync(mainPath), 'Built main.js is missing');
-  assert(
-    existsSync(resolve(packageDir, 'lf-plugin.js')),
-    'Built lf-plugin.js is missing — `lf assist` (the default command) would fail for every installed user. ' +
-      'Run `pnpm nx run cli:copy-plugin` before packaging.',
-  );
 
   const pkg = readJson(packageJsonPath);
   assert(pkg.name === '@lenserfight/cli', 'Unexpected package name', { name: pkg.name });

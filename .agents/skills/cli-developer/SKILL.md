@@ -10,9 +10,8 @@ Work on the LenserFight CLI (`lf`).
 - Source: `apps/cli/src/**`
 - Commands: `apps/cli/src/commands/*.ts`
 - Utilities: `apps/cli/src/utils/` (api, output, auth, auth-recovery, ansi, error-reporter, profiles, supabase-client, automation-objects, battle-stream-broadcaster, local-battle-engine, local-battle-paths, local-battle-storage)
-- Libraries: `apps/cli/src/lib/` (exec-context, safety, telemetry, redact, onboarding, combine-seeds)
-- TUI: `apps/cli/src/tui/` (runtime-telemetry — shared with `lf top`)
-- Assist bridge: `apps/cli/src/commands/assist.ts`, `apps/cli/src/lib/opencode-tool-bridge.ts`, `libs/adapters/opencode/` (default `lf` behavior — every command exposed as a tool to an interactive agent session)
+- Libraries: `apps/cli/src/lib/` (exec-context, safety, telemetry, redact, onboarding, combine-seeds, command-inventory)
+- TUI: `apps/cli/src/tui/` (`dashboard.ts` + `tui/ink/` — first-party dashboard, default `lf` behavior; `runtime-telemetry` — shared with `lf top`)
 - Adapters: `apps/cli/src/adapters/`
 
 ## CLI Structure
@@ -71,7 +70,7 @@ const main = defineCommand({
 
 - `--local` → sets `LF_LOCAL=1` (parsed early via `parseGlobalFlagsEarly` before citty)
 - `--debug` → sets `LF_DEBUG=1`
-- Default (`lf` with no subcommand) → launches the `assist` agent session
+- Default (`lf` with no subcommand) → opens the first-party TUI dashboard (`tui/dashboard.ts`)
 
 ## Constraints
 

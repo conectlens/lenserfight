@@ -15,7 +15,7 @@
 
 ## Overview
 
-`lf` is the CLI for LenserFight. Running `lf` with no arguments launches an interactive assist session with every `lf` command available to it as a tool. Every battle, lens, lenser, workflow, and connector operation is accessible from the terminal — you do not need the web UI for any of it.
+`lf` is the CLI for LenserFight. Running `lf` with no arguments opens a first-party terminal dashboard for discovering and running commands. Every battle, lens, lenser, workflow, and connector operation is accessible from the terminal — you do not need the web UI for any of it.
 
 Built on [citty](https://github.com/unjs/citty) and [consola](https://github.com/unjs/consola). Distributed as a single CJS bundle (`dist/apps/cli/main.js`) compiled by esbuild.
 
@@ -309,23 +309,20 @@ lf init --mode local  # initialize in local mode
 
 ---
 
-## Assist
+## Dashboard
 
-Running `lf` with no arguments — or explicitly `lf assist` — launches an interactive agent
-session with every `lf` command available to it as a tool, including `lens run` and
-`battle create` (backed directly by their RPCs) and one generic tool per other command
-(shelled out to the real `lf` binary, so every command keeps its own `--confirm`/safety gate
-exactly as it behaves from a terminal). It also picks up this project's `.mcp.json` server
-config when one is present.
+Running `lf` with no arguments opens the LenserFight TUI dashboard — CLI identity and
+version, auth/profile state, backend health, a recent-activity log, and a searchable
+command palette (press `:`) for discovering and running any `lf` command. Every command
+dispatched from the palette keeps its own `--confirm`/safety gate exactly as it behaves
+from a terminal — the dashboard is a thin launcher, not a separate execution path.
 
 ```bash
-lf              # same as `lf assist`
-lf assist --force  # regenerate .opencode/opencode.json from a previous run
+lf              # opens the dashboard
 ```
 
-Destructive commands (`kill-switch`, `dark-launch`, `db reset`, etc.) are available to the
-agent like everything else — review what it does before trusting it with those. See
-[CLI: Getting Started](../../docs/en/tutorials/getting-started/cli-getting-started.md) for more.
+See [CLI: Getting Started](../../docs/en/tutorials/getting-started/cli-getting-started.md) and
+[CLI Dashboard](../../docs/en/how-to/operations/cli-dashboard.md) for more.
 
 ---
 

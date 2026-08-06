@@ -272,26 +272,26 @@ Running agentic workflows and local model battles directly from the CLI produces
 
 ---
 
-## Step 12 — Launch assist
+## Step 12 — Launch the dashboard
 
-Running `lf` with no arguments — or explicitly `lf assist` — launches an interactive agent
-session with every `lf` command available to it as a tool: `lens run` and `battle create` are
-backed directly by their RPCs, and every other command (including destructive ones like
-`kill-switch`, `dark-launch`, and `db reset`) is available too, each keeping its own
-`--confirm`/safety gate exactly as it behaves from a terminal. It also picks up this project's
-`.mcp.json` server config when one is present:
+Running `lf` with no arguments opens the interactive TUI dashboard: a health/profile panel, a
+recent-activity log, and a `:` command bar with live autocomplete over every `lf` command.
 
 ```bash
 lf
-# or, explicitly:
-lf assist
 ```
 
-This generates `.opencode/opencode.json` in the current directory. Re-running is safe: a config
-`lf` generated is refreshed in place, and a config you wrote yourself is merged into — your
-settings are kept, the LenserFight plugin is added, and the original is saved alongside it as
-`opencode.json.lf-backup`. Pass `--force` to replace the file outright instead. Review what the
-agent does before trusting it with destructive commands.
+Press `:` to open the command bar, type a few characters of a command name, and pick from the
+live suggestions — `Enter` runs it, `Esc` cancels. Commands run in-process (no subshell) and
+still enforce their own `--confirm`/safety gates exactly as they would from a plain terminal
+invocation. Press `q` or `Esc` from the main screen to quit.
+
+See [Operate LenserFight from the TUI dashboard](/en/how-to/operations/cli-dashboard) for the
+full layout and key-binding reference.
+
+> **Coming from `lf assist`?** That command (and the OpenCode integration behind it) has been
+> removed. See [Migrating from `lf assist`](/en/reference/cli/migration-assist-to-tui) for where
+> its exploration and agent-driven-workflow use cases moved to.
 
 ---
 
