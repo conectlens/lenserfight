@@ -62,6 +62,7 @@ const CONCEPT_PAGES = new Set([
   'runtime-backends', // cloud / local / file-workspace backends overview
   'compatibility',    // Node.js / OS compatibility matrix
   'installation',     // install / upgrade guide
+  'migration-assist-to-tui', // migration guide for removed `lf assist` command
 ])
 
 // ─── 1. Read registered subcommands from main.ts ──────────────────────────

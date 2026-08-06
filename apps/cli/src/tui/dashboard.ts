@@ -1,9 +1,11 @@
 import { A, sym, isPlainText, stripAnsi } from '@lenserfight/cli-client'
-import { getHumanActivityFeed } from '../lib/data-services'
+
 import { buildCommandInventory } from '../lib/command-inventory'
-import { getActiveProfileName } from '../utils/profiles'
+import { getHumanActivityFeed } from '../lib/data-services'
 import { probeBackendHealth } from '../lib/health-probe'
 import { truncate } from '../utils/output'
+import { getActiveProfileName } from '../utils/profiles'
+
 import { dispatchInProcess } from './command-dispatch'
 
 // Single sink for full-screen frames used by the non-interactive fallbacks
@@ -66,6 +68,11 @@ export async function loadCommandSuggestions(): Promise<CommandSuggestion[]> {
 /** Test-only: seed the suggestion cache without walking the real command tree. */
 export function _setCommandSuggestionsForTest(entries: CommandSuggestion[] | null): void {
   inventoryCache = entries
+}
+
+/** Full inventory snapshot (already warmed by loadCommandSuggestions()) for the fuzzy command palette. */
+export function getAllCommandSuggestions(): CommandSuggestion[] {
+  return inventoryCache ?? []
 }
 
 /**

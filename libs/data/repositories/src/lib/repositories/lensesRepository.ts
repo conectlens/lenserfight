@@ -73,7 +73,7 @@ export interface LensesRepositoryPort {
   cloneLens(sourceLensId: string, versionId?: string | null): Promise<string>
   getForkTree(lensId: string, limit?: number): Promise<ForkNode[]>
   getTools(category?: string): Promise<ToolRecord[]>
-  getMyLenses(offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensRecord[]>>
+  getMyLenses(offset?: number, limit?: number, tagSlug?: string | null): Promise<ApiResponseEnvelope<LensRecord[]>>
   getMySavedLenses(offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensRecord[]>>
   getLatestVersion(lensId: string): Promise<LensVersion | null>
   updateVersionParams(
@@ -494,11 +494,12 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     )
   }
 
-  async getMyLenses(offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensRecord[]>> {
+  async getMyLenses(offset = 0, limit = 20, tagSlug: string | null = null): Promise<ApiResponseEnvelope<LensRecord[]>> {
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_get_my_lenses', {
       p_offset: offset,
       p_limit: limit,
+      p_tag_slug: tagSlug,
     })
     if (error) this.handleError(error)
     return paginatedResponse(

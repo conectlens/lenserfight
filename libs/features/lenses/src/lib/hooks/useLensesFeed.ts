@@ -14,7 +14,7 @@ export const useLensesFeed = (
     queryFn: async ({ pageParam = 0 }) => {
       if (sortOrder === 'mine') {
         if (searchQuery) return lensesService.search(searchQuery, pageParam, 12, profileId)
-        return lensesService.getMyLenses(pageParam, 12)
+        return lensesService.getMyLenses(pageParam, 12, selectedTag)
       }
       if (searchQuery) return lensesService.search(searchQuery, pageParam, 12)
       if (selectedTag) return lensesService.filter(selectedTag, pageParam, 12, sortOrder)

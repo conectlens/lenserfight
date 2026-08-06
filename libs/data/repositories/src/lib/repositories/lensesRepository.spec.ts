@@ -351,7 +351,7 @@ describe('SupabaseLensesRepository', () => {
     it('calls fn_get_my_lenses with default offset 0 and limit 20', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.getMyLenses()
-      expect(mockRpc).toHaveBeenCalledWith('fn_get_my_lenses', { p_offset: 0, p_limit: 20 })
+      expect(mockRpc).toHaveBeenCalledWith('fn_get_my_lenses', { p_offset: 0, p_limit: 20, p_tag_slug: null })
     })
   })
 
