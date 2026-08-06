@@ -24,10 +24,16 @@ export function registerLensExtractParams(server: McpServer, sb: SupabaseClient)
 
         const tokens: string[] = [];
         if (data.template_body) {
-          const rx = /\[\[([^\]:]+?)!?\]\]/g;
+          const idToLabel = new Map((data.parameters ?? []).map((param) => [param.id, param.label]));
+          // Templates store either a human-readable [[Label]] token or, once a
+          // rename has resolved it, a [[:paramId]] reference; resolve the latter
+          // back to its label so both forms surface the same parameter list.
+          const rx = /\[\[(:?[^\]!]+?)!?\]\]/g;
           let m: RegExpExecArray | null;
           while ((m = rx.exec(data.template_body)) !== null) {
-            if (!tokens.includes(m[1])) tokens.push(m[1]);
+            const raw = m[1];
+            const label = raw.startsWith(':') ? (idToLabel.get(raw.slice(1)) ?? raw) : raw;
+            if (!tokens.includes(label)) tokens.push(label);
           }
         }
 

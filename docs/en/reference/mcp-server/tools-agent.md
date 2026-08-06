@@ -1,25 +1,22 @@
 ---
 title: Agent Tools — MCP Server
-description: Reference for the 12 agent tools in the LenserFight MCP server — manage AI Lensers (AI Agents), their tools, runs, and autonomous actions.
+description: Reference for the 13 agent tools in the LenserFight MCP server — manage AI Lensers (AI Agents), their tools, runs, and autonomous actions.
 ---
 
 # Agent Tools
 
-The MCP server provides **12 tools** for managing AI Lensers — the AI Agent persona that runs workflows, joins battles, and acts inside LenserFight on behalf of a human owner.
+The MCP server provides **13 tools** for managing AI Lensers — the AI Agent persona that runs workflows, joins battles, and acts inside LenserFight on behalf of a human owner.
 
 Tools follow the sector-standard `verb_noun` naming convention.
 
 | Class | Count | What it does |
 |---|---|---|
-| [Read](#read) | 4 | List, fetch profile, inspect tools and run events |
+| [Read](#read) | 5 | List, fetch profile, inspect the tool catalog, assigned tools, and run events |
 | [Write](#write) | 3 | Create, update profile, assign tool |
 | [Execute](#execute) | 2 | Trigger an autonomous action, start a team run |
 | [Destructive](#destructive) | 3 | Archive agent, revoke tool, cancel run |
 
-**Underlying RPCs.** Tools call existing public RPCs (`fn_create_ai_lenser`, `fn_get_agent_profile`, …) and the `agents` schema (`agents.fn_agent_action`, `agents.fn_start_team_run`). The `agents` schema is exposed in `supabase/config.toml` so PostgREST routes both.
-
-**Transport constraints.** Two tools call SECURITY DEFINER functions restricted to `service_role`:
-- `start_agent_team_run` — works in **stdio mode** (uses service-role client). In HTTP mode authenticated users will see `PERMISSION_DENIED`.
+**Underlying RPCs.** Tools call public-schema RPCs only (`fn_create_ai_lenser`, `fn_get_agent_profile`, `fn_agent_action`, `fn_start_team_run`, …). `fn_agent_action` and `fn_start_team_run` are thin `public` wrappers over the `agents` schema's SECURITY DEFINER functions of the same name, so no client ever needs to switch PostgREST schema. `fn_start_team_run`'s wrapper also checks the caller manages the `ai_lenser_id` before delegating, since the inner `agents` function has no ownership check of its own.
 
 ---
 
@@ -72,6 +69,24 @@ List the tools an AI Lenser is allowed to invoke during team runs. Uses keyset p
 **Returns** `{ items, total, limit, next_cursor }`
 
 **RPC** `public.fn_list_agent_tools`
+
+---
+
+### `list_agent_tool_catalog`
+
+List the tool definitions registered under a human lenser — id, key, name, description, category, and risk flags. Use this to find a valid `tool_id` before calling `assign_agent_tool` or `revoke_agent_tool`; those calls fail if `tool_id` doesn't reference a row here.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `owner_lenser_id` | UUID | No | Defaults to `LENSERFIGHT_LENSER_ID` env var |
+
+**Returns** `{ items, total, owner_lenser_id }`
+
+**Error codes** `MISSING_LENSER`
+
+**RPC** `public.fn_list_tools_registry`
 
 ---
 
@@ -138,14 +153,14 @@ Patch an AI Lenser profile. Pass only the fields you want to change in `patch` �
 
 ### `assign_agent_tool`
 
-Grant a tool to an AI Lenser. Defaults to `allowed=true`; set `allowed=false` to register a known-but-denied entry.
+Grant a tool to an AI Lenser. Defaults to `allowed=true`; set `allowed=false` to register a known-but-denied entry. Call `list_agent_tool_catalog` first to find a valid `tool_id`.
 
 **Parameters**
 
 | Name | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `ai_lenser_id` | UUID | Yes | — | The AI Lenser |
-| `tool_id` | UUID | Yes | — | The registry tool to assign |
+| `tool_id` | UUID | Yes | — | The registry tool to assign, from `list_agent_tool_catalog` |
 | `profile_id` | UUID | No | — | Bind to a specific tool profile (config preset) |
 | `allowed` | boolean | No | `true` | Allowed or denied entry |
 
@@ -184,7 +199,7 @@ Invoke the single autonomous-action entry point for an AI Lenser. The RPC evalua
 
 **Error codes** `FORBIDDEN`
 
-**RPC** `agents.fn_agent_action` (exposed via `agents` schema in PostgREST; granted to `authenticated`)
+**RPC** `public.fn_agent_action` (public wrapper over `agents.fn_agent_action`; granted to `authenticated`)
 
 ---
 
@@ -205,7 +220,7 @@ Start a team run for an AI Lenser against a workflow.
 
 **Error codes** `FORBIDDEN` · `THROTTLED` · `NOT_FOUND`
 
-**RPC** `agents.fn_start_team_run` — **service_role only**. Works in stdio mode; HTTP MCP sessions using an authenticated user token will see `PERMISSION_DENIED`. Poll progress with [`list_agent_run_events`](#list_agent_run_events).
+**RPC** `public.fn_start_team_run` — public wrapper over `agents.fn_start_team_run`, granted to `authenticated`. Requires the caller to own or co-own `ai_lenser_id`; the inner `agents` function otherwise has no ownership check, so the wrapper enforces it before delegating. Poll progress with [`list_agent_run_events`](#list_agent_run_events).
 
 ---
 
