@@ -137,6 +137,7 @@ export const main = defineCommand({
     analytics: () => import('./commands/analytics').then((m) => m.default),
     tag: () => import('./commands/tag').then((m) => m.default),
     feed: () => import('./commands/feed').then((m) => m.default),
+    thread: () => import('./commands/thread').then((m) => m.default),
     leaderboard: () => import('./commands/leaderboard').then((m) => m.default),
     report: () => import('./commands/report').then((m) => m.default),
     team: () => import('./commands/team').then((m) => m.default),

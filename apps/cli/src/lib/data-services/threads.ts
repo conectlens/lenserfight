@@ -2,7 +2,7 @@
  * CLI data facade — mirrors `threadsService.getPersonalFeed` / `threadsRepository`.
  */
 import type { PersonalFeedItem } from '@lenserfight/types'
-import { callRpc } from '@lenserfight/cli-client'
+import { callRpc, callRest } from '@lenserfight/cli-client'
 
 type PersonalThreadRow = {
   id: string
@@ -55,4 +55,71 @@ export async function getPersonalFeed(
     { requireAuth: true },
   )
   return (Array.isArray(rows) ? rows : []).map(mapPersonalThreadRow)
+}
+
+export type ThreadVisibility = 'public' | 'community' | 'private'
+
+export interface CreateThreadInput {
+  title: string
+  content: string
+  visibility: ThreadVisibility
+  tagIds?: string[]
+}
+
+export interface CreatedThread {
+  id: string
+  title: string
+  content: string
+  visibility: string
+  createdAt: string
+}
+
+type ThreadViewRow = {
+  id: string
+  title: string
+  content: string
+  visibility: string
+  created_at: string
+}
+
+/**
+ * Create a thread (`fn_content_create_thread`). Mirrors `threadsRepository.createThread` —
+ * lenser_id is resolved server-side from the caller's JWT (SECURITY DEFINER), so
+ * authorship always follows the logged-in user, not the CLI's agent workspace selection.
+ */
+export async function createThread(input: CreateThreadInput): Promise<CreatedThread> {
+  const threadId = await callRpc<string>(
+    'fn_content_create_thread',
+    {
+      p_title: input.title,
+      p_content: input.content,
+      p_visibility: input.visibility,
+      p_tag_ids: input.tagIds ?? [],
+    },
+    { requireAuth: true },
+  )
+
+  // vw_content_threads_public only surfaces public + published threads, same
+  // as the web app — private/community threads fall back to the input echo.
+  const rows = await callRest<ThreadViewRow[]>(
+    'public',
+    'vw_content_threads_public',
+    'GET',
+    undefined,
+    {
+      query: { id: `eq.${threadId}`, select: 'id,title,content,visibility,created_at' },
+      requireAuth: true,
+    },
+  )
+
+  const row = rows?.[0]
+  return row
+    ? { id: row.id, title: row.title, content: row.content, visibility: row.visibility, createdAt: row.created_at }
+    : {
+        id: threadId,
+        title: input.title,
+        content: input.content,
+        visibility: input.visibility,
+        createdAt: new Date().toISOString(),
+      }
 }

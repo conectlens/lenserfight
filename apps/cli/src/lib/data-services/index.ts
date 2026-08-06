@@ -1,7 +1,13 @@
 export { getActiveLenserProfileId } from './lenser'
 export { getHumanActivityFeed } from './agent-workspace'
 export { getActionLogs } from './agents'
-export { getPersonalFeed as getPersonalThreadFeed } from './threads'
+export {
+  getPersonalFeed as getPersonalThreadFeed,
+  createThread,
+  type ThreadVisibility,
+  type CreateThreadInput,
+  type CreatedThread,
+} from './threads'
 export { getPersonalFeed as getPersonalLensFeed } from './lenses'
 export {
   getPersonalContentFeed,
