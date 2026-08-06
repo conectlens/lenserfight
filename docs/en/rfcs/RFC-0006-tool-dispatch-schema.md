@@ -80,7 +80,7 @@ SELECT fn_register_tool(
 );
 -- then, once the columns in this RFC exist:
 UPDATE agents.tools_registry
-   SET endpoint_url      = 'http://postiz-backend.internal:3000/public/v1/posts',
+   SET endpoint_url      = 'http://<postiz-host>/api/public/v1/posts',
        http_method        = 'POST',
        auth_placement     = 'header',
        auth_param_name    = 'Authorization',
@@ -90,6 +90,8 @@ UPDATE agents.tools_registry
 ```
 
 `egress_class = 'write'` already auto-forces `requires_approval` at invocation time per the existing `fn_invoke_tool` logic — the explicit `p_requires_approval => true` above is redundant but kept for clarity.
+
+**Validated in #464 (self-hosted Postiz via docker-compose):** the endpoint must go through Postiz's `/api/` nginx prefix (its docker-compose deployment fronts the backend with nginx; hitting `/public/v1/posts` directly falls through to the frontend and returns HTML, not JSON) — hence `/api/public/v1/posts` above, not the bare backend path. Also note Postiz API keys are per-organization: a key from the wrong org doesn't fail auth, it 400s as if the integration doesn't exist. And X posts require a `settings.who_can_reply_post` value in `request_template.body` even for `type: 'draft'`, so a real Postiz `request_template` needs that field set — see PR #472 for the exact worked payload.
 
 ## Drawbacks
 
