@@ -9,8 +9,8 @@ import { registerMcpTool } from '../register-tool.js'
 import { getToolMeta } from '../tool-metadata.js'
 import { p } from '../tool-params.js'
 
-import { validateWorkflowGraph } from './workflow-validate.js'
 import { TRIGGER_NODE_TYPES } from './workflow-trigger-node-types.js'
+import { validateWorkflowGraph } from './workflow-validate.js'
 
 const meta = getToolMeta('create_workflow')
 const TOOL = meta.name

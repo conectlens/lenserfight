@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 import { WORKFLOW_NODE_CATALOG, WORKFLOW_NODE_CATEGORIES } from '@lenserfight/infra/execution/catalog';
 
@@ -11,7 +10,7 @@ import { ok } from '../../types.js';
 const meta = getToolMeta('list_workflow_node_types');
 const TOOL = meta.name;
 
-export function registerWorkflowListNodeTypes(server: McpServer, _sb: SupabaseClient): void {
+export function registerWorkflowListNodeTypes(server: McpServer): void {
   registerMcpTool(
     server,
     meta,

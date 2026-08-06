@@ -1,5 +1,4 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 import {
@@ -74,7 +73,7 @@ function describeNodeType(entry: WorkflowNodeCatalogEntry) {
   };
 }
 
-export function registerWorkflowDescribeNodeType(server: McpServer, _sb: SupabaseClient): void {
+export function registerWorkflowDescribeNodeType(server: McpServer): void {
   registerMcpTool(
     server,
     meta,
