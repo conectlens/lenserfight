@@ -37,6 +37,16 @@ describe('lensService', () => {
       const { sb } = makeSb({ error: { message: 'lens_not_found' } });
       await expect(lensService.get(sb, 'l1')).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
+
+    it('maps the human-readable "Lens not found: <id>" message from fn_update_lens to NOT_FOUND', async () => {
+      const { sb } = makeSb({ error: { message: 'Lens not found: l1' } });
+      await expect(lensService.update(sb, { lens_id: 'l1' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    it('maps the human-readable "Permission denied" message from fn_update_lens to FORBIDDEN', async () => {
+      const { sb } = makeSb({ error: { message: 'Permission denied: you do not own this lens' } });
+      await expect(lensService.update(sb, { lens_id: 'l1' })).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    });
   });
 
   describe('create / update', () => {
