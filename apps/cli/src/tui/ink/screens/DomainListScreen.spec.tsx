@@ -1,3 +1,4 @@
+import { stripAnsi } from '@lenserfight/cli-client'
 import { render } from 'ink-testing-library'
 
 import { ConfirmDialog } from '../shared/ConfirmDialog'
@@ -110,7 +111,10 @@ describe('DomainListScreen', () => {
     await flush()
     stdin.write('\r')
     await flush()
-    expect(lastFrame() ?? '').toContain('Name: Alpha')
+    // The label ("Name:") and value ("Alpha") render as separate, differently
+    // -colored <Text> nodes, so ink emits a reset/color escape between them —
+    // strip ANSI before asserting on the concatenated text.
+    expect(stripAnsi(lastFrame() ?? '')).toContain('Name: Alpha')
   })
 
   it('shows the redacted raw view with "v" once detail is open', async () => {
