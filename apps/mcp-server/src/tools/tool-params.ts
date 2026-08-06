@@ -11,6 +11,7 @@ export const p = {
   ai_lenser_id: zUuid.describe('UUID of the AI Lenser (autonomous agent) profile.'),
   owner_lenser_id: zUuid.describe('UUID of the human lenser who owns the resource; defaults to the authenticated user when omitted.'),
   lenser_id: zUuid.describe('UUID of the human lenser profile; defaults to the authenticated user when omitted.'),
+  thread_id: zUuid.describe('UUID of a content thread owned by the authenticated user.'),
   team_run_id: zUuid.describe('UUID of an agent team run returned by start_agent_team_run.'),
   tool_id: zUuid.describe('UUID of a tool definition in the agent tool registry.'),
   query: z.string().min(1).describe('Natural-language search query describing what the user wants to accomplish.'),

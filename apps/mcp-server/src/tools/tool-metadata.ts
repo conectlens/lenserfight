@@ -14,6 +14,41 @@ const TOOL_CATALOG = {
     annotations: readOnly,
   },
 
+  // --- Thread ---
+  list_my_threads: {
+    name: 'list_my_threads',
+    title: 'List My Threads',
+    description:
+      'List the authenticated user\'s personalized thread feed, newest activity first. Returns title, content, author profile, tags, reaction totals, and reply count per thread. Requires an authenticated lenser session — returns an empty list otherwise. Use get_thread for one thread\'s full detail, or create_thread to post a new one.',
+    annotations: readOnly,
+  },
+  get_thread: {
+    name: 'get_thread',
+    title: 'Get Thread',
+    description:
+      'Fetch one thread owned by the authenticated user, including its title and content. Owner-only — returns NOT_FOUND for threads you do not own, even if they are public (use list_my_threads or the web feed for other authors\' public threads). Use before update_thread or delete_thread.',
+    annotations: readOnly,
+  },
+  create_thread: {
+    name: 'create_thread',
+    title: 'Create Thread',
+    description:
+      'Create a content-feed thread posted as the authenticated user. Authorship is resolved server-side from the caller\'s session — it is never the MCP client or an unrelated agent identity. visibility public/community threads become visible in vw_content_threads_public and other read surfaces once published; private threads are visible only via get_thread or list_my_threads.',
+  },
+  update_thread: {
+    name: 'update_thread',
+    title: 'Update Thread',
+    description:
+      'Update a thread you own. Pass title and/or content to edit the text (both are rewritten together — omitted fields keep their current value), and/or visibility to change who can see it. All fields are optional but at least one must be supplied. Silently no-ops if the thread is not owned by the authenticated user.',
+  },
+  delete_thread: {
+    name: 'delete_thread',
+    title: 'Delete Thread',
+    description:
+      'Permanently delete a thread you own. Requires confirm true. Silently no-ops if the thread does not exist or is not owned by the authenticated user — call get_thread first to confirm ownership when that distinction matters.',
+    annotations: destructive,
+  },
+
   // --- Lens ---
   list_lenses: {
     name: 'list_lenses',
