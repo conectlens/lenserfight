@@ -73,7 +73,7 @@ Every tool delegates to a Supabase RPC (e.g. `fn_mcp_lens_list`, `fn_battles_sub
 - [Lens tools](./tools-lens.md) — all 15 tools with parameter tables
 - [Battle tools](./tools-battle.md) — all 9 tools with parameter tables
 - [Workflow tools](./tools-workflow.md) — all 11 tools with parameter tables
-- [Agent tools](./tools-agent.md) — all 12 tools for AI Lensers (agents, runs, tools, events)
+- [Agent tools](./tools-agent.md) — all 13 tools for AI Lensers (agents, runs, tools, events)
 
 ---
 

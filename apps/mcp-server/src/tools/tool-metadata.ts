@@ -346,11 +346,18 @@ const TOOL_CATALOG = {
       'List tools assigned to an AI Lenser (what it may invoke during a team run). Supports keyset pagination via cursor (last tool_assignment id). Use before assign_agent_tool or revoke_agent_tool.',
     annotations: readOnly,
   },
+  list_agent_tool_catalog: {
+    name: 'list_agent_tool_catalog',
+    title: 'List Agent Tool Catalog',
+    description:
+      'List the tool definitions registered under a human lenser: id, key, name, description, category, and risk flags. owner_lenser_id defaults to the authenticated user. Call this to find a valid tool_id before assign_agent_tool or revoke_agent_tool — those calls fail if tool_id does not reference a row here.',
+    annotations: readOnly,
+  },
   assign_agent_tool: {
     name: 'assign_agent_tool',
     title: 'Assign Agent Tool',
     description:
-      'Grant a tool to an AI Lenser. Default allows invocation; pass allowed false to register a known-but-denied entry. Optional profile_id binds a specific tool configuration preset.',
+      'Grant a tool to an AI Lenser. tool_id must reference a row from list_agent_tool_catalog. Default allows invocation; pass allowed false to register a known-but-denied entry. Optional profile_id binds a specific tool configuration preset.',
   },
   revoke_agent_tool: {
     name: 'revoke_agent_tool',
@@ -363,7 +370,7 @@ const TOOL_CATALOG = {
     name: 'start_agent_team_run',
     title: 'Start Agent Team Run',
     description:
-      'Start a team run for an AI Lenser against a workflow. Returns team_run_id for polling via list_agent_run_events. Policy auto runs immediately; policy manual creates a pending-approval run. Note: underlying RPC may require service-role access on some deployments; user-scoped HTTP sessions can receive permission errors.',
+      'Start a team run for an AI Lenser against a workflow. Returns team_run_id for polling via list_agent_run_events. Policy auto runs immediately; policy manual creates a pending-approval run. Requires the caller to own or co-own the AI Lenser.',
     annotations: openWorld,
   },
   cancel_agent_run: {
