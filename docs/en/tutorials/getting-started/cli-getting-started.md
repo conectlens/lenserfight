@@ -272,21 +272,23 @@ Running agentic workflows and local model battles directly from the CLI produces
 
 ---
 
-## Step 12 — Launch the dashboard
+## Step 12 — Launch the interactive shell
 
-Running `lf` with no arguments opens the interactive TUI dashboard: a health/profile panel, a
-recent-activity log, and a `:` command bar with live autocomplete over every `lf` command.
+Running `lf` with no arguments opens a Claude Code–style interactive shell: a scrollable
+transcript of what you've run, with a persistent input at the bottom. Every `lf` command
+is executable directly by typing it — there's no sidebar or menu to navigate.
 
 ```bash
 lf
 ```
 
-Press `:` to open the command bar, type a few characters of a command name, and pick from the
-live suggestions — `Enter` runs it, `Esc` cancels. Commands run in-process (no subshell) and
-still enforce their own `--confirm`/safety gates exactly as they would from a plain terminal
-invocation. Press `q` or `Esc` from the main screen to quit.
+Type a command name and press Enter to run it in place — `agents list`, `battle create`,
+whatever you need. `Tab` completes command names, `↑`/`↓` recalls history, and `Ctrl+K`
+opens a fuzzy searchable palette. Commands run in-process (no subshell) and still enforce
+their own `--confirm`/safety gates exactly as they would from a plain terminal invocation.
+Type `/quit`, or press `Ctrl+C` with nothing running, to exit.
 
-See [Operate LenserFight from the TUI dashboard](/en/how-to/operations/cli-dashboard) for the
+See [Operate LenserFight from the interactive shell](/en/how-to/operations/cli-dashboard) for the
 full layout and key-binding reference.
 
 > **Coming from `lf assist`?** That command (and the OpenCode integration behind it) has been

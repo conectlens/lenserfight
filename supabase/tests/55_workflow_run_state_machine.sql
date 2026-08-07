@@ -71,7 +71,7 @@ SELECT ok(
   (SELECT pg_get_constraintdef(oid) FROM pg_constraint
    WHERE conrelid = 'lenses.workflow_runs'::regclass
      AND conname = 'workflow_runs_status_check')
-  LIKE '%pending%running%completed%failed%cancelled%',
+  LIKE '%pending%pending_approval%running%completed%failed%cancelled%',
   'workflow_runs_status_check covers every canonical state'
 );
 

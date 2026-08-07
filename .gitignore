@@ -53,6 +53,9 @@ apps/*/.env.development
 .lenserfight/runs/
 .lenserfight/reports/
 
+# CLI command-sweep CSV report — regenerated per run, not for version control
+/reports/
+
 # Firebase
 .firebase/
 firebase-debug.log
@@ -101,6 +104,10 @@ apps/docs/.vitepress/dist/
 .vitepress/cache/
 .vitepress/dist/
 .vite/
+
+# Build-time generated changelog data (tools/changelog/cli.mjs) — regenerated
+# on every apps/docs build, never committed. See docs/en/explanation/changelog-system.md.
+docs/public/changelog-data/
 
 # Supabase — ignore local state, track OSS schema files
 supabase/.branches/

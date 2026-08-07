@@ -112,4 +112,75 @@ describe('lf thread create', () => {
 
     expect(mockHandleError).toHaveBeenCalledWith(expect.any(Error))
   })
+
+  it('--as switches to the AI lenser, posts, then restores the previous active profile', async () => {
+    mockCallRpc.mockImplementation(async (fn: string, params?: unknown) => {
+      switch (fn) {
+        case 'fn_lensers_get_active_profile':
+          return { id: 'human-1' }
+        case 'fn_search_lensers':
+          return [{ id: 'ai-profile-1', handle: 'lenserfighter', display_name: 'LenserFighter', type: 'ai' }]
+        case 'fn_resolve_ai_lenser_ids_for_profiles':
+          return [{ profile_id: 'ai-profile-1', ai_lenser_id: 'ai-lenser-1' }]
+        case 'fn_switch_active_lenser':
+          return null
+        case 'fn_content_create_thread':
+          return 'thread-uuid-3'
+        default:
+          throw new Error(`Unexpected RPC in test: ${fn} (${JSON.stringify(params)})`)
+      }
+    })
+    mockCallRest.mockResolvedValueOnce([
+      { id: 'thread-uuid-3', title: 'As agent', content: 'Body', visibility: 'public', created_at: '2026-01-01T00:00:00Z' },
+    ] as never)
+
+    await createCmd?.run?.({
+      args: { title: 'As agent', content: 'Body', visibility: 'public', as: 'lenserfighter', json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    const switchCalls = mockCallRpc.mock.calls.filter(([fn]) => fn === 'fn_switch_active_lenser')
+    expect(switchCalls).toEqual([
+      ['fn_switch_active_lenser', { p_lenser_id: 'ai-profile-1' }, { requireAuth: true }],
+      ['fn_switch_active_lenser', { p_lenser_id: 'human-1' }, { requireAuth: true }],
+    ])
+    // Switched to the agent, created the thread, then restored — in that order.
+    const rpcOrder = mockCallRpc.mock.calls.map(([fn]) => fn)
+    expect(rpcOrder.indexOf('fn_switch_active_lenser')).toBeLessThan(rpcOrder.indexOf('fn_content_create_thread'))
+    expect(rpcOrder.lastIndexOf('fn_switch_active_lenser')).toBeGreaterThan(rpcOrder.indexOf('fn_content_create_thread'))
+    expect(mockHandleError).not.toHaveBeenCalled()
+  })
+
+  it('--as still restores the previous profile when thread creation fails', async () => {
+    mockCallRpc.mockImplementation(async (fn: string) => {
+      switch (fn) {
+        case 'fn_lensers_get_active_profile':
+          return { id: 'human-1' }
+        case 'fn_search_lensers':
+          return [{ id: 'ai-profile-1', handle: 'lenserfighter', display_name: 'LenserFighter', type: 'ai' }]
+        case 'fn_resolve_ai_lenser_ids_for_profiles':
+          return [{ profile_id: 'ai-profile-1', ai_lenser_id: 'ai-lenser-1' }]
+        case 'fn_switch_active_lenser':
+          return null
+        case 'fn_content_create_thread':
+          throw new Error('boom')
+        default:
+          throw new Error(`Unexpected RPC in test: ${fn}`)
+      }
+    })
+
+    await createCmd?.run?.({
+      args: { title: 'x', content: 'y', visibility: 'public', as: 'lenserfighter', json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    const switchCalls = mockCallRpc.mock.calls.filter(([fn]) => fn === 'fn_switch_active_lenser')
+    expect(switchCalls).toEqual([
+      ['fn_switch_active_lenser', { p_lenser_id: 'ai-profile-1' }, { requireAuth: true }],
+      ['fn_switch_active_lenser', { p_lenser_id: 'human-1' }, { requireAuth: true }],
+    ])
+    expect(mockHandleError).toHaveBeenCalledWith(expect.any(Error))
+  })
 })

@@ -1,43 +1,52 @@
 import { render } from 'ink'
 
-import { Dashboard, type DashboardAction } from './Dashboard'
-import { fetchDashboardData } from './useDashboardData'
+import { loadOnboardingSnapshot } from '../../lib/onboarding/state'
+import { createStableWriteStream } from '../ink-io-proxy'
 
-/**
- * Render the interactive ink dashboard for the main `lf` screen and resolve
- * once the user picks an action (run a command, or quit). The dispatch loop
- * in dashboard.ts owns what happens next — it mounts a fresh instance each
- * turn so the panels re-fetch after a dispatched command completes.
- */
-export function runInkDashboard(): Promise<DashboardAction> {
+import { Repl } from './Repl'
+import { OnboardingScreen } from './screens/OnboardingScreen'
+
+/** Renders the first-run onboarding screen once and resolves when the user dismisses it (any key). */
+function runOnboarding(io: { stdout: NodeJS.WriteStream; stderr: NodeJS.WriteStream }): Promise<void> {
   return new Promise((resolve) => {
-    let action: DashboardAction = { type: 'quit' }
-    const instance = render(
-      <Dashboard
-        onAction={(a) => {
-          action = a
-          instance.unmount()
-        }}
-      />,
-      { exitOnCtrlC: false },
-    )
-    void instance.waitUntilExit().then(() => resolve(action))
+    const instance = render(<OnboardingScreen onDone={() => { resolve(); instance.unmount() }} />, {
+      ...io,
+      exitOnCtrlC: false,
+    })
   })
 }
 
 /**
- * Render a single static frame for non-TTY / piped output. Fetches data once,
- * paints one frame with no key handling, then unmounts. Matches the legacy
- * single-frame degrade behavior.
+ * Mounts the REPL once for the whole interactive session and resolves with
+ * an exit code when the user quits (Ctrl+C while idle, or /quit). Unlike the
+ * old per-command mount/unmount loop, Ink stays mounted throughout — a
+ * dispatched command's captured output streams into the transcript instead
+ * of the whole screen being torn down and rebuilt.
+ *
+ * Rendered against createStableWriteStream() wrappers rather than
+ * process.stdout/stderr directly: stream-capture.ts's captureStd() reassigns
+ * those streams' .write property for the duration of a dispatched command so
+ * the command's own output can be captured into the transcript instead of
+ * printing raw — if Ink rendered through the same mutable property, its own
+ * frame updates would get captured (and silently dropped) too, freezing the
+ * screen instead of showing live progress.
  */
-export async function renderInkStatic(): Promise<void> {
-  const data = await fetchDashboardData()
-  const instance = render(
-    <Dashboard interactive={false} pollMs={null} initialData={data} onAction={() => undefined} />,
-    { patchConsole: false },
-  )
-  // Let ink flush one frame before tearing down.
-  await new Promise((r) => setImmediate(r))
-  instance.unmount()
-  await instance.waitUntilExit()
+export async function runInkRepl(): Promise<number> {
+  const io = { stdout: createStableWriteStream(process.stdout), stderr: createStableWriteStream(process.stderr) }
+
+  if (loadOnboardingSnapshot()?.status !== 'complete') {
+    await runOnboarding(io)
+  }
+
+  return new Promise((resolve) => {
+    const instance = render(
+      <Repl
+        onQuit={(code) => {
+          resolve(code)
+          instance.unmount()
+        }}
+      />,
+      { ...io, exitOnCtrlC: false },
+    )
+  })
 }

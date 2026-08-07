@@ -17,7 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 const VERSION_URL = '/version.json'
 const RECHECK_INTERVAL_MS = 60 * 60 * 1000 // 1 hour
-const RELEASE_NOTES_BASE = 'https://docs.lenserfight.com/changelog'
+const RELEASE_NOTES_BASE = 'https://docs.lenserfight.com/en/changelog'
 
 interface VersionManifest {
   version: string

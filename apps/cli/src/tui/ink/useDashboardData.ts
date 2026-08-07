@@ -2,6 +2,8 @@ import { stripAnsi } from '@lenserfight/cli-client'
 import { useEffect, useState } from 'react'
 
 import { formatAgentWorkspaceBanner } from '../../commands/agents'
+import { countPendingApprovals } from '../../lib/data-services/approvals'
+import { hasResolvableAuthToken } from '../../lib/has-auth-token'
 import { probeBackendHealth } from '../../lib/health-probe'
 import { getActiveProfileName } from '../../utils/profiles'
 import { getRecentCommands, type RecentCommandEntry } from '../command-dispatch'
@@ -15,21 +17,30 @@ export interface DashboardData {
   banner: string | null
   /** Commands dispatched from the command bar this session, most-recent-first. */
   recentCommands: RecentCommandEntry[]
+  pendingApprovals: number
 }
 
-const EMPTY: DashboardData = { profile: 'default', healthy: false, logs: [], banner: null, recentCommands: [] }
+const EMPTY: DashboardData = {
+  profile: 'default',
+  healthy: false,
+  logs: [],
+  banner: null,
+  recentCommands: [],
+  pendingApprovals: 0,
+}
 
 /**
- * Fetch the dashboard's async panels (profile, health, action logs, agent
- * banner, recent dispatched commands). Reuses the same probes the legacy
- * dashboard used so behavior stays identical. The banner is ANSI-stripped so
- * ink can measure/style it cleanly.
+ * Fetch the status line's async data (profile, health, action logs, agent
+ * banner, recent dispatched commands, pending-approval count). The banner is
+ * ANSI-stripped so ink can measure/style it cleanly. Approval count failures
+ * (e.g. no auth yet) degrade to 0 rather than surfacing an error here.
  */
 export async function fetchDashboardData(): Promise<DashboardData> {
-  const [profile, healthy, logs] = await Promise.all([
+  const [profile, healthy, logs, pendingApprovals] = await Promise.all([
     getActiveProfileName(),
     probeBackendHealth(),
     fetchRecentLogs(),
+    hasResolvableAuthToken() ? countPendingApprovals().catch(() => 0) : Promise.resolve(0),
   ])
   const rawBanner = formatAgentWorkspaceBanner()
   return {
@@ -38,6 +49,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     logs,
     banner: rawBanner ? stripAnsi(rawBanner) : null,
     recentCommands: getRecentCommands(),
+    pendingApprovals,
   }
 }
 

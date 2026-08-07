@@ -1,0 +1,116 @@
+name: Changelog gate
+
+# Blocks a PR unless it has a valid .changes/<pr-number>.md fragment, an
+# approved changelog:none label + reason, or only touches paths exempt from
+# the requirement (docs/CI/lockfiles). See .changes/README.md and
+# docs/en/explanation/changelog-system.md.
+#
+# Security notes:
+#   - Runs on pull_request_target so labels/comments from a maintainer are
+#     visible even on first-time-contributor PRs, but we never check out or
+#     execute the PR head. The "Determine PR changelog status" step uses only
+#     first-party actions/github-script against the REST API (same posture as
+#     .github/workflows/auto-label-community-adapter.yml). The fragment
+#     content itself is fetched as inert data via the Contents API at the PR
+#     head SHA and only ever passed to our own schema validator — never
+#     executed.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: changelog-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base ref (trusted — never the PR head)
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+
+      - name: Determine PR changelog status
+        id: status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo
+            const pull_number = context.payload.pull_request.number
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            })
+            const filenames = files.map((f) => f.filename)
+
+            const fragmentPath = `.changes/${pull_number}.md`
+            const hasFragment = filenames.includes(fragmentPath)
+
+            // Path-based exemption: PRs that only touch docs/CI/lockfiles
+            // have no product surface to record — a fragment is optional.
+            const EXEMPT_PATTERNS = [
+              /^docs\//,
+              /^apps\/docs\//,
+              /^\.github\//,
+              /^(package-lock\.json|pnpm-lock\.yaml)$/,
+            ]
+            const nonExemptFiles = filenames.filter(
+              (f) => !EXEMPT_PATTERNS.some((re) => re.test(f)),
+            )
+            const exempt = nonExemptFiles.length === 0
+
+            core.setOutput('has_fragment', String(hasFragment))
+
+            if (exempt) {
+              core.info('PR only touches docs/CI/lockfile paths — changelog fragment not required.')
+              return
+            }
+
+            const labels = context.payload.pull_request.labels.map((l) => l.name)
+            const hasNoneLabel = labels.includes('changelog:none')
+
+            if (hasNoneLabel) {
+              const body = context.payload.pull_request.body || ''
+              const hasReason = /<!--\s*changelog:none-reason:\s*\S.*-->/i.test(body)
+              if (!hasReason) {
+                core.setFailed(
+                  'PR has the changelog:none label but no `<!-- changelog:none-reason: ... -->` ' +
+                    'comment in the description. Add one explaining why no changelog entry is needed.',
+                )
+              } else {
+                core.info('changelog:none declared with a reason — OK.')
+              }
+              return
+            }
+
+            if (!hasFragment) {
+              core.setFailed(
+                `No .changes/${pull_number}.md fragment found, and no changelog:none label+reason. ` +
+                  'Add a fragment (see .changes/README.md) or apply changelog:none with a reason comment.',
+              )
+            }
+
+      - name: Fetch fragment content
+        if: steps.status.outputs.has_fragment == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/changelog-check
+          gh api "repos/${{ github.repository }}/contents/.changes/${{ github.event.pull_request.number }}.md?ref=${{ github.event.pull_request.head.sha }}" \
+            --jq '.content' | base64 -d > /tmp/changelog-check/fragment.md
+
+      - name: Validate fragment schema
+        if: steps.status.outputs.has_fragment == 'true'
+        run: node tools/changelog/check-fragment.mjs /tmp/changelog-check/fragment.md

@@ -1,0 +1,79 @@
+name: Docs build
+
+# Builds apps/docs for real (nx build docs — including the changelog-data
+# generation step) and checks the production output, not dev mode. Complements
+# docs-link-check.yml (which only checks markdown changed in a PR) by running
+# the same link checker against the full docs/ tree, and complements
+# docs-drift.yml (CLI-reference drift only) by actually building the site.
+#
+# No workflow in this repo built apps/docs before this one — see
+# docs/en/explanation/changelog-system.md for why that mattered for the
+# /en/changelog 404.
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'apps/docs/**'
+      - '.changes/**'
+      - 'tools/changelog/**'
+      - '.github/workflows/docs-build.yml'
+  push:
+    branches: [development, main]
+    paths:
+      - 'docs/**'
+      - 'apps/docs/**'
+      - '.changes/**'
+      - 'tools/changelog/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history — tools/changelog reads full git log)
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+
+      - name: Build docs (includes changelog data generation)
+        # HotLenses widget instantiates a Supabase client at module load time
+        # (apps/docs/.vitepress/theme/supabaseClient.ts), which VitePress's
+        # SSR pass hits during static generation even though the widget only
+        # fetches client-side in the browser. Placeholder values are enough to
+        # satisfy the client constructor — no network call happens at build time.
+        run: pnpm nx build docs
+        env:
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: placeholder-anon-key
+
+      - name: Verify changelog routes exist in the built output
+        run: |
+          set -euo pipefail
+          # cleanUrls: true — VitePress emits `<name>.html` for a flat page and
+          # `<dir>/<name>.html` for a nested one; NOT `<name>/index.html`.
+          for route in \
+            "dist/apps/docs/en/changelog.html" \
+            "dist/apps/docs/en/changelog/main.html" \
+            "dist/apps/docs/tr/changelog.html" \
+            "dist/apps/docs/tr/changelog/main.html"
+          do
+            if [ ! -f "$route" ]; then
+              echo "::error::Missing built page: $route (would 404 in production)"
+              exit 1
+            fi
+            echo "OK: $route"
+          done
+
+      - name: Markdown link check (full docs/ tree, not just changed files)
+        uses: gaurav-nelson/github-action-markdown-link-check@499c1e7f3637c131334fa8e937c45144f79d72d2 # v1
+        with:
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'yes'
+          config-file: '.markdown-link-check.json'
+          folder-path: 'docs'

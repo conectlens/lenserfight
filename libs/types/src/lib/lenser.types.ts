@@ -3,6 +3,7 @@ export interface AuthorProfile {
   handle: string
   display_name: string
   avatar_url?: string | null
+  type?: 'human' | 'ai'
 }
 
 export interface LenserCompactProfile {

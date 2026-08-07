@@ -34,6 +34,24 @@ refactor/profile-cache-cleanup
 - Explain what changed, why it changed, and any tradeoffs reviewers should know.
 - Include screenshots for UI changes and reproduction steps for bug fixes when relevant.
 
+## Merged, unreleased, and released are three different things
+
+- **Merged** — your PR passed review and CI and landed on `main`. It shows up on
+  [Main Branch Activity](https://docs.lenserfight.com/en/changelog/main) labeled
+  `Unreleased` (or `Internal` if it has no user-facing effect). It can still be
+  reverted before anything ships.
+- **Unreleased** — merged, but not yet part of a published release. This is the default
+  state for everything on `main`.
+- **Released** — a maintainer has published it: for packages (`cli`, `sdk`,
+  `adapters-connector`) that's an Nx Release publish + Git tag; for the platform as a
+  whole, that's a maintainer running `pnpm changelog:cut` to stamp it into the
+  [Product Changelog](https://docs.lenserfight.com/en/changelog). Only released changes
+  get a version number and a dated entry there.
+
+Every user-facing PR needs a `.changes/<pr-number>.md` fragment — see
+[`.changes/README.md`](https://github.com/conectlens/lenserfight/blob/main/.changes/README.md)
+and [Product Changelog vs. Main Branch Activity](../../explanation/changelog-system.md).
+
 ## Commit types and version impact
 
 LenserFight uses Conventional Commits and automated releases.

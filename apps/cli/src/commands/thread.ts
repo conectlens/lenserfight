@@ -17,7 +17,7 @@ const create = defineCommand({
   meta: {
     name: 'create',
     description:
-      'Create a content thread, posted as your logged-in lenser profile (authorship is resolved server-side from your auth session, not the CLI agent workspace).',
+      'Create a content thread, posted as your logged-in lenser profile by default. Pass --as to post as an owned AI lenser instead.',
   },
   args: {
     title: {
@@ -38,6 +38,11 @@ const create = defineCommand({
     tags: {
       type: 'string',
       description: 'Comma-separated tag UUIDs to attach',
+    },
+    as: {
+      type: 'string',
+      description:
+        'Post as an owned AI lenser (handle or id) instead of your human profile. Temporarily switches your account\'s active workspace — a global switch shared with the web app — then restores it afterward.',
     },
     json: {
       type: 'boolean',
@@ -69,6 +74,7 @@ const create = defineCommand({
         content: args.content,
         visibility: args.visibility,
         tagIds,
+        asLenser: args.as || undefined,
       })
 
       if (args.json) {
