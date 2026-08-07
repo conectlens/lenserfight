@@ -834,4 +834,4 @@ Leaf outputs: Lens 4 (show notes), Lens 5 (social clips plan). Lens 3 (scripts) 
 
 ---
 
-*Next: [Finance Workflows →](./finance-workflow)*
+*Next: [Finance Workflows →](./finance-workflow.md)*

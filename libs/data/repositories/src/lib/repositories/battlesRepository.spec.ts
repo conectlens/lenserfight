@@ -746,7 +746,7 @@ describe('SupabaseBattlesRepository', () => {
         p_content_media: null,
         p_execution_run_id: null,
         p_artifact_id: null,
-        p_source_type: 'text',
+        p_source_type: 'manual',
         p_adapter_id: null,
         p_model_id: null,
       })

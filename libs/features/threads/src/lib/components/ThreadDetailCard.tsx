@@ -3,7 +3,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
-import { MentionRenderer } from '@lenserfight/ui/components'
+import { MentionMarkdownRenderer } from '@lenserfight/ui/components'
 import { ThreadDetailViewModel } from '@lenserfight/types'
 import { timeAgo } from '@lenserfight/utils/date'
 
@@ -60,7 +60,7 @@ export const ThreadDetailCard: React.FC<ThreadDetailCardProps> = ({ thread, onTo
           {thread.title}
         </h1>
         <div className="text-base md:text-lg text-gray-800 dark:text-gray-200 leading-relaxed break-words">
-          <MentionRenderer content={thread.content} />
+          <MentionMarkdownRenderer content={thread.content} />
         </div>
       </div>
 

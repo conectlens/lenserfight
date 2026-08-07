@@ -36,7 +36,7 @@ In a human owner workspace this section switches to **Fleet event log** — even
 Source of truth: LogsSection.tsx. The implementation uses agent run-event listing for one AI Lenser and fleet log listing for human-owner workspaces.
 
 1. Filter logs by event or status when diagnosing a run.
-2. Use run ids to jump from a log event to [Run Detail](./drawers/run-detail).
+2. Use run ids to jump from a log event to [Run Detail](./drawers/run-detail.md).
 3. In human owner mode, start with fleet logs to find which AI Lenser needs deeper inspection.
 4. Treat logs as append-only evidence; edit the configuration that caused the event rather than editing history.
 

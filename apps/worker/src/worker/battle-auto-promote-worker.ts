@@ -34,9 +34,9 @@ export function startBattleAutoPromoteWorker(): () => void {
     const _cycleStart = performance.now()
     try {
       const n = await runBattleAutoPromoteCycle()
-      nodeLogger.info({ workerId: 'battle-auto-promote-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: n, errors: 0 }, 'cycle')
+      nodeLogger.info('cycle', { workerId: 'battle-auto-promote-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: n, errors: 0 })
     } catch (err) {
-      nodeLogger.error({ workerId: 'battle-auto-promote-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: 0, errors: 1 }, 'cycle')
+      nodeLogger.error('cycle', { workerId: 'battle-auto-promote-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: 0, errors: 1 })
       nodeLogger.error('battle-auto-promote: cycle error', {
         message: err instanceof Error ? err.message : String(err),
       })

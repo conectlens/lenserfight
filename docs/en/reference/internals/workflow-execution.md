@@ -5,7 +5,7 @@ description: How a ConnectedLenses workflow is validated, dispatched, executed, 
 
 # Workflow Execution
 
-A ConnectedLens workflow is a DAG. Nodes bind a lens version, edges declare data flow with merge strategy and an optional condition, and the engine runs nodes in dependency order with parallel lanes where the DAG allows it. This page is grounded in [`lenses.workflows`](./domain-model#workflow-domain) plus the canonical event taxonomy in [libs/types/src/lib/workflow-events.types.ts](../../libs/types/src/lib/workflow-events.types.ts).
+A ConnectedLens workflow is a DAG. Nodes bind a lens version, edges declare data flow with merge strategy and an optional condition, and the engine runs nodes in dependency order with parallel lanes where the DAG allows it. This page is grounded in [`lenses.workflows`](./domain-model.md#workflow-domain) plus the canonical event taxonomy in [libs/types/src/lib/workflow-events.types.ts](../../libs/types/src/lib/workflow-events.types.ts).
 
 ## Run lifecycle
 
@@ -76,7 +76,7 @@ When a node is in `awaiting_dependency`, `queued`, or `retrying`, its `waiting_r
 
 ## Conditional edges
 
-Edges support a `condition` JSONB (added in [20260417140000_lens_output_contract.sql](../../supabase/migrations/20260417140000_lens_output_contract.sql)). When the condition evaluates false, the engine writes the target node's status to `skipped` with `waiting_reason='condition_false'`.
+Edges support a `condition` JSONB (added in 20260417140000_lens_output_contract.sql). When the condition evaluates false, the engine writes the target node's status to `skipped` with `waiting_reason='condition_false'`.
 
 Merge strategies on edges: `last_write_wins | concat | array | json_object`.
 
@@ -87,7 +87,7 @@ Merge strategies on edges: `last_write_wins | concat | array | json_object`.
 
 ## Parallel lanes
 
-The DAG implicitly defines parallelism: any nodes whose parents are all completed run concurrently. For team runs, [`agents.team_members.lane`](./domain-model#agents-team-members) gives the owner an explicit lane index for queue policy purposes.
+The DAG implicitly defines parallelism: any nodes whose parents are all completed run concurrently. For team runs, [`agents.team_members.lane`](./domain-model.md#agents-team-members) gives the owner an explicit lane index for queue policy purposes.
 
 ## Streaming and the SSE event taxonomy
 
@@ -137,7 +137,7 @@ Persisted to `lenses.workflow_run_events` and framed onto SSE as [WorkflowSseEve
 
 ## Run state projection
 
-One round trip rebuilds the entire inspector. [`fn_workflow_get_run_state(p_run_id)`](../../supabase/migrations/20260426010000_n8n_execution_model.sql) returns:
+One round trip rebuilds the entire inspector. `fn_workflow_get_run_state(p_run_id)` returns:
 
 - `active_node_id` — the node currently executing (status in `running / streaming / retrying`).
 - `pending_count`, `waiting_count`, `in_flight_count`, `executed_count`, `failed_count`.
@@ -149,13 +149,13 @@ TypeScript: [WorkflowRunStateProjection](../../libs/types/src/lib/workflow-event
 
 ## Provenance
 
-Field-level lineage is recorded on every cross-node hand-off in `lenses.workflow_run_provenance`: source run / workflow / node / output_path → target run / workflow / node / input_path, with optional `transform jsonb`. Returned per-run by [`fn_get_run_provenance(run_id)`](../../supabase/migrations/20260426010000_n8n_execution_model.sql).
+Field-level lineage is recorded on every cross-node hand-off in `lenses.workflow_run_provenance`: source run / workflow / node / output_path → target run / workflow / node / input_path, with optional `transform jsonb`. Returned per-run by `fn_get_run_provenance(run_id)`.
 
 UI uses provenance to render data-flow arrows in the inspector and to support cross-run replay.
 
 ## Node assignment for team runs
 
-When a workflow is dispatched as a [team run](./agent-teams#team-runs), the engine maps each node to a team member. The default assignment algorithm:
+When a workflow is dispatched as a [team run](./agent-teams.md#team-runs), the engine maps each node to a team member. The default assignment algorithm:
 
 1. Filter team members where `is_active = true`.
 2. Filter by `tool_profile.allow_tools` containing the lens's required tools (or `tool_profile.requires_approval = true` flagged for the approval step).
@@ -163,7 +163,7 @@ When a workflow is dispatched as a [team run](./agent-teams#team-runs), the engi
 4. Order by `lane`, then `sort_order`.
 5. Assign first eligible member; otherwise mark node `blocked` with `waiting_reason='human_input'` so the owner can resolve.
 
-The proposed [`instruction_category` column](./lens-instructions#future-work) would let the matcher prefer members whose role responsibility matches the lens's role tag (e.g., a `validation`-categorized lens routes preferentially to a member with `role='reviewer'`).
+The proposed [`instruction_category` column](./lens-instructions.md#future-work) would let the matcher prefer members whose role responsibility matches the lens's role tag (e.g., a `validation`-categorized lens routes preferentially to a member with `role='reviewer'`).
 
 ## Instruction resolution priority
 
@@ -221,11 +221,11 @@ flowchart TD
     H2 -- split --> S[decompose; new run]
 ```
 
-Per-assignment policy lives in [`agents.workflow_assignments.failure_policy`](./domain-model#agents-workflow-assignments) (`{"mode":"isolate"}` default — keep failed branch isolated from siblings).
+Per-assignment policy lives in [`agents.workflow_assignments.failure_policy`](./domain-model.md#agents-workflow-assignments) (`{"mode":"isolate"}` default — keep failed branch isolated from siblings).
 
 ## Recovery
 
-A failed run can be re-claimed by the engine's recovery sweeper (added in [20260422000000_workflow_recovery.sql](../../supabase/migrations/20260422000000_workflow_recovery.sql)). On success, the engine emits `run.recovered` and transitions to `recovered`, then `completed`.
+A failed run can be re-claimed by the engine's recovery sweeper (added in 20260422000000_workflow_recovery.sql). On success, the engine emits `run.recovered` and transitions to `recovered`, then `completed`.
 
 Idempotency: every run carries an idempotency key on the run row; recovery uses it to avoid double-charging credits.
 

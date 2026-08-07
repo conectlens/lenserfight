@@ -24,7 +24,7 @@ A workflow's output depends on the prompt. Auto-upgrading the lens would change 
 
 - Saves the binding row in `agents.instruction_bindings`.
 - Invalidates the agent bootstrap cache so the next run picks up the new prompt.
-- Emits a `instruction.bound` event into the [Logs section](./logs).
+- Emits a `instruction.bound` event into the [Logs section](./logs.md).
 
 ## Unbinding
 
@@ -40,10 +40,10 @@ Source of truth: InstructionsSection.tsx. The implementation binds a versioned l
 3. Keep draft content substantial; the create action is disabled until the draft has enough content.
 4. Rebind explicitly after promoting a newer lens version.
 
-Verification: the [Overview](./overview) Instruction stat should move from Unset to Bound, and future owner-initiated runs should use the bound source unless a workflow overrides it.
+Verification: the [Overview](./overview.md) Instruction stat should move from Unset to Bound, and future owner-initiated runs should use the bound source unless a workflow overrides it.
 
 ## Related
 
 - [Lens Instructions Reference](/en/reference/internals/lens-instructions)
 - [What is a Lens?](/en/explanation/lenses/what-is-a-lens)
-- [Personality Section](./personality)
+- [Personality Section](./personality.md)

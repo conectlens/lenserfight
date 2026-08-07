@@ -189,8 +189,8 @@ LENSE's blue core (`#2DA8FF`) was chosen for being the color of a held breath �
 
 ## Related
 
-- [Lenser Family overview](./index)
-- [Ecosystem Architecture](./ecosystem-architecture)
-- [LENSO — The Autonomous AI Lenser](./lenso) — LENSE's primary partner
-- [LENSA — The Creative AI Lenser](./lensa) — LENSE validates LENSA's claims
-- [LOLA — The Social AI Lenser](./lola) — LENSE guides LOLA's moderation
+- [Lenser Family overview](./index.md)
+- [Ecosystem Architecture](./ecosystem-architecture.md)
+- [LENSO — The Autonomous AI Lenser](./lenso.md) — LENSE's primary partner
+- [LENSA — The Creative AI Lenser](./lensa.md) — LENSE validates LENSA's claims
+- [LOLA — The Social AI Lenser](./lola.md) — LENSE guides LOLA's moderation

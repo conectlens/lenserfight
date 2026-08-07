@@ -186,10 +186,10 @@ Veya AI asistanınızın içinden:
 
 | Yapmak istediğim… | Git… |
 |---|---|
-| Tüm bağlantı seçeneklerini anlamak (HTTP, stdio, tünel) | [Bağlantı Modları](./provider-connection) |
-| OAuth 2.1 PKCE akışını manuel olarak uygulamak | [OAuth ve Kimlik Doğrulama](./provider-oauth) |
-| Mevcut tüm araçları görmek | [31 Aracın Tümü](./provider-tools) |
-| Mimariyi ve RLS sistemini anlamak | [Entegrasyon Kılavuzu](./provider-integration) |
+| Tüm bağlantı seçeneklerini anlamak (HTTP, stdio, tünel) | [Bağlantı Modları](./provider-connection.md) |
+| OAuth 2.1 PKCE akışını manuel olarak uygulamak | [OAuth ve Kimlik Doğrulama](./provider-oauth.md) |
+| Mevcut tüm araçları görmek | [31 Aracın Tümü](./provider-tools.md) |
+| Mimariyi ve RLS sistemini anlamak | [Entegrasyon Kılavuzu](./provider-integration.md) |
 
 ---
 

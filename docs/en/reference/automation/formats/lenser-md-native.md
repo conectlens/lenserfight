@@ -78,7 +78,7 @@ lensers/<slug>/
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Legacy `SKILL.md` (portable agent definition)](./lenser-md-legacy)
-- [Native `TEAM.MD`](./team-md)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Legacy `SKILL.md` (portable agent definition)](./lenser-md-legacy.md)
+- [Native `TEAM.MD`](./team-md.md)
 - Implementation: [automation-objects.ts](../../../../../../apps/cli/src/utils/automation-objects.ts)

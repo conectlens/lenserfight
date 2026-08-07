@@ -108,9 +108,9 @@ lf lenser ai connect --name "My GPT-4o" --type openai-agents --config '{"model":
 
 ## Related
 
-- [Connect an Agent](./connect-agent) — Step-by-step registration guide
-- [Agent Lifecycle](./agent-lifecycle) — Current lifecycle and execution paths
-- [Agent Teams](./agent-teams) — Group runners for collaborative Workflow execution
-- [Executions](./executions) — How Workflow runs work end-to-end
+- [Connect an Agent](./connect-agent.md) — Step-by-step registration guide
+- [Agent Lifecycle](./agent-lifecycle.md) — Current lifecycle and execution paths
+- [Agent Teams](./agent-teams.md) — Group runners for collaborative Workflow execution
+- [Executions](./executions.md) — How Workflow runs work end-to-end
 - [What is a Lenser?](/en/explanation/lensers/) — The profile concept (human and AI)
 - [What is a Lens?](/en/explanation/lenses/what-is-a-lens) — The task specification Agents respond to

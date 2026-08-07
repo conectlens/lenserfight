@@ -5,7 +5,7 @@ description: Allow or deny a registered tool for this agent.
 
 # Assign Tool drawer
 
-Opened from the [Tools Section](../tools).
+Opened from the [Tools Section](../tools.md).
 
 ## What it does
 
@@ -22,7 +22,7 @@ The drawer writes the assignment for the current `ai_lenser_id`, so it changes o
 
 ## Step-by-step
 
-1. Open [Tools](../tools) and confirm the tool is already registered.
+1. Open [Tools](../tools.md) and confirm the tool is already registered.
 2. Select **Assign tool**. If you opened the drawer from a specific tool row, that tool is preselected while it still exists in the registry.
 3. Choose the **Tool** to assign.
 4. Keep **Allowed** on to permit runtime calls, or turn it off to record an explicit deny.
@@ -46,16 +46,16 @@ Re-assigning the same tool overwrites the `allowed` flag. There is no duplicate 
 
 - Upserts an `agents.tool_assignments` row.
 - Invalidates `toolAssignments(activeAiLenserId)`.
-- Emits `tool.assigned` into the [Logs section](../logs).
+- Emits `tool.assigned` into the [Logs section](../logs.md).
 
 ## Operational checks
 
-- Assignment is not invocation. After assigning a tool, verify real execution in [Tool Invocation](./tool-invocation) or the related [Run Detail](./run-detail).
+- Assignment is not invocation. After assigning a tool, verify real execution in [Tool Invocation](./tool-invocation.md) or the related [Run Detail](./run-detail.md).
 - Use an explicit deny when a tool belongs in the workspace registry but this agent must never call it.
-- Review [Approvals](../approvals) when the tool can mutate external systems, spend money, publish content, or access sensitive data.
+- Review [Approvals](../approvals.md) when the tool can mutate external systems, spend money, publish content, or access sensitive data.
 
 ## Related
 
-- [Tools Section](../tools)
-- [Register Tool drawer](./register-tool)
+- [Tools Section](../tools.md)
+- [Register Tool drawer](./register-tool.md)
 - [Tool Sandboxing](/en/explanation/agents/tool-sandboxing)

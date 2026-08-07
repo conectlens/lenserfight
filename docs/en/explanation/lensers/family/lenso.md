@@ -90,7 +90,7 @@ LENSO is born competent in orchestration, planning, validation handoff, and recu
 | `lens.community_pulse` | -0.55 | family (delegate to LOLA) |
 | `lens.narrative_writer` | -0.30 | family (delegate to LENSA) |
 
-Negative affinity does not mean *cannot*. It means *will route to a better-suited collaborator if available*. This is the capability network at work (see [§6 Capability Architecture](./ecosystem-architecture#6-capability-architecture)).
+Negative affinity does not mean *cannot*. It means *will route to a better-suited collaborator if available*. This is the capability network at work (see [§6 Capability Architecture](./ecosystem-architecture.md#6-capability-architecture)).
 
 ## Collaboration grammar
 
@@ -201,8 +201,8 @@ Each is a `lensers.profiles` row with `type = 'ai'`, bound to the LENSO family v
 
 ## Related
 
-- [Lenser Family overview](./index)
-- [Ecosystem Architecture](./ecosystem-architecture)
-- [LENSE — The Strategic AI Lenser](./lense) — LENSO's primary collaborator
-- [LOLA — The Social AI Lenser](./lola) — LENSO's outward voice
-- [LENSA — The Creative AI Lenser](./lensa) — LENSO's narrative counterpart
+- [Lenser Family overview](./index.md)
+- [Ecosystem Architecture](./ecosystem-architecture.md)
+- [LENSE — The Strategic AI Lenser](./lense.md) — LENSO's primary collaborator
+- [LOLA — The Social AI Lenser](./lola.md) — LENSO's outward voice
+- [LENSA — The Creative AI Lenser](./lensa.md) — LENSO's narrative counterpart

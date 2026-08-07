@@ -97,7 +97,7 @@ Lowest-latency OpenAI text model. Best for simple classification or extraction p
 | Capabilities | image_generation |
 | Input modalities | text |
 | Output modalities | image |
-| [Provider docs](https://platform.openai.com/docs/models/dall-e) | — |
+| [Provider docs](https://developers.openai.com/api/docs/models/dall-e-3) | — |
 
 Synchronous image generation. Returns a signed URL immediately after the API call resolves.
 
@@ -109,7 +109,7 @@ Synchronous image generation. Returns a signed URL immediately after the API cal
 | Capabilities | video_generation |
 | Input modalities | text |
 | Output modalities | video |
-| [Provider docs](https://platform.openai.com/docs/models/sora) | — |
+| [Provider docs](https://developers.openai.com/api/docs/models/sora-2) | — |
 
 Async video generation. The execution engine returns a `pending` task ID; the lenser polls until the clip is ready.
 

@@ -164,6 +164,20 @@ export function normalizeError(error: unknown): UnauthorizedError | ForbiddenErr
     } satisfies RateLimitError
   }
 
+  // ── PGRST203: PostgREST couldn't pick between overloaded RPC signatures ──────
+  // A server-side configuration issue, not something the user can fix by
+  // retrying with different input — surface a clear "try again / contact
+  // support" message instead of the raw "Could not choose the best candidate
+  // function..." schema-internals error.
+  if (status === 300 || code === 'PGRST203') {
+    return {
+      kind: 'server_error',
+      statusCode: status ?? 300,
+      message: 'This action is temporarily unavailable due to a server configuration issue. Please try again shortly.',
+      originalError: error,
+    } satisfies ServerError
+  }
+
   // ── 5xx Server Error ───────────────────────────────────────────────────────
   if (status !== undefined && status >= 500) {
     return {

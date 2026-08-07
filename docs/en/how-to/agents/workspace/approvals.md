@@ -41,7 +41,7 @@ Source of truth: ApprovalsSection.tsx and ApprovalQueueSection.tsx. The implemen
 3. Add delegates only for scopes they are expected to operate. Delegate changes refresh the ownership list.
 4. Use history to audit who decided a gate and when.
 
-Verification: approved or rejected requests should disappear from the pending queue, appear in history, and unblock or stop the related run in [Runs](./runs).
+Verification: approved or rejected requests should disappear from the pending queue, appear in history, and unblock or stop the related run in [Runs](./runs.md).
 
 ## Related
 

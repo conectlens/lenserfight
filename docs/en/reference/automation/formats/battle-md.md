@@ -76,6 +76,6 @@ lenserfight battle run ./SKILL.md
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Portable `PRIVATE_BATTLE.md`](./private-battle-md)
-- [Native `SKILL.md`](./lens-md), [`SKILL.md`](./lenser-md-native), [`SKILL.md`](./colens-md-native)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Portable `PRIVATE_BATTLE.md`](./private-battle-md.md)
+- [Native `SKILL.md`](./lens-md.md), [`SKILL.md`](./lenser-md-native.md), [`SKILL.md`](./colens-md-native.md)

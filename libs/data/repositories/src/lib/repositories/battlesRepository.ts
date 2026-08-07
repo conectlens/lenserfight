@@ -892,7 +892,9 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       p_content_media: null,
       p_execution_run_id: null,
       p_artifact_id: null,
-      p_source_type: 'text',
+      // battles.submissions.source_type only accepts
+      // manual|execution_output|hybrid|imported — 'text' was never valid.
+      p_source_type: 'manual',
       p_adapter_id: null,
       p_model_id: null,
     })

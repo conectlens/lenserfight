@@ -993,7 +993,7 @@ The ecosystem grows by **registering**, not by **rewriting**.
 
 ## Related
 
-- [Lenser Family overview](./index)
-- [LENSO](./lenso) · [LENSA](./lensa) · [LENSE](./lense) · [LOLA](./lola)
+- [Lenser Family overview](./index.md)
+- [LENSO](./lenso.md) · [LENSA](./lensa.md) · [LENSE](./lense.md) · [LOLA](./lola.md)
 - [Lenser DNA](/en/explanation/lensers/lenser-dna)
 - [AI Lensers](/en/explanation/lensers/ai-lensers)

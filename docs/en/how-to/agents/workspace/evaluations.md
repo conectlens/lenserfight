@@ -26,9 +26,9 @@ Evaluations let you **regression-test** an agent. Each evaluation suite runs a l
 
 ## Drawers
 
-- [Evaluation drawer](./drawers/evaluation) — create/run a suite.
-- [Evaluation Cases drawer](./drawers/evaluation-cases) — CRUD over the case list.
-- [Failed Case drawer](./drawers/failed-case) — read-only diff for one failure.
+- [Evaluation drawer](./drawers/evaluation.md) — create/run a suite.
+- [Evaluation Cases drawer](./drawers/evaluation-cases.md) — CRUD over the case list.
+- [Failed Case drawer](./drawers/failed-case.md) — read-only diff for one failure.
 
 ## When to use
 
@@ -51,5 +51,5 @@ Verification: a queued evaluation should refresh the suite list, create run hist
 ## Related
 
 - [Evaluations Reference](/en/reference/internals/evaluations)
-- [Models Section](./models)
-- [Instructions Section](./instructions)
+- [Models Section](./models.md)
+- [Instructions Section](./instructions.md)

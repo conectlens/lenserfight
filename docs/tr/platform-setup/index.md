@@ -61,10 +61,10 @@ Otomasyon nesneleri (`AGENT.md`, `WORKFLOW.md`, `TOOL.md`, vb.) kodunuzun yanın
 
 ## Platformunuzu seçin
 
-- [Windows](./windows) — PowerShell yolları, `%APPDATA%`, winget / npm kurulumu
-- [Linux](./linux) — XDG yapılandırması, bash/zsh, apt / npm kurulumu
-- [macOS](./macos) — `~/Library/Application Support`, brew / npm kurulumu
-- [Pardus](./pardus) — TÜBİTAK Linux, apt tabanlı, Linux ile aynı XDG yolları
+- [Windows](./windows.md) — PowerShell yolları, `%APPDATA%`, winget / npm kurulumu
+- [Linux](./linux.md) — XDG yapılandırması, bash/zsh, apt / npm kurulumu
+- [macOS](./macos.md) — `~/Library/Application Support`, brew / npm kurulumu
+- [Pardus](./pardus.md) — TÜBİTAK Linux, apt tabanlı, Linux ile aynı XDG yolları
 
 ## İlgili
 

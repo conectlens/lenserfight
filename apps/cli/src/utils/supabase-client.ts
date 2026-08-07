@@ -12,7 +12,13 @@ async function getSupabaseModule() {
 export async function createClient() {
   const config = loadConfig();
   const { createClient: create } = await getSupabaseModule();
-  return create(config.supabaseUrl, config.supabaseAnonKey);
+  // Without the caller's bearer token, every request (including Storage
+  // uploads) runs as an unauthenticated anon session — auth.uid() is NULL
+  // inside RLS policies, so any policy gated on auth.uid() IS NOT NULL
+  // rejects the request outright, regardless of ownership.
+  return create(config.supabaseUrl, config.supabaseAnonKey, {
+    global: config.authToken ? { headers: { Authorization: `Bearer ${config.authToken}` } } : undefined,
+  });
 }
 
 export async function createServiceClient() {

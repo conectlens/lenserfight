@@ -361,4 +361,4 @@ Call a GraphQL endpoint with a query and variables.
 
 ---
 
-**See also:** [Node Catalog Index](./) · [Integration Nodes](./integration) · [Utility Nodes](./utility) · [Workflow Studio](/en/how-to/agents/workspace/workflows)
+**See also:** [Node Catalog Index](./) · [Integration Nodes](./integration.md) · [Utility Nodes](./utility.md) · [Workflow Studio](/en/how-to/agents/workspace/workflows)

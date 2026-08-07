@@ -601,6 +601,60 @@ const resume = defineCommand({
   },
 });
 
+const activeProfile = defineCommand({
+  meta: { name: 'active', description: 'Show which lenser profile is currently active for posting/actions.' },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const profile = await callRpc<Record<string, unknown> | Record<string, unknown>[] | null>(
+        'fn_lensers_get_active_profile',
+        {},
+        { requireAuth: true },
+      );
+      const row = Array.isArray(profile) ? profile[0] : profile;
+      if (args.json) { printJson(row ?? null); return; }
+      if (!row) { consola.warn('No active profile found.'); return; }
+      consola.info('Active profile ID: %s', row.id ?? row.profile_id ?? '—');
+      consola.info('Handle:            %s', row.handle ? `@${row.handle}` : '—');
+      consola.info('Display name:      %s', row.display_name ?? '—');
+    } catch (err) { handleError(err); }
+  },
+});
+
+const switchActive = defineCommand({
+  meta: { name: 'switch-active', description: 'Switch your account\'s active lenser (human profile or an owned AI lenser).' },
+  args: {
+    id: { type: 'positional', description: 'Lenser handle or UUID to switch to', required: true },
+  },
+  async run({ args, rawArgs }) {
+    try {
+      const identifier = readIdentifier(args, rawArgs);
+      const profileId = await resolveProfileId(identifier);
+      await callRpc('fn_switch_active_lenser', { p_lenser_id: profileId }, { requireAuth: true });
+      consola.success('Active lenser switched to: %s', identifier);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const preferences = defineCommand({
+  meta: { name: 'preferences', description: 'Show your account preferences (including selected_api_key_id).' },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const prefs = await callRpc<Record<string, unknown> | null>('fn_lensers_get_preferences', {}, { requireAuth: true });
+      if (args.json) { printJson(prefs ?? {}); return; }
+      if (!prefs) { consola.info('No preferences set.'); return; }
+      for (const [key, value] of Object.entries(prefs)) {
+        consola.info('%s: %s', key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+      }
+    } catch (err) { handleError(err); }
+  },
+});
+
 const personality = defineCommand({
   meta: { name: 'personality', description: 'Set or clear the personality note for an AI lenser.' },
   args: {
@@ -616,6 +670,43 @@ const personality = defineCommand({
         { requireAuth: true },
       );
       consola.success('Personality updated for %s', args.id);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const agentPolicy = defineCommand({
+  meta: { name: 'policy', description: 'Update battle/vote/spending policy flags for an AI lenser you own.' },
+  args: {
+    id: { type: 'positional', description: 'AI lenser UUID or handle', required: true },
+    'can-join-battles': { type: 'boolean', description: 'Allow this agent to join battles', default: undefined },
+    'can-create-battles': { type: 'boolean', description: 'Allow this agent to create battles', default: undefined },
+    'can-vote': { type: 'boolean', description: 'Allow this agent to vote', default: undefined },
+    'can-receive-sponsorship': { type: 'boolean', description: 'Allow this agent to receive sponsorship', default: undefined },
+    'is-public-policy': { type: 'boolean', description: 'Make this agent\'s policy publicly visible', default: undefined },
+    'max-daily-battles': { type: 'string', description: 'Max battles this agent can join/create per day', default: '' },
+    'max-daily-votes': { type: 'string', description: 'Max votes this agent can cast per day', default: '' },
+    'spending-limit-credits': { type: 'string', description: 'Daily spending limit in credits', default: '' },
+  },
+  async run({ args }) {
+    try {
+      const aiLenserId = await resolveAiLenserIdFromIdentifier(args.id);
+      const patch: Record<string, unknown> = {};
+      if (args['can-join-battles'] !== undefined) patch['can_join_battles'] = args['can-join-battles'];
+      if (args['can-create-battles'] !== undefined) patch['can_create_battles'] = args['can-create-battles'];
+      if (args['can-vote'] !== undefined) patch['can_vote'] = args['can-vote'];
+      if (args['can-receive-sponsorship'] !== undefined) patch['can_receive_sponsorship'] = args['can-receive-sponsorship'];
+      if (args['is-public-policy'] !== undefined) patch['is_public_policy'] = args['is-public-policy'];
+      if (args['max-daily-battles']) patch['max_daily_battles'] = parseInt(args['max-daily-battles'], 10);
+      if (args['max-daily-votes']) patch['max_daily_votes'] = parseInt(args['max-daily-votes'], 10);
+      if (args['spending-limit-credits']) patch['spending_limit_credits'] = parseInt(args['spending-limit-credits'], 10);
+
+      if (Object.keys(patch).length === 0) {
+        consola.warn('No policy flags provided. Nothing to update.');
+        return;
+      }
+
+      await callRpc('fn_update_agent_policy', { p_ai_lenser_id: aiLenserId, p_patch: patch }, { requireAuth: true });
+      consola.success('Policy updated for %s', args.id);
     } catch (err) { handleError(err); }
   },
 });
@@ -724,6 +815,7 @@ const ai = defineCommand({
     pause,
     resume,
     personality,
+    policy: agentPolicy,
     status: lenserStatus,
     lifecycle: agentLifecycleCommand('status', 'Show agent lifecycle state, pinned state, snapshot hash, and delete blockers.'),
     archive: agentLifecycleCommand('archive', 'Archive an AI lenser without deleting historical battle or run evidence.'),
@@ -745,6 +837,9 @@ export default defineCommand({
     list,
     human,
     ai,
+    active: activeProfile,
+    'switch-active': switchActive,
+    preferences,
     // Deprecated top-level aliases (pre-v0.9 layout)
     follow: deprecate(follow, 'Use `lf lenser human follow` instead.'),
     unfollow: deprecate(unfollow, 'Use `lf lenser human unfollow` instead.'),

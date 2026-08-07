@@ -343,12 +343,15 @@ const list = defineCommand({
   },
   async run({ args }) {
     try {
-      const self = await callRpc<Record<string, unknown>>(
+      const self = await callRpc<Record<string, unknown> | Record<string, unknown>[]>(
         'fn_lensers_get_active_profile',
         {},
         { requireAuth: true }
       )
-      const lenserId = self?.id as string | undefined
+      // fn_lensers_get_active_profile is SETOF-returning — PostgREST always
+      // wraps the result in a JSON array, even for a single row.
+      const selfRow = Array.isArray(self) ? self[0] : self
+      const lenserId = selfRow?.id as string | undefined
       if (!lenserId) {
         consola.error('Could not resolve your profile. Run `lf auth login` first.')
         process.exitCode = 1

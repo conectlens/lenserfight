@@ -113,6 +113,6 @@ pnpm lenserfight battle run .\PRIVATE_BATTLE.md
 
 ## İlgili
 
-- [Platform Kurulumuna Genel Bakış](./index)
+- [Platform Kurulumuna Genel Bakış](./index.md)
 - [CLI Yapılandırma Referansı](/en/reference/cli/configuration)
 - [PRIVATE_BATTLE.md Nasıl Çalıştırılır](/en/tutorials/battle-walkthroughs/private-battle-execute)

@@ -5,7 +5,7 @@ description: Read-only side-by-side diff for one failing evaluation case — exp
 
 # Failed Case drawer
 
-Opened from the [Evaluations Section](../evaluations) or [Evaluation drawer](./evaluation) when a case fails.
+Opened from the [Evaluations Section](../evaluations.md) or [Evaluation drawer](./evaluation.md) when a case fails.
 
 ## Sections
 
@@ -14,7 +14,7 @@ Opened from the [Evaluations Section](../evaluations) or [Evaluation drawer](./e
 | **Expected** | The assertion's expected value (rendered by type) |
 | **Actual** | The agent's actual output for this case |
 | **Diff** | Inline character-level diff for `substring` / `regex` types |
-| **Run trace** | Link to the originating run (opens [Run Detail](./run-detail)) |
+| **Run trace** | Link to the originating run (opens [Run Detail](./run-detail.md)) |
 | **Token cost** | Prompt + completion tokens consumed |
 
 ## Triage flow
@@ -38,5 +38,5 @@ Source of truth: FailedCaseDrawer.tsx.
 
 ## Related
 
-- [Evaluation drawer](./evaluation)
-- [Run Detail drawer](./run-detail)
+- [Evaluation drawer](./evaluation.md)
+- [Run Detail drawer](./run-detail.md)

@@ -9,7 +9,7 @@ description: pg_cron-driven workflow schedules. Covers the schedule row, policy 
 CRON scheduling requires a full Supabase instance and the Supabase `pg_cron` configured for workflow dispatch flag. It is **disabled by default** in self-hosted Community Edition installs. See [Known Preview Surfaces](/en/reference/known-preview-surfaces).
 :::
 
-ConnectedLenses workflows can be triggered on a CRON schedule. The mechanism is `pg_cron` driving rows in [`lenses.workflow_schedules`](./domain-model#lenses-workflow-schedules), each carrying a five-field CRON expression, a timezone, an assignee (agent or team), and a four-policy bundle (approval / retry / failure / queue).
+ConnectedLenses workflows can be triggered on a CRON schedule. The mechanism is `pg_cron` driving rows in [`lenses.workflow_schedules`](./domain-model.md#lenses-workflow-schedules), each carrying a five-field CRON expression, a timezone, an assignee (agent or team), and a four-policy bundle (approval / retry / failure / queue).
 
 ## Architecture
 
@@ -36,8 +36,8 @@ flowchart LR
 |--------|-------|
 | `id` | uuid PK |
 | `workflow_id` | FK to `lenses.workflows` |
-| `cron_expr` | Five-field CRON (validated by [`fn_upsert_workflow_schedule`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762)) |
-| `timezone` | IANA timezone — added in [20260428010000](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L332). Default `'UTC'`. |
+| `cron_expr` | Five-field CRON (validated by [`fn_upsert_workflow_schedule`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762)) |
+| `timezone` | IANA timezone — added in [20260428010000](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L332). Default `'UTC'`. |
 | `is_active` | Pause/resume without deleting |
 | `assignee_type` | `'agent' \| 'team'` |
 | `assignee_id` | Polymorphic — `agents.ai_lensers.id` or `agents.teams.id` |
@@ -62,7 +62,7 @@ TypeScript: [WorkflowScheduleRecord](../../libs/types/src/lib/workflows.types.ts
 public.fn_workflow_get_schedules(p_workflow_id uuid DEFAULT NULL)
 ```
 
-Returns every schedule the active workspace owns (joins `lenses.workflows` filtered by `lensers.get_auth_lenser_id()`). When `p_workflow_id` is supplied, scopes to that workflow. Source: [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:692](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692).
+Returns every schedule the active workspace owns (joins `lenses.workflows` filtered by `lensers.get_auth_lenser_id()`). When `p_workflow_id` is supplied, scopes to that workflow. Source: [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:692](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692).
 
 ## Upsert RPC
 
@@ -92,18 +92,18 @@ Validations enforced server-side:
 - `assignee_type` must be `'agent'` or `'team'` (raises `22023`).
 - Activating a schedule on a workflow with cycles is rejected (`22023 cycle_detected`).
 
-Source: [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:762](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762).
+Source: [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:762](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762).
 
 ## Policy bundles
 
-Each schedule (and each [`agents.workflow_assignments`](./domain-model#agents-workflow-assignments) row) carries four JSONB policy slots. The defaults are conservative — every new schedule requires approval and limits retries to one.
+Each schedule (and each [`agents.workflow_assignments`](./domain-model.md#agents-workflow-assignments) row) carries four JSONB policy slots. The defaults are conservative — every new schedule requires approval and limits retries to one.
 
 ### `approval_policy`
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `requiresApproval` | boolean | Top-level switch |
-| `mode` | `'every_node' \| 'sensitive_actions' \| 'on_block'` | When approval triggers (matches [autonomy levels](./agent-teams#autonomy-levels)) |
+| `mode` | `'every_node' \| 'sensitive_actions' \| 'on_block'` | When approval triggers (matches [autonomy levels](./agent-teams.md#autonomy-levels)) |
 | `gates` | `string[]` | Always-required gates (publish / spend / delete / external_message / schedule_change / ...) |
 
 ### `retry_policy`
@@ -233,7 +233,7 @@ The dispatch status is also written to `lenses.workflow_schedules.last_dispatch_
 
 ## CLI surface
 
-CLI coverage is partial today. See [cli-reference.md](./cli-reference#schedule-commands) for the proposed `lenserfight schedule` subcommand tree.
+CLI coverage is partial today. See [cli-reference.md](./cli-reference.md#schedule-commands) for the proposed `lenserfight schedule` subcommand tree.
 
 ## Future work
 

@@ -319,7 +319,7 @@ Split long text or documents into chunks for downstream embedding or processing.
 
 ### Related Nodes
 
-[Embedding](./ai-primitives#embedding) · [RAG Retriever](./ai-primitives#rag-retrieval)
+[Embedding](./ai-primitives.md#embedding) · [RAG Retriever](./ai-primitives.md#rag-retrieval)
 
 ---
 
@@ -357,4 +357,4 @@ Map fields from one schema into another using a declarative mapping object. Use 
 
 ---
 
-**See also:** [Node Catalog Index](./) · [Logic Nodes](./logic) · [AI Primitive Nodes](./ai-primitives) · [Workflow Studio](/en/how-to/agents/workspace/workflows)
+**See also:** [Node Catalog Index](./) · [Logic Nodes](./logic.md) · [AI Primitive Nodes](./ai-primitives.md) · [Workflow Studio](/en/how-to/agents/workspace/workflows)

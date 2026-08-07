@@ -5,7 +5,7 @@ description: LenserFight CLI'yi Linux üzerinde kurun ve yapılandırın — XDG
 
 # Linux Kurulumu
 
-Debian/Ubuntu, Fedora, Arch ve XDG uyumlu tüm dağıtımları kapsar. Pardus'a özgü kurulum için [Pardus Kurulumu](./pardus) sayfasına bakın.
+Debian/Ubuntu, Fedora, Arch ve XDG uyumlu tüm dağıtımları kapsar. Pardus'a özgü kurulum için [Pardus Kurulumu](./pardus.md) sayfasına bakın.
 
 ## Yapılandırma yolları
 
@@ -125,7 +125,7 @@ pnpm lenserfight battle run ./PRIVATE_BATTLE.md --execute
 
 ## İlgili
 
-- [Platform Kurulumuna Genel Bakış](./index)
-- [Pardus Kurulumu](./pardus)
+- [Platform Kurulumuna Genel Bakış](./index.md)
+- [Pardus Kurulumu](./pardus.md)
 - [CLI Yapılandırma Referansı](/en/reference/cli/configuration)
 - [PRIVATE_BATTLE.md Nasıl Çalıştırılır](/en/tutorials/battle-walkthroughs/private-battle-execute)

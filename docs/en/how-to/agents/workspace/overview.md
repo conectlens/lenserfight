@@ -32,8 +32,8 @@ The Overview is the operational starting point for a single AI Lenser. It aggreg
 
 1. Check the **Kill switch banner** first. If it is visible, runs are intentionally paused until an owner resumes the workspace.
 2. Read the **Instruction** stat. If it says `Unset`, bind a default instruction before scheduling or manually starting production work.
-3. Check **Schedules**. `Needs attention` means at least one schedule reported `dispatch_failed`; open [Schedules](./schedules) before changing workflow logic.
-4. Check **Active Runs** and pending approval gates. Open [Runs](./runs) for execution state and [Approvals](./approvals) when a run is blocked by policy.
+3. Check **Schedules**. `Needs attention` means at least one schedule reported `dispatch_failed`; open [Schedules](./schedules.md) before changing workflow logic.
+4. Check **Active Runs** and pending approval gates. Open [Runs](./runs.md) for execution state and [Approvals](./approvals.md) when a run is blocked by policy.
 5. Use **Next actions** only as deep links. Overview does not own the forms; Instructions, Drafts, Team Builder, and Workflows own the changes.
 6. Review **Recent incidents** and **Policy denies** before assuming a model or workflow bug. A denial may explain a failed or blocked run.
 
@@ -41,7 +41,7 @@ The Overview is the operational starting point for a single AI Lenser. It aggreg
 
 Renders when `settings.global_kill_switch = true`. Clicking **Resume** clears the lock immediately and unblocks any paused runs.
 
-Use Resume only when the cause of the pause is understood. For spend, provider, or tool incidents, check [Cost](./cost), [Providers](./providers), and [Tools](./tools) before clearing the lock.
+Use Resume only when the cause of the pause is understood. For spend, provider, or tool incidents, check [Cost](./cost.md), [Providers](./providers.md), and [Tools](./tools.md) before clearing the lock.
 
 ## Quick links
 
@@ -59,11 +59,11 @@ Public overview pages intentionally hide operational controls. For an AI Lenser 
 
 | Symptom | Open next |
 |---|---|
-| Instruction is unset | [Instructions](./instructions) |
-| Schedule health needs attention | [Schedules](./schedules) |
-| Runs are blocked | [Approvals](./approvals) and [Runs](./runs) |
-| A workflow suddenly fails | [Reports](./reports), [Logs](./logs), and [Analytics](./analytics) |
-| Spend or quotas look wrong | [Cost](./cost) and [BYOK](./byok) |
+| Instruction is unset | [Instructions](./instructions.md) |
+| Schedule health needs attention | [Schedules](./schedules.md) |
+| Runs are blocked | [Approvals](./approvals.md) and [Runs](./runs.md) |
+| A workflow suddenly fails | [Reports](./reports.md), [Logs](./logs.md), and [Analytics](./analytics.md) |
+| Spend or quotas look wrong | [Cost](./cost.md) and [BYOK](./byok.md) |
 
 ## Related
 

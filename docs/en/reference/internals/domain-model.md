@@ -87,7 +87,7 @@ Agent-only runtime extension. Exactly one row per `lensers.profiles` with `type=
 | `is_active` | boolean | |
 | `suspended_at` | timestamptz | Nullable |
 | `suspended_reason` | text | Nullable |
-| `personality_note` | text | Free-text behavior injection ([20260424000000_agent_personality.sql](../../supabase/migrations/20260424000000_agent_personality.sql)) |
+| `personality_note` | text | Free-text behavior injection (20260424000000_agent_personality.sql) |
 
 TypeScript: [libs/types/src/lib/agents.types.ts:18](../../libs/types/src/lib/agents.types.ts#L18).
 
@@ -103,7 +103,7 @@ Ownership graph. One row per (human, agent) pair with a role.
 | `permission_scope` | `text[]` |
 | `granted_at`, `revoked_at` | |
 
-The owner-authority helper [agents.can_manage_ai_lenser(uuid)](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) checks this table for the active session's human Lenser id.
+The owner-authority helper [agents.can_manage_ai_lenser(uuid)](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) checks this table for the active session's human Lenser id.
 
 ## Lens domain
 
@@ -154,13 +154,13 @@ Each node references a lens version (or carries an inline override). Conditional
 
 ### `lenses.workflow_edges`
 
-Typed edges with merge strategy `'last_write_wins' \| 'concat' \| 'array' \| 'json_object'` and optional condition (added in [20260417140000_lens_output_contract.sql](../../supabase/migrations/20260417140000_lens_output_contract.sql)).
+Typed edges with merge strategy `'last_write_wins' \| 'concat' \| 'array' \| 'json_object'` and optional condition (added in 20260417140000_lens_output_contract.sql).
 
 ### `lenses.workflow_runs`
 
 One row per execution. Status enum (mirrored in [workflow-events.types.ts:236](../../libs/types/src/lib/workflow-events.types.ts#L236)): `draft / validated / queued / pending / running / streaming / recovered / completed / failed / cancelled / timed_out`.
 
-`active_node_id` (added in [20260426010000_n8n_execution_model.sql](../../supabase/migrations/20260426010000_n8n_execution_model.sql)) enables the n8n-style "currently executing" inspector.
+`active_node_id` (added in 20260426010000_n8n_execution_model.sql) enables the n8n-style "currently executing" inspector.
 
 ### `lenses.workflow_node_results`
 
@@ -176,17 +176,17 @@ SSE event log. Append-only, monotonic `event_id` per run via advisory-lock alloc
 
 ### `lenses.workflow_run_provenance`
 
-Field-level lineage: `source_node_id` / `source_output_path` → `target_node_id` / `target_input_path`. Added in [20260426010000_n8n_execution_model.sql](../../supabase/migrations/20260426010000_n8n_execution_model.sql).
+Field-level lineage: `source_node_id` / `source_output_path` → `target_node_id` / `target_input_path`. Added in 20260426010000_n8n_execution_model.sql.
 
 ### `lenses.workflow_schedules`
 
-`pg_cron`-driven schedule bundle. Extended in [20260428010000](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L329) with timezone, next_run_at, assignee_type/id, workflow_assignment_id, approval_policy, retry_policy, failure_policy, queue_policy, last_completed_at, last_result.
+`pg_cron`-driven schedule bundle. Extended in [20260428010000](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L329) with timezone, next_run_at, assignee_type/id, workflow_assignment_id, approval_policy, retry_policy, failure_policy, queue_policy, last_completed_at, last_result.
 
 TypeScript: [WorkflowScheduleRecord](../../libs/types/src/lib/workflows.types.ts#L11).
 
 ## Agent control-room domain
 
-All tables below are owner-authoritative via [agents.can_manage_ai_lenser()](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92).
+All tables below are owner-authoritative via [agents.can_manage_ai_lenser()](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92).
 
 ### `agents.teams`
 
@@ -251,16 +251,16 @@ Append-only event log scoped to a team run, optionally to a step. `event_type te
 
 ### `ai.providers`
 
-Provider directory. `support_level ∈ {runnable, byok_only, catalog_only, deprecated}` (added in [20260428010000](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L10)).
+Provider directory. `support_level ∈ {runnable, byok_only, catalog_only, deprecated}` (added in [20260428010000](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L10)).
 
 ### `ai.models`
 
 Model directory with capability tags, modalities, context window, support level, status, use cases, summaries, and metadata jsonb.
 
 Read-only catalog RPCs:
-- [`fn_ai_catalog_providers()`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L520)
-- [`fn_ai_catalog_models(provider_key, support_level, capability, modality)`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L561)
-- [`fn_ai_catalog_model_detail(provider_key, model_key)`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L645)
+- [`fn_ai_catalog_providers()`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L520)
+- [`fn_ai_catalog_models(provider_key, support_level, capability, modality)`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L561)
+- [`fn_ai_catalog_model_detail(provider_key, model_key)`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L645)
 
 ## Authoritative authorization helper
 
@@ -268,7 +268,7 @@ Read-only catalog RPCs:
 agents.can_manage_ai_lenser(p_ai_lenser_id uuid) RETURNS boolean
 ```
 
-Returns true when the active human Lenser holds an `owner` or `co_owner` ownership row (not revoked). Every owner-only RLS policy on `agents.*` calls this helper. Source: [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:92](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92).
+Returns true when the active human Lenser holds an `owner` or `co_owner` ownership row (not revoked). Every owner-only RLS policy on `agents.*` calls this helper. Source: [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:92](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92).
 
 ## Memory domain
 
@@ -290,7 +290,7 @@ RPCs: `fn_write_memory_entry`, `fn_read_memory_entries`, `fn_redact_memory_entry
 
 View: `agents.memories_v` joins `memory_profiles.name`.
 
-See full column list at [memory-per-agent.md](./memory-per-agent#data-model).
+See full column list at [memory-per-agent.md](./memory-per-agent.md#data-model).
 
 ## Tools runtime domain
 
@@ -312,12 +312,12 @@ RPCs: `fn_invoke_tool`, `fn_complete_tool_invocation`, `fn_approve_tool_invocati
 
 View: `agents.tool_invocations_v` joins `tools_registry.key`, `tools_registry.name`, `tools_registry.egress_class`, and `agent_run_steps.title`.
 
-See full column list at [tools.md](./tools#data-model).
+See full column list at [tools.md](./tools.md#data-model).
 
 ## Future work
 
 The following are **Proposed (not yet implemented)**:
 
-- **`lenses.versions.instruction_category text`** — Tag a lens version with one of `instruction / research / planning / generation / validation / routing / memory / export` so workflows can do capability-driven node assignment without parsing tags. See [lens-instructions.md](./lens-instructions#future-work).
-- **`agents.approval_requests_v` view** — Materialize the approval queue from `agents.team_runs WHERE approval_status='pending'` plus a join to assignment metadata so the UI can render a single list. See [approvals.md](./approvals#future-work).
+- **`lenses.versions.instruction_category text`** — Tag a lens version with one of `instruction / research / planning / generation / validation / routing / memory / export` so workflows can do capability-driven node assignment without parsing tags. See [lens-instructions.md](./lens-instructions.md#future-work).
+- **`agents.approval_requests_v` view** — Materialize the approval queue from `agents.team_runs WHERE approval_status='pending'` plus a join to assignment metadata so the UI can render a single list. See [approvals.md](./approvals.md#future-work).
 - **`agents.agent_run_events` taxonomy** — Today `event_type` is unconstrained text. A canonical enum aligned to [WorkflowEventType](../../libs/types/src/lib/workflow-events.types.ts#L27) would let the inspector reuse the same client reducer.

@@ -84,6 +84,22 @@ const create = defineCommand({
       description: 'Rubric UUID used to score submissions (optional)',
       default: '',
     },
+    'battle-type': {
+      type: 'string',
+      description:
+        'ai_vs_ai | human_vs_human_open_votes | human_vs_human_ai_votes | human_vs_ai | lenser_battle | workflow_battle. Omit to use the platform default.',
+      default: '',
+    },
+    'content-type': {
+      type: 'string',
+      description: 'Expected submission kind: text | code | image | video | audio | ... (default: text)',
+      default: '',
+    },
+    'lens-id': {
+      type: 'string',
+      description: 'Lens UUID to bind — contenders execute this lens instead of freeform text',
+      default: '',
+    },
     json: {
       type: 'boolean',
       description: 'Output result as JSON',
@@ -92,16 +108,43 @@ const create = defineCommand({
   },
   async run({ args }) {
     try {
-      const battle = await callRpc<Record<string, unknown>>(
-        'fn_battles_create',
-        {
-          p_title: args.title,
-          p_slug: args.slug,
-          p_task_prompt: args.task,
-          p_rubric_id: args['rubric-id'] || null,
-        },
-        { requireAuth: true }
-      )
+      // fn_create_battle is the only path that can set battle_type, content_type,
+      // or lens_id — but it always derives its own slug, ignoring --slug.
+      // fn_battles_create (the default) honors --slug exactly but can't set
+      // any of those. Route based on whether the richer fields were requested.
+      const wantsRichCreate = args['battle-type'] || args['content-type'] || args['lens-id']
+
+      let battle: Record<string, unknown>
+      if (wantsRichCreate) {
+        if (args.slug) {
+          consola.warn('--slug is ignored when --battle-type/--content-type/--lens-id is set; the server derives a slug from --title.')
+        }
+        const rows = await callRpc<Array<Record<string, unknown>>>(
+          'fn_create_battle',
+          {
+            p_title: args.title,
+            p_task_prompt: args.task,
+            p_battle_type: args['battle-type'] || 'human_vs_human_open_votes',
+            p_lens_id: args['lens-id'] || null,
+            p_content_type: args['content-type'] || 'text',
+          },
+          { requireAuth: true }
+        )
+        const row = rows?.[0]
+        if (!row) throw new Error('fn_create_battle returned no row')
+        battle = row
+      } else {
+        battle = await callRpc<Record<string, unknown>>(
+          'fn_battles_create',
+          {
+            p_title: args.title,
+            p_slug: args.slug,
+            p_task_prompt: args.task,
+            p_rubric_id: args['rubric-id'] || null,
+          },
+          { requireAuth: true }
+        )
+      }
 
       if (args.json) {
         printJson(battle)
@@ -723,7 +766,8 @@ const submit = defineCommand({
     },
     agent: {
       type: 'string',
-      description: 'Agent UUID (used with --workflow)',
+      description:
+        'Owned AI agent UUID to submit for. Required with --workflow; also required for text/url/run-id submissions when you own more than one contender in this battle.',
       default: '',
     },
     json: {
@@ -791,9 +835,13 @@ const submit = defineCommand({
           p_content_media: null,
           p_execution_run_id: args['run-id'] || null,
           p_artifact_id: null,
-          p_source_type: args['run-id'] ? 'execution_run' : args.url ? 'url' : 'text',
+          // battles.submissions.source_type only accepts
+          // manual|execution_output|hybrid|imported — 'text'/'url'/'execution_run'
+          // were never valid values here.
+          p_source_type: args['run-id'] ? 'execution_output' : 'manual',
           p_adapter_id: null,
           p_model_id: null,
+          p_agent_id: args.agent || null,
         },
         { requireAuth: true }
       )
@@ -884,6 +932,50 @@ async function resolveBattleId(idOrSlug: string): Promise<string> {
     )
   return row.id
 }
+
+const setExecutionConfig = defineCommand({
+  meta: {
+    name: 'set-execution-config',
+    description:
+      'Set which provider/model a contender uses when the worker auto-executes the battle (creator only).',
+  },
+  args: {
+    id: { type: 'positional', description: 'Battle UUID or slug', required: true },
+    contender: { type: 'string', description: 'Contender UUID (omit to set the battle-wide default)', default: '' },
+    provider: { type: 'string', description: 'Provider key, e.g. google_vertex', required: true },
+    model: { type: 'string', description: 'Model key, e.g. gemini-3.1-flash-lite-image', required: true },
+    'max-tokens': { type: 'string', description: 'Max tokens (default: 4096)', default: '' },
+    temperature: { type: 'string', description: 'Sampling temperature (default: 0.7)', default: '' },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const battleId = await resolveBattleId(args.id)
+      const row = await callRpc(
+        'fn_battles_set_execution_config',
+        {
+          p_battle_id: battleId,
+          p_contender_id: args.contender || null,
+          p_provider_key: args.provider,
+          p_model_key: args.model,
+          p_max_tokens: args['max-tokens'] ? parseInt(args['max-tokens'], 10) : null,
+          p_temperature: args.temperature ? parseFloat(args.temperature) : null,
+        },
+        { requireAuth: true }
+      )
+      if (args.json) {
+        printJson(row)
+        return
+      }
+      consola.success(
+        'Execution config set: %s/%s%s',
+        args.provider,
+        args.model,
+        args.contender ? ` (contender ${args.contender})` : ' (battle default)'
+      )
+    } catch (err) { handleError(err) }
+  },
+})
 
 const open = defineCommand({
   meta: {
@@ -3129,7 +3221,7 @@ const byokKey = defineCommand({
 // ---------------------------------------------------------------------------
 // battle exec — cloud battle BYOK execution with optional web streaming
 // ---------------------------------------------------------------------------
-import { byokKeyResolver, getStreamAdapter as _getStreamAdapter } from '@lenserfight/providers'
+import { byokKeyResolver, getStreamAdapter as _getStreamAdapter, resolveWireModel as _resolveWireModel } from '@lenserfight/providers'
 import type { ProviderMessage as _ProviderMessage } from '@lenserfight/providers'
 
 const exec = defineCommand({
@@ -3191,10 +3283,13 @@ const exec = defineCommand({
 
       const providerA = (args['provider-a'] ||
         String(cfgA['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0]
-      const modelA = args['model-a'] || String(cfgA['model_key'] ?? 'claude-sonnet-4-6')
+      // Catalog keys (e.g. gemini-2.5-flash-vertex) can differ from the real
+      // provider-side model id (e.g. gemini-2.5-flash) — always resolve to
+      // the wire model before it reaches an adapter.
+      const modelA = _resolveWireModel(args['model-a'] || String(cfgA['model_key'] ?? 'claude-sonnet-4-6'))
       const providerB = (args['provider-b'] ||
         String(cfgB['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0]
-      const modelB = args['model-b'] || String(cfgB['model_key'] ?? 'claude-sonnet-4-6')
+      const modelB = _resolveWireModel(args['model-b'] || String(cfgB['model_key'] ?? 'claude-sonnet-4-6'))
 
       const task = String(battle['task_prompt'] ?? '')
       const messages: _ProviderMessage[] = [{ role: 'user', content: task }]
@@ -4943,6 +5038,7 @@ export default defineCommand({
     view,
     submit,
     open,
+    'set-execution-config': setExecutionConfig,
     'start-voting': startVoting,
     finalize,
     publish,

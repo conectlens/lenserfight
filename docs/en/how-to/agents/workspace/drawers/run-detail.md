@@ -5,7 +5,7 @@ description: Forensic deep-dive into one workflow execution — lifecycle timeli
 
 # Run Detail drawer
 
-Opened from the [Runs Section](../runs) or [Reports Section](../reports).
+Opened from the [Runs Section](../runs.md) or [Reports Section](../reports.md).
 
 ## Panels
 
@@ -21,8 +21,8 @@ Opened from the [Runs Section](../runs) or [Reports Section](../reports).
 ## Actions
 
 - **Re-run** — clones inputs into a new manual run.
-- **Copy run id** — for sharing with operators or pasting into [Logs filter](../logs).
-- **Open report** — if a report exists, jumps to its [Reports row](../reports).
+- **Copy run id** — for sharing with operators or pasting into [Logs filter](../logs.md).
+- **Open report** — if a report exists, jumps to its [Reports row](../reports.md).
 
 ## When fields are absent
 
@@ -40,6 +40,6 @@ Source of truth: RunDetailDrawer.tsx.
 
 ## Related
 
-- [Runs Section](../runs)
-- [Reports Section](../reports)
+- [Runs Section](../runs.md)
+- [Reports Section](../reports.md)
 - [Workflow Execution Reference](/en/reference/internals/workflow-execution)

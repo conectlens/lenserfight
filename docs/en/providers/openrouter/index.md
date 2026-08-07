@@ -27,4 +27,4 @@ OpenRouter is a unified API gateway that provides access to hundreds of language
 
 - [AI Providers overview](/en/reference/ai-providers)
 - [BYOK execution guide](/en/how-to/battles/byok-execution)
-- [API Keys settings](/settings/api-keys)
+- API Keys settings

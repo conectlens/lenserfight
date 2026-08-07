@@ -27,4 +27,4 @@ Use Sora 2.0 for video generation lenses that produce clips from descriptive tex
 
 ## Provider documentation
 
-→ [OpenAI Sora docs](https://platform.openai.com/docs/models/sora)
+→ [OpenAI Sora docs](https://developers.openai.com/api/docs/models/sora-2)

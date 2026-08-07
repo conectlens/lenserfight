@@ -27,11 +27,11 @@ Bu entegrasyon bölümü, [Diátaxis çerçevesi](https://diataxis.fr) takip edi
 
 | Sayfa | Tür | Ne zaman okunmalı? |
 |---|---|---|
-| [Sağlayıcı Hızlı Başlangıç](./provider-quickstart) | **Öğretici (Tutorial)** | Çalışan bir örnekle ürününüzü 5 dakika içinde bağlamak istediğinizde |
-| [Entegrasyon Kılavuzu](./provider-integration) | **Açıklama (Explanation)** | Geliştirmeye başlamadan önce mimariyi, taşıma modlarını, RLS'yi ve jeton (token) modelini anlamak istediğinizde |
-| [Bağlantı Modları](./provider-connection) | **Nasıl Yapılır (How-to)** | LF Cloud, stdio veya HTTP + tünel için adım adım talimatlara ihtiyaç duyduğunuzda |
-| [OAuth ve Kimlik Doğrulama](./provider-oauth) | **Nasıl Yapılır (How-to)** | Tam OAuth 2.1 PKCE akışını, dinamik kaydı ve jeton yaşam döngüsünü uygulamak istediğinizde |
-| [31 Aracın Tümü](./provider-tools) | **Referans (Reference)** | Her araç için parametre tablolarına ve geri dönüş şablonlarına ihtiyaç duyduğunuzda |
+| [Sağlayıcı Hızlı Başlangıç](./provider-quickstart.md) | **Öğretici (Tutorial)** | Çalışan bir örnekle ürününüzü 5 dakika içinde bağlamak istediğinizde |
+| [Entegrasyon Kılavuzu](./provider-integration.md) | **Açıklama (Explanation)** | Geliştirmeye başlamadan önce mimariyi, taşıma modlarını, RLS'yi ve jeton (token) modelini anlamak istediğinizde |
+| [Bağlantı Modları](./provider-connection.md) | **Nasıl Yapılır (How-to)** | LF Cloud, stdio veya HTTP + tünel için adım adım talimatlara ihtiyaç duyduğunuzda |
+| [OAuth ve Kimlik Doğrulama](./provider-oauth.md) | **Nasıl Yapılır (How-to)** | Tam OAuth 2.1 PKCE akışını, dinamik kaydı ve jeton yaşam döngüsünü uygulamak istediğinizde |
+| [31 Aracın Tümü](./provider-tools.md) | **Referans (Reference)** | Her araç için parametre tablolarına ve geri dönüş şablonlarına ihtiyaç duyduğunuzda |
 
 ---
 
@@ -80,8 +80,8 @@ Kullanıcı adı seçmemiş kullanıcılar, yetkilendirme sırasında `No Lenser
 
 <div class="tip custom-block">
 
-**İlk kez mi?** [Sağlayıcı Hızlı Başlangıç](./provider-quickstart) kılavuzu ile başlayın — bu kılavuz kayıt, yetkilendirme ve gerçek bir araç çağrısını 5 dakikadan kısa sürede tamamlamanızı sağlar.
+**İlk kez mi?** [Sağlayıcı Hızlı Başlangıç](./provider-quickstart.md) kılavuzu ile başlayın — bu kılavuz kayıt, yetkilendirme ve gerçek bir araç çağrısını 5 dakikadan kısa sürede tamamlamanızı sağlar.
 
 </div>
 
-Ardından, üretim kodunu yazmadan önce mimariyi anlamak için [Entegrasyon Kılavuzu](./provider-integration) belgesini okuyun.
+Ardından, üretim kodunu yazmadan önce mimariyi anlamak için [Entegrasyon Kılavuzu](./provider-integration.md) belgesini okuyun.

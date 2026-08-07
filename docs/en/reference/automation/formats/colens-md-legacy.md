@@ -83,6 +83,6 @@ Run `lenserfight migrate-terminology` to:
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Native `SKILL.md`](./colens-md-native)
-- [Trigger Rule Schema](../trigger-rule-schema)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Native `SKILL.md`](./colens-md-native.md)
+- [Trigger Rule Schema](../trigger-rule-schema.md)

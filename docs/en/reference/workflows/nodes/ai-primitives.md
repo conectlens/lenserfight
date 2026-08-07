@@ -62,7 +62,7 @@ Render a prompt from variables and upstream data. Use before `lens_execute` or `
 
 ### Related Nodes
 
-[Lens Execute](#lens-execute) · [Lens Node](./lens) · [Output Parser](#output-parser)
+[Lens Execute](#lens-execute) · [Lens Node](./lens.md) · [Output Parser](#output-parser)
 
 ---
 
@@ -101,7 +101,7 @@ Execute a selected LenserFight lens as a utility node (unlike the top-level Lens
 
 ### Related Nodes
 
-[Lens Node](./lens) · [Prompt Template](#prompt-template) · [Judge / Eval](#judge-evaluator)
+[Lens Node](./lens.md) · [Prompt Template](#prompt-template) · [Judge / Eval](#judge-evaluator)
 
 ---
 
@@ -243,7 +243,7 @@ At least one of `content` or `documents` is required.
 
 ### Related Nodes
 
-[Text Splitter](./data#text-splitter) · [RAG Retriever](#rag-retrieval) · [Vector Search](#vector-search)
+[Text Splitter](./data.md#text-splitter) · [RAG Retriever](#rag-retrieval) · [Vector Search](#vector-search)
 
 ---
 
@@ -408,7 +408,7 @@ Evaluate candidates against a rubric and emit structured scoring. The core node 
 
 ### Related Nodes
 
-[Battle Execute](./battle#battle-execute) · [Output Parser](#output-parser) · [Score Aggregator](./battle#score-aggregator)
+[Battle Execute](./battle.md#battle-execute) · [Output Parser](#output-parser) · [Score Aggregator](./battle.md#score-aggregator)
 
 ---
 
@@ -536,7 +536,7 @@ Summarize text or documents using a selected model.
 
 ### Related Nodes
 
-[Prompt Template](#prompt-template) · [Lens Execute](#lens-execute) · [Text Splitter](./data#text-splitter)
+[Prompt Template](#prompt-template) · [Lens Execute](#lens-execute) · [Text Splitter](./data.md#text-splitter)
 
 ---
 
@@ -652,4 +652,4 @@ Analyze video frames and transcript into structured notes.
 
 ---
 
-**See also:** [Node Catalog Index](./) · [Battle Nodes](./battle) · [Data Nodes](./data) · [Embedding and RAG concepts](/en/explanation/workflows/workflow-concepts) · [Workflow Studio](/en/how-to/agents/workspace/workflows)
+**See also:** [Node Catalog Index](./) · [Battle Nodes](./battle.md) · [Data Nodes](./data.md) · [Embedding and RAG concepts](/en/explanation/workflows/workflow-concepts) · [Workflow Studio](/en/how-to/agents/workspace/workflows)

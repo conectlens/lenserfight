@@ -27,4 +27,4 @@ Perplexity AI offers search-augmented language models that can query the web in 
 
 - [AI Providers overview](/en/reference/ai-providers)
 - [BYOK execution guide](/en/how-to/battles/byok-execution)
-- [API Keys settings](/settings/api-keys)
+- API Keys settings

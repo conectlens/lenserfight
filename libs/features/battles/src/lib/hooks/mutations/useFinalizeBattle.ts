@@ -1,5 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { battlesService } from '@lenserfight/data/repositories'
+import { normalizeError } from '@lenserfight/shared/error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
@@ -37,7 +38,7 @@ export const useFinalizeBattle = (battleSlug: string) => {
         refetch()
         return
       }
-      toast.error(message || 'Failed to finalize battle. Please try again.')
+      toast.error(normalizeError(error).message || 'Failed to finalize battle. Please try again.')
     },
   })
 }

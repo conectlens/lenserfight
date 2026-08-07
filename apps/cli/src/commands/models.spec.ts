@@ -29,6 +29,7 @@ jest.mock('@lenserfight/providers', () => ({
   getAdapter: jest.fn(),
   getStreamAdapter: jest.fn(),
   OLLAMA_DEFAULT_BASE_URL: 'http://localhost:11434',
+  resolveWireModel: jest.fn((key: string) => key),
 }))
 
 import { callRpc, handleError } from '@lenserfight/cli-client'

@@ -83,8 +83,8 @@ Community Edition workflows are ready to document as:
 
 ## Related
 
-- [What is a Lens?](./what-is-a-lens)
-- [Lens Parameters](./lens-parameters)
+- [What is a Lens?](./what-is-a-lens.md)
+- [Lens Parameters](./lens-parameters.md)
 - [What are Workflows](/en/tutorials/walkthroughs/what-are-workflows)
 - [Create a Workflow](/en/tutorials/walkthroughs/create-a-workflow)
 - [Community API: Workflows](/en/reference/community-api/workflows)

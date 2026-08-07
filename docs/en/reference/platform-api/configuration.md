@@ -5,7 +5,7 @@ Reference for CLI configuration precedence.
 ## What to read first
 
 - [CLI Configuration](/en/reference/cli/configuration)
-- [Environment Variables](environment-variables)
+- [Environment Variables](./environment-variables.md)
 
 ## Rules of thumb
 

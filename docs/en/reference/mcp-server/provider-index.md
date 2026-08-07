@@ -27,11 +27,11 @@ This integration section is organized following the [Diátaxis framework](https:
 
 | Page | Type | When to read it |
 |---|---|---|
-| [Provider Quickstart](./provider-quickstart) | **Tutorial** | You want to connect your product in 5 minutes with a working example |
-| [Integration Guide](./provider-integration) | **Explanation** | You want to understand the architecture, transport modes, RLS, and token model before building |
-| [Connection Modes](./provider-connection) | **How-to** | You want step-by-step instructions for LF Cloud, stdio, or HTTP + tunnel |
-| [OAuth & Authentication](./provider-oauth) | **How-to** | You want to implement the full OAuth 2.1 PKCE flow, dynamic registration, and token lifecycle |
-| [All 31 Tools](./provider-tools) | **Reference** | You need parameter tables and return shapes for every tool |
+| [Provider Quickstart](./provider-quickstart.md) | **Tutorial** | You want to connect your product in 5 minutes with a working example |
+| [Integration Guide](./provider-integration.md) | **Explanation** | You want to understand the architecture, transport modes, RLS, and token model before building |
+| [Connection Modes](./provider-connection.md) | **How-to** | You want step-by-step instructions for LF Cloud, stdio, or HTTP + tunnel |
+| [OAuth & Authentication](./provider-oauth.md) | **How-to** | You want to implement the full OAuth 2.1 PKCE flow, dynamic registration, and token lifecycle |
+| [All 31 Tools](./provider-tools.md) | **Reference** | You need parameter tables and return shapes for every tool |
 
 ---
 
@@ -80,8 +80,8 @@ Users without a handle will see `No Lenser profile found` during authorization. 
 
 <div class="tip custom-block">
 
-**First time?** Start with the [Provider Quickstart](./provider-quickstart) — it walks through registration, authorization, and a real tool call in under 5 minutes.
+**First time?** Start with the [Provider Quickstart](./provider-quickstart.md) — it walks through registration, authorization, and a real tool call in under 5 minutes.
 
 </div>
 
-Then read the [Integration Guide](./provider-integration) to understand the architecture before writing production code.
+Then read the [Integration Guide](./provider-integration.md) to understand the architecture before writing production code.

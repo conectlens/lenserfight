@@ -5,7 +5,7 @@ description: Create a named access-policy preset — allow list, deny list, tool
 
 # Tool Profile drawer
 
-Opened from the [Tools Section](../tools) (Policies tab).
+Opened from the [Tools Section](../tools.md) (Policies tab).
 
 ## What's a tool profile?
 
@@ -44,7 +44,7 @@ If deny_tools is empty and allow_tools is empty: all tools in the active groups 
 
 ## Related
 
-- [Tools Section](../tools)
-- [Register Tool drawer](./register-tool)
-- [Assign Tool drawer](./assign-tool)
+- [Tools Section](../tools.md)
+- [Register Tool drawer](./register-tool.md)
+- [Assign Tool drawer](./assign-tool.md)
 - [Tool Sandboxing](/en/explanation/agents/tool-sandboxing)

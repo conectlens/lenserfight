@@ -64,7 +64,7 @@ Yeni savaş durumu kullanıcı çalışma zamanı depolamasına yazılır ve `LE
 ## API ve dokümantasyon
 
 **OpenAPI 3.1 spesifikasyonu yayımlanır ancak rota işleyicilerinden otomatik üretilmez.**
-HTTP API yüzeyi [`docs/reference/platform-api/openapi.yaml`](https://github.com/conectlens/lenserfight/blob/main/docs/reference/platform-api/openapi.yaml) dosyasında tanımlanır. Spesifikasyon `libs/api/contracts/` içindeki DTO'lara karşı el ile yazılmıştır; CI bunu `redocly` ile linter'dan geçirir ancak henüz rota işleyici imzalarına karşı diff yapmaz. Drift mümkündür.
+HTTP API yüzeyi `docs/reference/platform-api/openapi.yaml` dosyasında tanımlanır. Spesifikasyon `libs/api/contracts/` içindeki DTO'lara karşı el ile yazılmıştır; CI bunu `redocly` ile linter'dan geçirir ancak henüz rota işleyici imzalarına karşı diff yapmaz. Drift mümkündür.
 
 **Türkçe dokümantasyon, niş sayfalarda İngilizceden geri kalır.**
 Yüksek trafikli sayfalar (Hızlı Başlangıç, OSS Lansman Kapsamı, Bilinen Önizleme Yüzeyleri) çevrilmiştir. Derinlemesine referans sayfaları yalnızca İngilizce olarak kalmaya devam eder ve Türkçe gezintiden bağlantılanmaz.

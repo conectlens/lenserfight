@@ -30,11 +30,11 @@ flowchart TD
 
 ### Lens record
 
-[`lenses.lenses`](./domain-model#lens-domain) holds the author-owned envelope: title, description, content (legacy free-form), visibility, status, tags, params (legacy). The authoritative behavior lives on the version row.
+[`lenses.lenses`](./domain-model.md#lens-domain) holds the author-owned envelope: title, description, content (legacy free-form), visibility, status, tags, params (legacy). The authoritative behavior lives on the version row.
 
 ### Lens version
 
-[`lenses.versions`](./domain-model#lenses-versions) stores the executable definition. A lens has many versions; the head pointer (`lenses.lenses.head_version_id`) names the active one. Status is `'draft' | 'published' | 'archived'`.
+[`lenses.versions`](./domain-model.md#lenses-versions) stores the executable definition. A lens has many versions; the head pointer (`lenses.lenses.head_version_id`) names the active one. Status is `'draft' | 'published' | 'archived'`.
 
 Key columns:
 
@@ -139,7 +139,7 @@ Forking a published version creates a new draft row sharing `lens_id`, with a fr
 
 `agents.lens_bindings` (legacy, see [agents.types.ts:66](../../libs/types/src/lib/agents.types.ts#L66)) ties a lens to an agent with an optional version pin. When the binding pins a `version_id`, the agent always uses that version even if the lens publishes a new head.
 
-For team-level execution, a lens is referenced indirectly: the workflow node binds a `lens_version_id`, the team is assigned to the workflow via [`agents.workflow_assignments`](./domain-model#agents-workflow-assignments), and a team member runs the node with their `agents.tool_profiles` allowlist applied.
+For team-level execution, a lens is referenced indirectly: the workflow node binds a `lens_version_id`, the team is assigned to the workflow via [`agents.workflow_assignments`](./domain-model.md#agents-workflow-assignments), and a team member runs the node with their `agents.tool_profiles` allowlist applied.
 
 ## Future work
 
@@ -172,4 +172,4 @@ ALTER TABLE lenses.versions
   ]));
 ```
 
-This unblocks capability-driven node assignment in [workflow-execution.md](./workflow-execution#node-assignment) without scraping tags.
+This unblocks capability-driven node assignment in [workflow-execution.md](./workflow-execution.md#node-assignment) without scraping tags.

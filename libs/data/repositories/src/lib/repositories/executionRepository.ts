@@ -80,7 +80,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       modelId: (row.model_id as string | null) ?? null,
       modelKey: (row.model_key as string | null) ?? null,
       providerKey: (row.provider_key as string | null) ?? null,
-      fundingSource: (row.funding_source as LensExecutionHistoryItem['fundingSource']) ?? 'free',
+      fundingSource: (row.funding_source as LensExecutionHistoryItem['fundingSource']) ?? 'platform_credit',
       runId: (row.run_id as string | null) ?? null,
       runStatus: (row.run_status as LensExecutionHistoryItem['runStatus']) ?? null,
       latencyMs: (row.latency_ms as number | null) ?? null,

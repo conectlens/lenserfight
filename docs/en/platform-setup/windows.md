@@ -117,6 +117,6 @@ Some antivirus tools flag Node.js child processes on first run. Add your project
 
 ## Related
 
-- [Platform Setup Overview](./index)
+- [Platform Setup Overview](./index.md)
 - [CLI Configuration Reference](/en/reference/cli/configuration)
 - [Execute a PRIVATE_BATTLE.md](/en/tutorials/battle-walkthroughs/private-battle-execute)

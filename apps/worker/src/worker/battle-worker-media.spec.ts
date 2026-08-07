@@ -135,6 +135,36 @@ describe('processNextBattleJob — direct media routing (non-Chainabit)', () => 
     })
   })
 
+  describe('image sync with agent personality', () => {
+    it('folds the ai_agent contender personality_note into the media prompt', async () => {
+      mockModelKind.mockReturnValue('image')
+      const personaJob = {
+        ...BASE_JOB,
+        ai_lenser_id: 'agent-1',
+        personality_note: 'Blunt, Grok-style realist. No fluff.',
+      }
+      claimJob(personaJob)
+      mockCallGenerativeMedia.mockResolvedValue({
+        status: 'completed',
+        urls: ['https://cdn.example.com/persona-image.png'],
+        mimeType: 'image/png',
+      })
+
+      const result = await processNextBattleJob()
+
+      expect(result).toBe(true)
+      expect(mockCallGenerativeMedia).toHaveBeenCalledWith(
+        'openai',
+        'image',
+        'test-api-key',
+        'dall-e-3',
+        expect.stringContaining('Blunt, Grok-style realist. No fluff.'),
+      )
+      const [, , , , promptArg] = mockCallGenerativeMedia.mock.calls[0]
+      expect(promptArg).toContain(BASE_JOB.task_prompt)
+    })
+  })
+
   describe('audio sync (text_to_speech)', () => {
     it('calls callGenerativeMedia with audio modality and stores URL', async () => {
       const audioJob = { ...BASE_JOB, provider_key: 'elevenlabs', model_key: 'eleven-monolingual-v1' }

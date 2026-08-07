@@ -5,7 +5,7 @@ description: Install and configure LenserFight CLI on Pardus — TÜBİTAK's nat
 
 # Pardus Setup
 
-[Pardus](https://pardus.org.tr/) is Turkey's national Linux distribution, developed by [TÜBİTAK ULAKBİM](https://www.tubitak.gov.tr/). It is Debian-based and XDG-compliant, so config paths match the [Linux Setup](./linux) exactly.
+[Pardus](https://pardus.org.tr/) is Turkey's national Linux distribution, developed by [TÜBİTAK ULAKBİM](https://www.tubitak.gov.tr/). It is Debian-based and XDG-compliant, so config paths match the [Linux Setup](./linux.md) exactly.
 
 ## Config paths
 
@@ -106,8 +106,8 @@ pnpm lenserfight battle run ./PRIVATE_BATTLE.md --execute
 
 ## Related
 
-- [Platform Setup Overview](./index)
-- [Linux Setup](./linux)
+- [Platform Setup Overview](./index.md)
+- [Linux Setup](./linux.md)
 - [CLI Configuration Reference](/en/reference/cli/configuration)
 - [Pardus official site](https://pardus.org.tr/)
 - [Execute a PRIVATE_BATTLE.md](/en/tutorials/battle-walkthroughs/private-battle-execute)

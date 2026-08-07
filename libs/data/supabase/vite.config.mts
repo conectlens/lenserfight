@@ -49,6 +49,7 @@ export default defineConfig(() => ({
   test: {
     name: 'supabase',
     watch: false,
+    passWithNoTests: true,
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

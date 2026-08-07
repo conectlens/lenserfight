@@ -823,4 +823,4 @@ should be validated with additional research before major product or investment 
 
 ---
 
-*Next: [Startup Workflows →](./startup-workflow)*
+*Next: [Startup Workflows →](./startup-workflow.md)*

@@ -170,6 +170,14 @@ export async function processNextBattleJob(): Promise<boolean> {
     } else {
       // ── Generative media execution path ───────────────────────────────────
       // Covers image (sync), audio (sync/async), video (async), music (async).
+      // Generative-media APIs take a single prompt string with no separate
+      // system-role channel, so — unlike the text branch — personality is
+      // folded into the prompt itself as a framing preamble rather than a
+      // separate message.
+      const systemPrompt = await resolvePersonalityPrompt(serviceClient, job, prompt)
+      const mediaPrompt = systemPrompt
+        ? `You are generating this as the following character would envision it:\n${systemPrompt}\n\nVisual/creative task: ${prompt}`
+        : prompt
 
       const apiKey = await resolveApiKey(job)
       const modality = kindToGenerativeModality(execKind)
@@ -181,7 +189,7 @@ export async function processNextBattleJob(): Promise<boolean> {
           modality,
           apiKey,
           job.model_key,
-          prompt,
+          mediaPrompt,
         ),
         PROVIDER_TIMEOUT_MS,
         `media:${job.model_key}`,

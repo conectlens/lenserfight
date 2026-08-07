@@ -8,6 +8,7 @@ import {
   getAdapter,
   getStreamAdapter,
   OLLAMA_DEFAULT_BASE_URL,
+  resolveWireModel,
   type Provider,
 } from '@lenserfight/providers';
 
@@ -60,11 +61,14 @@ async function fetchModels(args: {
 }
 
 async function fetchModel(providerKey: string, modelKey: string): Promise<CatalogModel | null> {
-  return callRpc<CatalogModel | null>(
+  // fn_ai_catalog_model_detail is a TABLE-returning RPC — PostgREST always wraps
+  // its result in a JSON array, even for a single row.
+  const result = await callRpc<CatalogModel[] | CatalogModel | null>(
     'fn_ai_catalog_model_detail',
     { p_provider_key: providerKey, p_model_key: modelKey },
     { noAuth: true }
   );
+  return Array.isArray(result) ? (result[0] ?? null) : result;
 }
 
 function parseModelRef(modelRef: string): { providerKey: string; modelKey: string } {
@@ -213,6 +217,7 @@ const run = defineCommand({
     tool: { type: 'string', default: '', description: 'Optional tool name' },
     'tool-args': { type: 'string', default: '', description: 'Optional JSON schema for a tool' },
     stream: { type: 'boolean', default: true, description: 'Stream token output when supported' },
+    key: { type: 'string', default: '', description: 'BYOK API key override (skips env var lookup)' },
     json: { type: 'boolean', default: false, description: 'Output as JSON' },
   },
   async run({ args }) {
@@ -220,6 +225,10 @@ const run = defineCommand({
       const { providerKey, modelKey } = parseModelRef(args.model);
       const model = await fetchModel(providerKey, modelKey);
       if (!model) throw new Error(`Model not found: ${args.model}`);
+      // The catalog key (e.g. gemini-2.5-flash-vertex) can differ from the real
+      // provider-side model id (e.g. gemini-2.5-flash) — always call adapters
+      // with the resolved wire model, never the LenserFight canonical key.
+      const wireModelKey = resolveWireModel(modelKey);
 
       const prompt = args.prompt || (args['input-file'] ? readFileSync(resolve(process.cwd(), args['input-file']), 'utf-8') : '');
       if (!prompt.trim()) throw new Error('Provide --prompt or --input-file.');
@@ -241,7 +250,7 @@ const run = defineCommand({
       if (providerKey === 'ollama') {
         const adapter = getAdapter('ollama');
         const baseUrl = resolveConfig().ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
-        const { body, headers } = adapter.transformRequest(modelKey, messages, {
+        const { body, headers } = adapter.transformRequest(wireModelKey, messages, {
           maxTokens: 4096,
           tools,
         });
@@ -262,17 +271,17 @@ const run = defineCommand({
         throw new Error(`No direct CLI execution route for provider '${providerKey}'. Use gateway:routes to inspect support.`);
       }
 
-      const apiKey = byokKeyResolver.resolve(providerKey);
+      const apiKey = byokKeyResolver.resolve(providerKey, { cliFlag: args.key || undefined });
 
       if (args.stream && model.supports_streaming) {
         const streamAdapter = getStreamAdapter(providerKey as TextProvider);
-        const { url: baseUrl, body, headers } = streamAdapter.buildStreamRequest(modelKey, messages, {
+        const { url: baseUrl, body, headers } = streamAdapter.buildStreamRequest(wireModelKey, messages, {
           maxTokens: 4096,
           tools,
         });
         const authHeaders = streamAdapter.authHeader(apiKey);
         const url = streamAdapter.buildStreamUrl
-          ? streamAdapter.buildStreamUrl(modelKey, apiKey)
+          ? streamAdapter.buildStreamUrl(wireModelKey, apiKey)
           : baseUrl;
         const res = await fetch(url, {
           method: 'POST',
@@ -311,11 +320,12 @@ const run = defineCommand({
       }
 
       const adapter = getAdapter(providerKey as TextProvider);
-      const { url, body, headers } = adapter.transformRequest(modelKey, messages, {
+      const { url: baseUrl, body, headers } = adapter.transformRequest(wireModelKey, messages, {
         maxTokens: 4096,
         tools,
       });
       const authHeaders = adapter.authHeader(apiKey);
+      const url = adapter.buildUrl ? adapter.buildUrl(wireModelKey, apiKey) : baseUrl;
       const res = await fetch(url, {
         method: 'POST',
         headers: { ...headers, ...authHeaders },

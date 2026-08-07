@@ -2,7 +2,7 @@
 
 Workflow templates are pre-built starting points that appear in the "Create Workflow" wizard. Contributing a template lets users skip the blank-page problem for common use cases.
 
-This guide is distinct from the [task schema contribution guide](./task-schema-contribution-guide), which covers battle rubrics. Workflow templates are about execution topology — how lenses are wired together — not evaluation criteria.
+This guide is distinct from the [task schema contribution guide](./task-schema-contribution-guide.md), which covers battle rubrics. Workflow templates are about execution topology — how lenses are wired together — not evaluation criteria.
 
 ## What makes a good template
 

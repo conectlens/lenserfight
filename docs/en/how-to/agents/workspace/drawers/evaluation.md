@@ -5,7 +5,7 @@ description: Create or run an evaluation suite against the current binding state
 
 # Evaluation drawer
 
-Opened from the [Evaluations Section](../evaluations).
+Opened from the [Evaluations Section](../evaluations.md).
 
 ## Fields
 
@@ -14,7 +14,7 @@ Opened from the [Evaluations Section](../evaluations).
 | **Name** | yes | Unique within the agent |
 | **Description** | no | Free-text rationale |
 | **Model profile** | yes | Binding the suite runs against — defaults to agent default |
-| **Cases** | yes (≥1) | Managed via [Evaluation Cases drawer](./evaluation-cases) |
+| **Cases** | yes (≥1) | Managed via [Evaluation Cases drawer](./evaluation-cases.md) |
 | **Schedule (cron)** | no | When set, suite auto-runs on this cron expression |
 
 ## Lifecycle
@@ -22,7 +22,7 @@ Opened from the [Evaluations Section](../evaluations).
 1. **Create** — empty suite, no cases.
 2. **Add cases** — open the cases drawer.
 3. **Run** — dispatches the suite, returns a `run_id`.
-4. **Review** — passes/fails per case; click a failure to open the [Failed Case drawer](./failed-case).
+4. **Review** — passes/fails per case; click a failure to open the [Failed Case drawer](./failed-case.md).
 
 ## When to schedule
 
@@ -41,7 +41,7 @@ Source of truth: EvaluationDrawer.tsx.
 
 ## Related
 
-- [Evaluations Section](../evaluations)
-- [Evaluation Cases drawer](./evaluation-cases)
-- [Failed Case drawer](./failed-case)
+- [Evaluations Section](../evaluations.md)
+- [Evaluation Cases drawer](./evaluation-cases.md)
+- [Failed Case drawer](./failed-case.md)
 - [Evaluations Reference](/en/reference/internals/evaluations)

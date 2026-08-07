@@ -5,7 +5,7 @@ description: Forensic view of a single tool call — args, result, latency, and 
 
 # Tool Invocation drawer
 
-Opened from the [Tools Section](../tools) (Invocations tab) or from a [Run Detail drawer](./run-detail) tool-call row.
+Opened from the [Tools Section](../tools.md) (Invocations tab) or from a [Run Detail drawer](./run-detail.md) tool-call row.
 
 ## Panels
 
@@ -41,6 +41,6 @@ Source of truth: ToolInvocationDrawer.tsx.
 
 ## Related
 
-- [Tools Section](../tools)
-- [Run Detail drawer](./run-detail)
+- [Tools Section](../tools.md)
+- [Run Detail drawer](./run-detail.md)
 - [Tool Sandboxing](/en/explanation/agents/tool-sandboxing)

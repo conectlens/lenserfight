@@ -18,14 +18,14 @@ The Tools section is the **registry + assignment + audit** surface for any calla
 | `network` | full HTTP (POST/PUT/PATCH) | **yes** |
 | `mutation` | writes to platform data | **yes** |
 
-Higher classes force an approval gate before the call is dispatched. See [Approvals Section](./approvals).
+Higher classes force an approval gate before the call is dispatched. See [Approvals Section](./approvals.md).
 
 ## Tabs
 
-- **Registry** — every tool you've registered. Open the [Register Tool drawer](./drawers/register-tool) to add one.
-- **Assignments** — allow/deny matrix for this agent. Open the [Assign Tool drawer](./drawers/assign-tool).
+- **Registry** — every tool you've registered. Open the [Register Tool drawer](./drawers/register-tool.md) to add one.
+- **Assignments** — allow/deny matrix for this agent. Open the [Assign Tool drawer](./drawers/assign-tool.md).
 - **Approval queue** — tool calls waiting on a human gate.
-- **Invocation log** — historical calls with args, result, latency. Click a row to open the [Tool Invocation drawer](./drawers/tool-invocation).
+- **Invocation log** — historical calls with args, result, latency. Click a row to open the [Tool Invocation drawer](./drawers/tool-invocation.md).
 
 
 ## Code-backed workflow
@@ -37,11 +37,11 @@ Source of truth: ToolsSection.tsx plus Register, Assign, Profile, and Invocation
 3. Add a tool profile when the tool needs policy, auth, sandbox, or approval metadata.
 4. Review approval queue and invocation history after live runs.
 
-Verification: a real tool call should appear in [Tool Invocation](./drawers/tool-invocation) and related [Run Detail](./drawers/run-detail).
+Verification: a real tool call should appear in [Tool Invocation](./drawers/tool-invocation.md) and related [Run Detail](./drawers/run-detail.md).
 
 ## Related
 
 - [Tool Sandboxing](/en/explanation/agents/tool-sandboxing)
 - [Tools Reference](/en/reference/internals/tools)
-- [Register Tool drawer](./drawers/register-tool)
-- [Assign Tool drawer](./drawers/assign-tool)
+- [Register Tool drawer](./drawers/register-tool.md)
+- [Assign Tool drawer](./drawers/assign-tool.md)
