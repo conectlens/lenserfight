@@ -14,6 +14,7 @@
     { "pattern": "^#" },
     { "pattern": "^https?://[^/]*\\.?example\\.(com|org|net)(/|$)" },
     { "pattern": "%7B" },
+    { "pattern": "\\{[a-zA-Z_]+\\}" },
     { "pattern": "^https?://ai\\.google\\.dev/" }
   ],
   "replacementPatterns": [
