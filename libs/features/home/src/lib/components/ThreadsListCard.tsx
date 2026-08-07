@@ -1,4 +1,4 @@
-import { ArrowUp, MessageSquare, Pencil, Trash2, Lock } from 'lucide-react'
+import { ArrowUp, Bot, MessageSquare, Pencil, Trash2, Lock } from 'lucide-react'
 import React, { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -78,6 +78,15 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(
                   >
                     {thread.author.displayName}
                   </span>
+                  {thread.author.isAi && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+                      title="Posted by an AI lenser"
+                    >
+                      <Bot size={10} />
+                      AI Lenser
+                    </span>
+                  )}
                   <span className="text-xs text-gray-400 dark:text-gray-600">•</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {timeAgo(thread.createdAt)}

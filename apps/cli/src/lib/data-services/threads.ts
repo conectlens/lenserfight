@@ -3,6 +3,7 @@
  */
 import type { PersonalFeedItem } from '@lenserfight/types'
 import { callRpc, callRest } from '@lenserfight/cli-client'
+import { resolveProfileId, resolveSelfProfileId } from '../lenser-catalog'
 
 type PersonalThreadRow = {
   id: string
@@ -64,6 +65,8 @@ export interface CreateThreadInput {
   content: string
   visibility: ThreadVisibility
   tagIds?: string[]
+  /** Handle or profile/AI-lenser id of an owned AI lenser to post as, instead of your human profile. */
+  asLenser?: string
 }
 
 export interface CreatedThread {
@@ -85,9 +88,36 @@ type ThreadViewRow = {
 /**
  * Create a thread (`fn_content_create_thread`). Mirrors `threadsRepository.createThread` —
  * lenser_id is resolved server-side from the caller's JWT (SECURITY DEFINER), so
- * authorship always follows the logged-in user, not the CLI's agent workspace selection.
+ * authorship follows whichever profile is active in `lensers.preferences.active_lenser_id`.
+ *
+ * Passing `asLenser` temporarily switches the account's active workspace to that owned AI
+ * lenser via `fn_switch_active_lenser` (a global switch — it also affects the web app and
+ * any other client sharing this session), creates the thread, then restores whatever was
+ * active beforehand. Restoration always runs, even if thread creation fails.
  */
 export async function createThread(input: CreateThreadInput): Promise<CreatedThread> {
+  let previousProfileId: string | null = null
+
+  if (input.asLenser) {
+    previousProfileId = await resolveSelfProfileId()
+    const targetProfileId = await resolveProfileId(input.asLenser)
+    await callRpc('fn_switch_active_lenser', { p_lenser_id: targetProfileId }, { requireAuth: true })
+  }
+
+  try {
+    return await createThreadAsActiveProfile(input)
+  } finally {
+    if (previousProfileId) {
+      await callRpc(
+        'fn_switch_active_lenser',
+        { p_lenser_id: previousProfileId },
+        { requireAuth: true },
+      )
+    }
+  }
+}
+
+async function createThreadAsActiveProfile(input: CreateThreadInput): Promise<CreatedThread> {
   const threadId = await callRpc<string>(
     'fn_content_create_thread',
     {
