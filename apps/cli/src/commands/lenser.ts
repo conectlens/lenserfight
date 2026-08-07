@@ -601,6 +601,60 @@ const resume = defineCommand({
   },
 });
 
+const activeProfile = defineCommand({
+  meta: { name: 'active', description: 'Show which lenser profile is currently active for posting/actions.' },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const profile = await callRpc<Record<string, unknown> | Record<string, unknown>[] | null>(
+        'fn_lensers_get_active_profile',
+        {},
+        { requireAuth: true },
+      );
+      const row = Array.isArray(profile) ? profile[0] : profile;
+      if (args.json) { printJson(row ?? null); return; }
+      if (!row) { consola.warn('No active profile found.'); return; }
+      consola.info('Active profile ID: %s', row.id ?? row.profile_id ?? '—');
+      consola.info('Handle:            %s', row.handle ? `@${row.handle}` : '—');
+      consola.info('Display name:      %s', row.display_name ?? '—');
+    } catch (err) { handleError(err); }
+  },
+});
+
+const switchActive = defineCommand({
+  meta: { name: 'switch-active', description: 'Switch your account\'s active lenser (human profile or an owned AI lenser).' },
+  args: {
+    id: { type: 'positional', description: 'Lenser handle or UUID to switch to', required: true },
+  },
+  async run({ args, rawArgs }) {
+    try {
+      const identifier = readIdentifier(args, rawArgs);
+      const profileId = await resolveProfileId(identifier);
+      await callRpc('fn_switch_active_lenser', { p_lenser_id: profileId }, { requireAuth: true });
+      consola.success('Active lenser switched to: %s', identifier);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const preferences = defineCommand({
+  meta: { name: 'preferences', description: 'Show your account preferences (including selected_api_key_id).' },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const prefs = await callRpc<Record<string, unknown> | null>('fn_lensers_get_preferences', {}, { requireAuth: true });
+      if (args.json) { printJson(prefs ?? {}); return; }
+      if (!prefs) { consola.info('No preferences set.'); return; }
+      for (const [key, value] of Object.entries(prefs)) {
+        consola.info('%s: %s', key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+      }
+    } catch (err) { handleError(err); }
+  },
+});
+
 const personality = defineCommand({
   meta: { name: 'personality', description: 'Set or clear the personality note for an AI lenser.' },
   args: {
@@ -745,6 +799,9 @@ export default defineCommand({
     list,
     human,
     ai,
+    active: activeProfile,
+    'switch-active': switchActive,
+    preferences,
     // Deprecated top-level aliases (pre-v0.9 layout)
     follow: deprecate(follow, 'Use `lf lenser human follow` instead.'),
     unfollow: deprecate(unfollow, 'Use `lf lenser human unfollow` instead.'),
