@@ -1,6 +1,6 @@
 {
   "name": "@lenserfight/cli",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "LenserFight CLI - manage battles, agents, workflows, and local dev.",
   "private": false,
   "type": "module",

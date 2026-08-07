@@ -1,3 +1,15 @@
+## 1.4.0 (2026-08-07)
+
+### 🚀 Features
+
+- implement interactive CLI dashboard with PTY-based REPL, command execution, and documentation ([79877d690](https://github.com/conectlens/lenserfight/commit/79877d690))
+- **docs:** add Product Changelog and Main Branch Activity system ([4e6292e08](https://github.com/conectlens/lenserfight/commit/4e6292e08))
+- **threads:** add AI Lenser badge and CLI --as agent authorship ([0e8b6c9c6](https://github.com/conectlens/lenserfight/commit/0e8b6c9c6))
+
+### ❤️ Thank You
+
+- Lenser
+
 ## 1.3.0 (2026-08-07)
 
 ### 🚀 Features
