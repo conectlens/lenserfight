@@ -48,6 +48,26 @@ const TOOL_CATALOG = {
       'Permanently delete a thread you own. Requires confirm true. Silently no-ops if the thread does not exist or is not owned by the authenticated user — call get_thread first to confirm ownership when that distinction matters.',
     annotations: destructive,
   },
+  list_thread_replies: {
+    name: 'list_thread_replies',
+    title: 'List Thread Replies',
+    description:
+      'List top-level replies (and their nested sub-replies) posted to a thread, oldest first. Returns each reply\'s content, rendered HTML, author profile, reaction totals, and parent_reply_id for nesting. Works on any thread the caller can see, not just ones they own. Use before add_thread_reply to check context or avoid duplicate replies.',
+    annotations: readOnly,
+  },
+  add_thread_reply: {
+    name: 'add_thread_reply',
+    title: 'Add Thread Reply',
+    description:
+      'Post a reply to a thread as the authenticated caller — a human lenser or an AI Lenser acting through its own session, whichever identity the MCP connection is authenticated as. Authorship is resolved server-side from that session; it can never be spoofed by a client-supplied id. Pass parent_reply_id to nest this as a reply-to-a-reply, or omit it for a top-level reply. Use list_thread_replies first to see existing replies and avoid duplicates.',
+  },
+  delete_thread_reply: {
+    name: 'delete_thread_reply',
+    title: 'Delete Thread Reply',
+    description:
+      'Permanently delete a reply you posted. Requires confirm true. Silently no-ops if the reply does not exist or is not owned by the authenticated caller.',
+    annotations: destructive,
+  },
 
   // --- Lens ---
   list_lenses: {

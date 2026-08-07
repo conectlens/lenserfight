@@ -29,6 +29,18 @@ export interface ThreadDetail extends Record<string, unknown> {
   content: string | null;
 }
 
+export interface AddThreadReplyArgs {
+  thread_id: string;
+  content: string;
+  parent_reply_id?: string | null;
+}
+
+export interface ListThreadRepliesArgs {
+  thread_id: string;
+  limit: number;
+  offset: number;
+}
+
 function mapError(message: string | undefined): McpError | null {
   if (!message) return null;
   if (message.includes('Unauthenticated')) {
@@ -108,6 +120,35 @@ export const threadService = {
   async delete(sb: SupabaseClient, thread_id: string): Promise<void> {
     const { error } = (await sb.rpc('fn_delete_thread' as never, {
       p_thread_id: thread_id,
+    })) as unknown as RpcResult<unknown>;
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
+  },
+
+  async addReply(sb: SupabaseClient, args: AddThreadReplyArgs): Promise<{ id: string; lenser_id: string }> {
+    const { data, error } = (await sb.rpc('fn_create_thread_reply' as never, {
+      p_thread_id: args.thread_id,
+      p_content: args.content,
+      p_parent_reply_id: args.parent_reply_id ?? null,
+    })) as unknown as RpcResult<Array<{ id: string; lenser_id: string }>>;
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
+    const row = data?.[0];
+    if (!row) throw new McpError('DB_ERROR', 'Reply creation did not return an id');
+    return row;
+  },
+
+  async listReplies(sb: SupabaseClient, args: ListThreadRepliesArgs): Promise<unknown[]> {
+    const { data, error } = (await sb.rpc('fn_get_thread_replies_page' as never, {
+      p_thread_id: args.thread_id,
+      p_limit: args.limit,
+      p_offset: args.offset,
+    })) as unknown as RpcResult<unknown[]>;
+    if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
+    return data ?? [];
+  },
+
+  async deleteReply(sb: SupabaseClient, reply_id: string): Promise<void> {
+    const { error } = (await sb.rpc('fn_delete_thread_reply' as never, {
+      p_reply_id: reply_id,
     })) as unknown as RpcResult<unknown>;
     if (error) throw mapError(error.message) ?? new McpError('DB_ERROR', error.message);
   },
