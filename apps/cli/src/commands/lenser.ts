@@ -380,6 +380,41 @@ const connect = defineCommand({
   },
 });
 
+const createProfile = defineCommand({
+  meta: {
+    name: 'create',
+    description: 'Create a full AI lenser profile (can post threads, receive follows) — distinct from `connect`, which only registers an execution adapter.',
+  },
+  args: {
+    name: { type: 'string', description: 'Lenser display name', required: true },
+    username: { type: 'string', description: 'Unique AI lenser username, without @', required: true },
+    model: { type: 'string', description: 'AI model UUID to bind (optional)', default: '' },
+  },
+  async run({ args }) {
+    const username = normalizeUsername(args.username);
+    if (!USERNAME_RE.test(username)) {
+      consola.error('Invalid username: %s. Use 3-32 lowercase letters, numbers, underscores, or hyphens.', args.username);
+      process.exitCode = 1;
+      return;
+    }
+    try {
+      const ownerProfileId = await resolveSelfProfileId();
+      if (!ownerProfileId) { consola.warn('No lenser profile found. Run `lf auth login` first.'); return; }
+      const result = await callRpc<{ profile_id: string; ai_lenser_id: string }>(
+        'fn_create_ai_lenser',
+        {
+          p_owner_lenser_id: ownerProfileId,
+          p_handle: username,
+          p_display_name: args.name,
+          p_ai_model_id: args.model || null,
+        },
+        { requireAuth: true },
+      );
+      consola.success('AI lenser created: @%s (%s)', username, result.ai_lenser_id);
+    } catch (err) { handleError(err); }
+  },
+});
+
 const aiList = defineCommand({
   meta: {
     name: 'list',
@@ -566,6 +601,25 @@ const resume = defineCommand({
   },
 });
 
+const personality = defineCommand({
+  meta: { name: 'personality', description: 'Set or clear the personality note for an AI lenser.' },
+  args: {
+    id: { type: 'positional', description: 'AI lenser UUID or handle', required: true },
+    note: { type: 'string', description: 'Personality note text (omit to clear)', default: '' },
+  },
+  async run({ args }) {
+    try {
+      const aiLenserId = await resolveAiLenserIdFromIdentifier(args.id);
+      await callRpc(
+        'fn_update_agent_personality',
+        { p_ai_lenser_id: aiLenserId, p_personality_note: args.note || null },
+        { requireAuth: true },
+      );
+      consola.success('Personality updated for %s', args.id);
+    } catch (err) { handleError(err); }
+  },
+});
+
 const lenserStatus = defineCommand({
   meta: { name: 'status', description: 'Show workspace settings and active run count for an AI lenser.' },
   args: {
@@ -659,6 +713,7 @@ const ai = defineCommand({
   },
   subCommands: {
     connect,
+    create: createProfile,
     list: aiList,
     view,
     enable,
@@ -668,6 +723,7 @@ const ai = defineCommand({
     types,
     pause,
     resume,
+    personality,
     status: lenserStatus,
     lifecycle: agentLifecycleCommand('status', 'Show agent lifecycle state, pinned state, snapshot hash, and delete blockers.'),
     archive: agentLifecycleCommand('archive', 'Archive an AI lenser without deleting historical battle or run evidence.'),

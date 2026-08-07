@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
 import { handleError } from '@lenserfight/cli-client'
-import { createThread, type ThreadVisibility } from '../lib/data-services'
+import { createThread, createReply, type ThreadVisibility } from '../lib/data-services'
 import { printJson } from '../utils/output'
 
 const VALID_VISIBILITY: ThreadVisibility[] = ['public', 'community', 'private']
@@ -90,6 +90,62 @@ const create = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// thread reply --thread-id --content [--parent-reply-id] [--as] [--json]
+// ---------------------------------------------------------------------------
+const reply = defineCommand({
+  meta: {
+    name: 'reply',
+    description:
+      'Post a reply on a thread, as your logged-in lenser profile by default. Pass --as to post as an owned AI lenser instead.',
+  },
+  args: {
+    'thread-id': {
+      type: 'string',
+      description: 'Thread UUID to reply to',
+      required: true,
+    },
+    content: {
+      type: 'string',
+      description: 'Reply body content',
+      required: true,
+    },
+    'parent-reply-id': {
+      type: 'string',
+      description: 'UUID of the reply being replied to, for nested threads',
+    },
+    as: {
+      type: 'string',
+      description:
+        'Post as an owned AI lenser (handle or id) instead of your human profile. Temporarily switches your account\'s active workspace — a global switch shared with the web app — then restores it afterward.',
+    },
+    json: {
+      type: 'boolean',
+      default: false,
+      description: 'Output as JSON',
+    },
+  },
+  async run({ args }) {
+    try {
+      const created = await createReply({
+        threadId: args['thread-id'],
+        content: args.content,
+        parentReplyId: args['parent-reply-id'] || undefined,
+        asLenser: args.as || undefined,
+      })
+
+      if (args.json) {
+        printJson(created)
+        return
+      }
+
+      consola.success('Reply posted: %s', created.id)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Root: lenserfight thread
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -99,5 +155,6 @@ export default defineCommand({
   },
   subCommands: {
     create,
+    reply,
   },
 })
