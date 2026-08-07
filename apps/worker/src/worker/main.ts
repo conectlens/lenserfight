@@ -47,7 +47,7 @@ const _healthServer = http.createServer(async (req, res) => {
   }
   res.writeHead(404); res.end()
 })
-_healthServer.listen(HEALTH_PORT, () => nodeLogger.info({ port: HEALTH_PORT }, 'health server ready'))
+_healthServer.listen(HEALTH_PORT, () => nodeLogger.info('health server ready', { port: HEALTH_PORT }))
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `worker-${process.pid}`
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env['WORKER_HEARTBEAT_INTERVAL_MS'] ?? '10000', 10)

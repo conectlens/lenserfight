@@ -24,7 +24,14 @@
         "bundle": true,
         "main": "apps/worker/src/worker/main.ts",
         "tsConfig": "apps/worker/tsconfig.app.json",
-        "generatePackageJson": true
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "define": {
+            "import.meta.env": "{}",
+            "import.meta.env.SUPABASE_URL": "process.env.SUPABASE_URL",
+            "import.meta.env.SUPABASE_PUBLISHABLE_KEY": "process.env.SUPABASE_ANON_KEY"
+          }
+        }
       },
       "configurations": {
         "development": {},

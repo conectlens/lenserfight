@@ -285,10 +285,16 @@ export async function executeWorkflowRun(
 
       resolveConnector: createCompositeConnectorResolver(
         input.aiLenserId
-          ? createOAuthConnectionResolver(serviceClient, input.aiLenserId)
+          ? createOAuthConnectionResolver(
+              // supabase-js's .rpc() returns a thenable query builder, not a
+              // real Promise (missing catch/finally/Symbol.toStringTag) — wrap
+              // it so it satisfies OAuthResolverServiceClient's Promise return type.
+              { rpc: (fn, args) => Promise.resolve(serviceClient.rpc(fn, args)) },
+              input.aiLenserId,
+            )
           : nullOAuthConnectionResolver,
         createServerConnectorResolver(
-          (name, params) => serviceClient.rpc(name, params).then((r) => r.data),
+          (name, params) => Promise.resolve(serviceClient.rpc(name, params)).then((r) => r.data),
         ),
       ).resolve,
     }

@@ -4,8 +4,10 @@
     "outDir": "../../dist/out-tsc",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "strict": true,
     "types": [
-      "node"
+      "node",
+      "vite/client"
     ]
   },
   "include": [
