@@ -125,7 +125,7 @@ pnpm lenserfight battle run ./PRIVATE_BATTLE.md --execute
 
 ## İlgili
 
-- [Platform Kurulumuna Genel Bakış](./index)
-- [Linux Kurulumu](./linux)
+- [Platform Kurulumuna Genel Bakış](./index.md)
+- [Linux Kurulumu](./linux.md)
 - [CLI Yapılandırma Referansı](/en/reference/cli/configuration)
 - [PRIVATE_BATTLE.md Nasıl Çalıştırılır](/en/tutorials/battle-walkthroughs/private-battle-execute)

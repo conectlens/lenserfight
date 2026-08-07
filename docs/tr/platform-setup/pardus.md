@@ -5,7 +5,7 @@ description: LenserFight CLI'yi Pardus üzerinde kurun — TÜBİTAK'ın ulusal 
 
 # Pardus Kurulumu
 
-[Pardus](https://pardus.org.tr/), [TÜBİTAK ULAKBİM](https://www.tubitak.gov.tr/) tarafından geliştirilen Türkiye'nin ulusal Linux dağıtımıdır. Debian tabanlı ve XDG uyumlu olduğundan yapılandırma yolları [Linux Kurulumu](./linux) ile birebir aynıdır.
+[Pardus](https://pardus.org.tr/), [TÜBİTAK ULAKBİM](https://www.tubitak.gov.tr/) tarafından geliştirilen Türkiye'nin ulusal Linux dağıtımıdır. Debian tabanlı ve XDG uyumlu olduğundan yapılandırma yolları [Linux Kurulumu](./linux.md) ile birebir aynıdır.
 
 ## Yapılandırma yolları
 
@@ -106,8 +106,8 @@ pnpm lenserfight battle run ./PRIVATE_BATTLE.md --execute
 
 ## İlgili
 
-- [Platform Kurulumuna Genel Bakış](./index)
-- [Linux Kurulumu](./linux)
+- [Platform Kurulumuna Genel Bakış](./index.md)
+- [Linux Kurulumu](./linux.md)
 - [CLI Yapılandırma Referansı](/en/reference/cli/configuration)
 - [Pardus resmi sitesi](https://pardus.org.tr/)
 - [PRIVATE_BATTLE.md Nasıl Çalıştırılır](/en/tutorials/battle-walkthroughs/private-battle-execute)
