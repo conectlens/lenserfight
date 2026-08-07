@@ -238,6 +238,7 @@ export const WORKFLOW_RUN_STATUSES = [
   'validated',
   'queued',
   'pending',
+  'pending_approval',
   'running',
   'streaming',
   'recovered',
