@@ -13,6 +13,19 @@ pnpm nx test <project> --testFile=path/to/file.spec.ts
 pnpm smoke            (full gate)
 ```
 
+## Changelog
+
+<!--
+  Every user-facing PR needs a .changes/<this-pr-number>.md fragment — see
+  .changes/README.md. If this PR has no user-facing or noteworthy effect
+  (typo fix, dependency bump with no behavior change), add the
+  `changelog:none` label AND a reason comment instead, in this exact form
+  (uncomment and fill in): changelog:none-reason: ...
+-->
+
+- [ ] `.changes/<pr-number>.md` fragment added
+- [ ] OR `changelog:none` label applied with a reason comment in this description
+
 ## Migration blast radius
 
 <!-- "none" if no migration. Otherwise: which tables are altered, estimated row count, rollback path. -->

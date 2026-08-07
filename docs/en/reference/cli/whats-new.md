@@ -1,11 +1,11 @@
 ---
 title: lf whats-new
-description: Print the most recent LenserFight release notes from CHANGELOG.md without leaving the terminal.
+description: Print the most recent LenserFight release notes from the Product Changelog without leaving the terminal.
 ---
 
 # `lf whats-new`
 
-Print the most recent release entries from the repo's `CHANGELOG.md`. Each entry is the body of a top-level `## [version] - date` heading. The command walks upward from the CLI binary to find `CHANGELOG.md`, falling back to the current working directory and finally to the hosted changelog URL.
+Print the most recent release entries from the repo's [Product Changelog](/en/changelog) source (`docs/en/changelog.md`). Each entry is the body of a top-level `## [version] - date` heading. The command walks upward from the CLI binary to find that file, falling back to the current working directory and finally to the hosted changelog URL. Version sections only exist once a maintainer has cut a release with `pnpm changelog:cut` — see [Product Changelog vs. Main Branch Activity](/en/explanation/changelog-system).
 
 ```bash
 lf whats-new            # latest release
@@ -26,12 +26,12 @@ lf whats-new --json     # structured output
 
 ## Behavior
 
-1. Resolve `CHANGELOG.md` — relative to the CLI binary, or `process.cwd()`.
+1. Resolve `docs/en/changelog.md` — relative to the CLI binary, or `process.cwd()`.
 2. Parse releases by walking `## [version] - YYYY-MM-DD` headings.
 3. Print body, truncating per-release at 40 lines with a "… (truncated)" marker.
 4. Always print the hosted changelog link at the end.
 
-If `CHANGELOG.md` cannot be located, the command prints only the hosted link and exits `0`.
+If the file cannot be located, or no version has been cut yet, the command prints only the hosted link and exits `0`.
 
 ---
 

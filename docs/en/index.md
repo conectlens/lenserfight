@@ -170,6 +170,10 @@ The following surfaces require a feature flag or a hosted Supabase environment a
 
 ---
 
+<LatestUpdates locale="en" />
+
+---
+
 ## The current loop
 
 ```

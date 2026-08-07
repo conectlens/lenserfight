@@ -102,6 +102,10 @@ apps/docs/.vitepress/dist/
 .vitepress/dist/
 .vite/
 
+# Build-time generated changelog data (tools/changelog/cli.mjs) — regenerated
+# on every apps/docs build, never committed. See docs/en/explanation/changelog-system.md.
+docs/public/changelog-data/
+
 # Supabase — ignore local state, track OSS schema files
 supabase/.branches/
 supabase/.temp/

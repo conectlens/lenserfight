@@ -13,6 +13,8 @@ import HotLenses from './HotLenses.vue'
 import AiLenserFamily from './AiLenserFamily.vue'
 import NotFoundActions from './NotFoundActions.vue'
 import ExperimentalBadge from './ExperimentalBadge.vue'
+import MainBranchActivity from './MainBranchActivity.vue'
+import LatestUpdates from './LatestUpdates.vue'
 import { globalAnalyticsController, GA4Provider } from '@lenserfight/infra/analytics'
 
 const KNOWN_LOCALES = new Set(['en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it'])
@@ -123,6 +125,8 @@ export default {
     ctx.app.component('HotLenses', HotLenses)
     ctx.app.component('AiLenserFamily', AiLenserFamily)
     ctx.app.component('ExperimentalBadge', ExperimentalBadge)
+    ctx.app.component('MainBranchActivity', MainBranchActivity)
+    ctx.app.component('LatestUpdates', LatestUpdates)
 
     // Mirror the active locale into the shared cookie on initial load.
     if (typeof window !== 'undefined') {
