@@ -1,3 +1,18 @@
+## 1.3.0 (2026-08-07)
+
+### 🚀 Features
+
+- **cli:** replace TUI command-bar dashboard with a sidebar app shell ([424c124ea](https://github.com/conectlens/lenserfight/commit/424c124ea))
+
+### 🩹 Fixes
+
+- **cli:** don't call ink's useInput unguarded when the dashboard renders non-interactively ([ab7a6014f](https://github.com/conectlens/lenserfight/commit/ab7a6014f))
+- **cli:** strip ANSI before asserting on styled detail-panel text in tests ([e4257f865](https://github.com/conectlens/lenserfight/commit/e4257f865))
+
+### ❤️ Thank You
+
+- Lenser
+
 ## 1.2.0 (2026-08-06)
 
 ### 🚀 Features
