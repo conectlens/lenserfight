@@ -723,7 +723,8 @@ const submit = defineCommand({
     },
     agent: {
       type: 'string',
-      description: 'Agent UUID (used with --workflow)',
+      description:
+        'Owned AI agent UUID to submit for. Required with --workflow; also required for text/url/run-id submissions when you own more than one contender in this battle.',
       default: '',
     },
     json: {
@@ -791,9 +792,13 @@ const submit = defineCommand({
           p_content_media: null,
           p_execution_run_id: args['run-id'] || null,
           p_artifact_id: null,
-          p_source_type: args['run-id'] ? 'execution_run' : args.url ? 'url' : 'text',
+          // battles.submissions.source_type only accepts
+          // manual|execution_output|hybrid|imported — 'text'/'url'/'execution_run'
+          // were never valid values here.
+          p_source_type: args['run-id'] ? 'execution_output' : 'manual',
           p_adapter_id: null,
           p_model_id: null,
+          p_agent_id: args.agent || null,
         },
         { requireAuth: true }
       )
