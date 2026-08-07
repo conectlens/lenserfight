@@ -257,12 +257,8 @@ export function classifyError(error: unknown): TaxonomyEntry {
     return entry('config', error)
   }
 
-  // Not found
-  if (s === 404 || m.includes('not found') || m.includes('does not exist')) {
-    return entry('not_found', error)
-  }
-
-  // Gateway
+  // Gateway — checked BEFORE generic not_found (gateway messages don't collide, kept together
+  // with the local-model check below for readability)
   if (
     c2 === 'GATEWAY_UNAVAILABLE' ||
     m.includes('gateway') ||
@@ -272,7 +268,9 @@ export function classifyError(error: unknown): TaxonomyEntry {
     return entry('gateway', error)
   }
 
-  // Local model (Ollama-specific)
+  // Local model (Ollama-specific) — checked BEFORE generic not_found because Ollama's
+  // "model not found" error body contains the phrase "not found" and would otherwise be
+  // swallowed by the generic not_found check below.
   if (
     c2 === 'OLLAMA_ERROR' ||
     m.includes('ollama') ||
@@ -280,6 +278,11 @@ export function classifyError(error: unknown): TaxonomyEntry {
     (m.includes('econnrefused') && m.includes('11434'))
   ) {
     return entry('local_model', error)
+  }
+
+  // Not found
+  if (s === 404 || m.includes('not found') || m.includes('does not exist')) {
+    return entry('not_found', error)
   }
 
   // Multimodal — checked BEFORE provider to avoid "provider does not support text-to-image"
