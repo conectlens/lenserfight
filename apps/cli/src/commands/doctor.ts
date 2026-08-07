@@ -141,7 +141,7 @@ export default defineCommand({
 
     // ── BYOK key checks ───────────────────────────────────────────────────
     if (requestedCheck === 'byok') {
-      const providers = ['openai', 'anthropic', 'google', 'mistral'] as const
+      const providers = ['openai', 'anthropic', 'google', 'google_vertex', 'mistral'] as const
       for (const provider of providers) {
         const ok = byokKeyResolver.has(provider)
         push(

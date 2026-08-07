@@ -200,6 +200,34 @@ WITH model_seed AS (
         'https://ai.google.dev/gemini-api/docs/models',
         false
       ),
+
+      -- -----------------------------------------------------------------------
+      -- Google models via Vertex AI (Express Mode API key, not Gemini Developer API)
+      -- -----------------------------------------------------------------------
+      (
+        'Gemini 2.5 Pro (Vertex)',
+        ARRAY['chat','reasoning','tools','vision']::text[],
+        'gemini-2.5-pro-vertex',
+        'google_vertex',
+        2000000,
+        true,
+        true,
+        true,
+        'https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-pro',
+        false
+      ),
+      (
+        'Gemini 2.5 Flash (Vertex)',
+        ARRAY['chat','tools','vision']::text[],
+        'gemini-2.5-flash-vertex',
+        'google_vertex',
+        1000000,
+        true,
+        true,
+        true,
+        'https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash',
+        false
+      ),
       (
         'Gemini 3 Flash Preview',
         ARRAY['chat','tools','vision']::text[],
@@ -513,7 +541,9 @@ WHERE key IN (
   'gemini-2.5-flash-lite',
   'gemini-3-flash-preview',
   'gemini-3.1-pro-preview',
-  'gemini-3.1-flash-lite-preview'
+  'gemini-3.1-flash-lite-preview',
+  'gemini-2.5-pro-vertex',
+  'gemini-2.5-flash-vertex'
 );
 
 -- ---------------------------------------------------------------------------

@@ -127,4 +127,77 @@ describe('threadService', () => {
       await expect(threadService.delete(sb, 't1')).rejects.toBeInstanceOf(McpError);
     });
   });
+
+  describe('addReply', () => {
+    it('forwards thread_id/content/parent_reply_id and unwraps the first row', async () => {
+      const { sb, rpc } = makeSb([{ data: [{ id: 'r1', lenser_id: 'l1' }] }]);
+      const result = await threadService.addReply(sb, {
+        thread_id: 't1',
+        content: 'Hello',
+        parent_reply_id: 'r0',
+      });
+      expect(rpc).toHaveBeenCalledWith('fn_create_thread_reply', {
+        p_thread_id: 't1',
+        p_content: 'Hello',
+        p_parent_reply_id: 'r0',
+      });
+      expect(result).toEqual({ id: 'r1', lenser_id: 'l1' });
+    });
+
+    it('defaults parent_reply_id to null when omitted', async () => {
+      const { sb, rpc } = makeSb([{ data: [{ id: 'r1', lenser_id: 'l1' }] }]);
+      await threadService.addReply(sb, { thread_id: 't1', content: 'Hello' });
+      expect(rpc).toHaveBeenCalledWith('fn_create_thread_reply', {
+        p_thread_id: 't1',
+        p_content: 'Hello',
+        p_parent_reply_id: null,
+      });
+    });
+
+    it('throws DB_ERROR when the RPC returns no row', async () => {
+      const { sb } = makeSb([{ data: [] }]);
+      await expect(threadService.addReply(sb, { thread_id: 't1', content: 'Hello' })).rejects.toBeInstanceOf(
+        McpError
+      );
+    });
+
+    it('maps an unauthenticated RPC error to UNAUTHENTICATED', async () => {
+      const { sb } = makeSb([{ error: { message: 'Unauthenticated or no active lenser profile' } }]);
+      await expect(
+        threadService.addReply(sb, { thread_id: 't1', content: 'Hello' })
+      ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+    });
+  });
+
+  describe('listReplies', () => {
+    it('forwards thread_id/limit/offset and returns the rows array', async () => {
+      const { sb, rpc } = makeSb([{ data: [{ id: 'r1' }, { id: 'r2' }] }]);
+      const result = await threadService.listReplies(sb, { thread_id: 't1', limit: 20, offset: 0 });
+      expect(rpc).toHaveBeenCalledWith('fn_get_thread_replies_page', {
+        p_thread_id: 't1',
+        p_limit: 20,
+        p_offset: 0,
+      });
+      expect(result).toEqual([{ id: 'r1' }, { id: 'r2' }]);
+    });
+
+    it('falls back to an empty array when data is null', async () => {
+      const { sb } = makeSb([{ data: null }]);
+      const result = await threadService.listReplies(sb, { thread_id: 't1', limit: 20, offset: 0 });
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('deleteReply', () => {
+    it('forwards reply_id', async () => {
+      const { sb, rpc } = makeSb([{ data: null }]);
+      await threadService.deleteReply(sb, 'r1');
+      expect(rpc).toHaveBeenCalledWith('fn_delete_thread_reply', { p_reply_id: 'r1' });
+    });
+
+    it('throws DB_ERROR on RPC failure', async () => {
+      const { sb } = makeSb([{ error: { message: 'boom' } }]);
+      await expect(threadService.deleteReply(sb, 'r1')).rejects.toBeInstanceOf(McpError);
+    });
+  });
 });

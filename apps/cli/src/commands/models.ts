@@ -257,7 +257,7 @@ const run = defineCommand({
         return;
       }
 
-      const runnableByok: TextProvider[] = ['openai', 'anthropic', 'google', 'mistral'];
+      const runnableByok: TextProvider[] = ['openai', 'anthropic', 'google', 'google_vertex', 'mistral'];
       if (!runnableByok.includes(providerKey as TextProvider)) {
         throw new Error(`No direct CLI execution route for provider '${providerKey}'. Use gateway:routes to inspect support.`);
       }

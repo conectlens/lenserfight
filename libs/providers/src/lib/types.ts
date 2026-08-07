@@ -1,6 +1,6 @@
 // ─── Provider Registry ────────────────────────────────────────────────────────
 
-export type Provider = 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama' | 'fal' | 'deepseek';
+export type Provider = 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'mistral' | 'ollama' | 'fal' | 'deepseek';
 
 export type GenerativeMediaProvider =
   | 'openai'      // DALL-E (image), Sora (video)

@@ -202,7 +202,7 @@ const test = defineCommand({
         route:
           args.provider === 'ollama'
             ? 'local'
-            : ['openai', 'anthropic', 'google', 'mistral'].includes(args.provider)
+            : ['openai', 'anthropic', 'google', 'google_vertex', 'mistral'].includes(args.provider)
               ? 'byok'
               : 'catalog-only',
       };

@@ -4,9 +4,12 @@ export { getActionLogs } from './agents'
 export {
   getPersonalFeed as getPersonalThreadFeed,
   createThread,
+  createReply,
   type ThreadVisibility,
   type CreateThreadInput,
   type CreatedThread,
+  type CreateReplyInput,
+  type CreatedReply,
 } from './threads'
 export { getPersonalFeed as getPersonalLensFeed } from './lenses'
 export {

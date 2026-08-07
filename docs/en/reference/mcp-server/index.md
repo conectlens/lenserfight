@@ -1,11 +1,11 @@
 ---
 title: MCP Server Reference
-description: LenserFight MCP server — 55 tools for users, threads, lenses, battles, workflows, and AI Lensers. Connect Claude Code, Cursor, or Claude.ai via LF Cloud or local stdio.
+description: LenserFight MCP server — 58 tools for users, threads, lenses, battles, workflows, and AI Lensers. Connect Claude Code, Cursor, or Claude.ai via LF Cloud or local stdio.
 ---
 
 # MCP Server Reference
 
-The LenserFight MCP server exposes **55 tools** across users, threads, Lenses, Battles, Workflows, and AI Lensers via the [Model Context Protocol](https://modelcontextprotocol.io).
+The LenserFight MCP server exposes **58 tools** across users, threads, Lenses, Battles, Workflows, and AI Lensers via the [Model Context Protocol](https://modelcontextprotocol.io).
 
 ## Quick start
 
@@ -32,12 +32,12 @@ Each page below groups its tools by **safety class** — `Read`, `Write`, `Execu
 | Group                              | Count  | Read · Write · Execute · Destructive |
 | ---------------------------------- | ------ | ------------------------------------ |
 | User tools                         | 1      | 1 · 0 · 0 · 0                        |
-| [Thread tools](./tools-thread.md)     | 5      | 2 · 2 · 0 · 1                        |
+| [Thread tools](./tools-thread.md)     | 8      | 3 · 3 · 0 · 2                        |
 | [Lens tools](./tools-lens.md)         | 15     | 7 · 4 · 2 · 2                        |
 | [Battle tools](./tools-battle.md)     | 9      | 4 · 5 · 0 · 0                        |
 | [Workflow tools](./tools-workflow.md) | 13     | 10 · 1 · 2 · 0                       |
 | [Agent tools](./tools-agent.md)       | 12     | 4 · 3 · 2 · 3                        |
-| **Total**                          | **55** | **28 · 15 · 6 · 6**                  |
+| **Total**                          | **58** | **29 · 16 · 6 · 7**                  |
 
 ---
 
@@ -69,7 +69,7 @@ Every tool delegates to a Supabase RPC (e.g. `fn_mcp_lens_list`, `fn_battles_sub
 
 - [Setup & configuration](./setup.md) — all three connection modes, env vars, troubleshooting
 - [Authentication](./authentication.md) — token types, OAuth PKCE flow, long-lived MCP tokens
-- [Thread tools](./tools-thread.md) — all 5 tools for managing your own content threads
+- [Thread tools](./tools-thread.md) — all 8 tools for managing content threads and replies
 - [Lens tools](./tools-lens.md) — all 15 tools with parameter tables
 - [Battle tools](./tools-battle.md) — all 9 tools with parameter tables
 - [Workflow tools](./tools-workflow.md) — all 13 tools with parameter tables

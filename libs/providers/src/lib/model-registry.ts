@@ -134,6 +134,11 @@ const MODEL_ENTRIES: ModelRegistryEntry[] = [
   { key: 'gemini-3.1-flash-lite-preview', provider: 'google', wireModel: 'gemini-3.1-flash-lite',  kind: 'text' },
   { key: 'gemini-2.5-flash-lite',         provider: 'google', wireModel: 'gemini-2.5-flash-lite',  kind: 'text' },
 
+  // Same Gemini models, routed through Vertex AI (Express Mode API key)
+  // instead of the Gemini Developer API. See ./google-vertex.ts.
+  { key: 'gemini-2.5-pro-vertex',   provider: 'google_vertex', wireModel: 'gemini-2.5-pro',   kind: 'text' },
+  { key: 'gemini-2.5-flash-vertex', provider: 'google_vertex', wireModel: 'gemini-2.5-flash', kind: 'text' },
+
   // ── Google image (Imagen) ────────────────────────────────────────────────
   // Imagen 3 was shut down June 2025. Imagen 4 GA only (-001 suffix = GA;
   // -002 variant is Vertex AI only).

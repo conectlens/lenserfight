@@ -63,6 +63,23 @@ WITH provider_seed AS (
         )
       ),
       (
+        'google_vertex',
+        'Google Vertex AI',
+        'https://aiplatform.googleapis.com',
+        'https://cloud.google.com/vertex-ai/generative-ai/docs',
+        'byok_only',
+        'google',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://cloud.google.com/vertex-ai/generative-ai/docs',
+          'source_checked_at', '2026-08-07',
+          'gateway_compatible', false,
+          'platforms', jsonb_build_array('web', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'google_vertex'
+        )
+      ),
+      (
         'mistral',
         'Mistral AI',
         'https://api.mistral.ai/v1',
