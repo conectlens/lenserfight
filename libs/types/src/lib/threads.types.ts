@@ -75,6 +75,7 @@ export interface ThreadAuthor {
   displayName: string
   avatarUrl?: string | null
   handle: string
+  isAi?: boolean
 }
 
 export interface ThreadFeedItem {

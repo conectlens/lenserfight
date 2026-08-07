@@ -7,6 +7,10 @@ jest.mock('../lib/data-services', () => ({
   getHumanActivityFeed: jest.fn(),
 }))
 
+jest.mock('../lib/has-auth-token', () => ({
+  hasResolvableAuthToken: jest.fn(() => true),
+}))
+
 // command-inventory.ts pulls in current-script-url.ts, which uses
 // import.meta.url (invalid under ts-jest's commonjs module target — see the
 // same mock in command-inventory.spec.ts). buildCommandInventory() itself is
@@ -16,6 +20,8 @@ jest.mock('../lib/command-inventory', () => ({
 }))
 
 import { getHumanActivityFeed } from '../lib/data-services'
+import { hasResolvableAuthToken } from '../lib/has-auth-token'
+
 import {
   formatHealthStatus,
   formatActionLogRow,
@@ -27,6 +33,7 @@ import {
 } from './dashboard'
 
 const mockGetHumanActivityFeed = getHumanActivityFeed as jest.MockedFunction<typeof getHumanActivityFeed>
+const mockHasResolvableAuthToken = hasResolvableAuthToken as jest.MockedFunction<typeof hasResolvableAuthToken>
 
 describe('formatHealthStatus', () => {
   it('renders a HEALTHY pill for true', () => {
@@ -114,6 +121,7 @@ describe('tokenise', () => {
 describe('fetchRecentLogs', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockHasResolvableAuthToken.mockReturnValue(true)
   })
 
   it('maps activity-feed rows to ActionLogRow shape', async () => {
@@ -149,5 +157,16 @@ describe('fetchRecentLogs', () => {
   it('degrades to an empty array on fetch failure', async () => {
     mockGetHumanActivityFeed.mockRejectedValue(new Error('network error'))
     await expect(fetchRecentLogs()).resolves.toEqual([])
+  })
+
+  it('skips the call entirely without a resolvable auth token, instead of triggering auth recovery', async () => {
+    // getHumanActivityFeed calls a requireAuth:true RPC — without a valid
+    // token that would trip callRpc's automatic auth-recovery (an
+    // interactive browser login prompt) from what must stay silent
+    // background polling. See lib/has-auth-token.ts.
+    mockHasResolvableAuthToken.mockReturnValue(false)
+    const rows = await fetchRecentLogs()
+    expect(rows).toEqual([])
+    expect(mockGetHumanActivityFeed).not.toHaveBeenCalled()
   })
 })

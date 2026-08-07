@@ -33,6 +33,7 @@ const resolveAuthor = (record: Pick<ThreadRecord, 'author_profile' | 'lenser_id'
     displayName: profile?.display_name || 'Unknown',
     handle: profile?.handle || 'unknown',
     avatarUrl: profile?.avatar_url || null,
+    isAi: profile?.type === 'ai',
   }
 }
 

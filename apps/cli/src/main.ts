@@ -2,6 +2,7 @@ import { defineCommand, runMain } from 'citty'
 import consola from 'consola'
 import { getEffectiveMode } from '@lenserfight/cli-client'
 import { setExecContext, getExecContext } from '@lenserfight/cli-client'
+import { normalizeTopLevel, topLevelKeysOf } from './lib/command-resolve'
 import { resolveRootInvocation } from './lib/root-invocation'
 import { readCliVersion } from './lib/version'
 
@@ -160,10 +161,11 @@ export const main = defineCommand({
     examples: () => import('./commands/examples').then((m) => m.default),
     env: () => import('./commands/env').then((m) => m.default),
     docs: () => import('./commands/docs').then((m) => m.default),
+    __inventory: () => import('./commands/__inventory').then((m) => m.default),
   },
 })
 
-runMain(main)
+runMain(main, { rawArgs: normalizeTopLevel(process.argv.slice(2), topLevelKeysOf(main.subCommands)) })
 
 // Background update-check: runs after the command completes, never blocks.
 // Prints a one-line hint to stderr so it never pollutes stdout/JSON output.

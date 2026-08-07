@@ -309,31 +309,46 @@ lf init --mode local  # initialize in local mode
 
 ---
 
-## Dashboard
+## Interactive shell
 
-Running `lf` with no arguments opens the LenserFight TUI dashboard: a persistent sidebar
-for Agents, Workflows, Execute, Battles, Schedules, Memory, Lensers, Approvals,
-Configuration, and Logs; a central workspace with searchable/sortable/paginated tables,
-progress views, and structured detail cards (no raw JSON unless you explicitly open it);
-and a contextual detail panel for metadata, bindings, and actions.
-
-- `1`–`9` jump directly to a section; `Tab` moves focus between the sidebar and the
-  workspace; arrow keys + `Enter` navigate the sidebar or select a row.
-- `:` opens the raw command bar (same as before — type any `lf` command and run it
-  in place). `Ctrl+K` opens a fuzzy palette that also jumps to any dashboard section.
-- `?` opens a searchable shortcut reference, global plus whatever the focused screen adds.
-- Destructive row actions (pause/resume/approve/reject/delete/...) show an in-dashboard
-  confirmation dialog before dispatching — no surprise mutations.
-- Every dispatched command runs in-process through the same routing, arg parsing, and
-  `--confirm`/safety gate as running it directly from a terminal — the dashboard is a
-  thin, stateful launcher, not a separate execution path.
+Running `lf` with no arguments opens a Claude Code–style interactive shell: a single,
+scrollable transcript with a persistent input at the bottom. There is no sidebar and no
+menu navigation — every `lf` command (and its subcommands) is executable directly by
+typing it, exactly as it would run from a plain shell.
 
 ```bash
-lf              # opens the dashboard
+lf              # opens the interactive shell
 ```
 
+- Type any command name to run it — `agents list`, `battle create`, `workflow run …`.
+  Case, a leading `lf`/`lenserfight`, and a leading `/` are all normalized before
+  dispatch, so `AGENTS`, `agents`, `/agents`, and `lf agents` all resolve identically.
+- **History & search** — `↑`/`↓` recall previous commands (retry a failed one by
+  recalling it and pressing Enter again); `Ctrl+R` opens reverse history search.
+- **Completion & discovery** — `Tab` completes the command name as you type; matching
+  commands are suggested inline; `Ctrl+K` opens a fuzzy searchable command palette.
+- **Typo-aware errors** — an unrecognized command shows the invalid token, the closest
+  valid alternatives, and a recovery hint — never a raw stack trace. Pass `--debug` (or
+  run `/debug` in the shell) to see full diagnostic detail on failures.
+- **Local shell access** — prefix a line with `!` to run it as a real shell command
+  (`!git status`, `!ls`). The working directory persists across `!` commands (including
+  `!cd`), stdout/stderr stream separately, the exit code is reported, and destructive
+  patterns (`rm -rf`, `git push --force`, `git reset --hard`, `DROP TABLE`, …) require
+  confirmation first.
+- **Live progress & cancellation** — long-running commands (workflow streaming, battle
+  execution) stream their output into the transcript as it happens; `Ctrl+C` cancels the
+  in-flight command without exiting the shell. `Ctrl+C` with nothing running exits.
+- **Confirmation** — destructive/security-sensitive commands show the same confirmation
+  gate they'd show from a plain terminal — the shell dispatches through the identical
+  routing, arg parsing, and `--confirm`/safety gate as running a command directly; it is
+  a thin launcher, not a separate execution path.
+- **Shell-only controls** (not `lf` subcommands): `/help` (shortcut reference),
+  `/clear` (clear the transcript), `/history` (recently typed commands), `/status` and
+  `/settings` (delegate to the real `status`/`configure` commands), `/debug` (toggle full
+  error detail), `/quit` (exit).
+
 See [CLI: Getting Started](../../docs/en/tutorials/getting-started/cli-getting-started.md) and
-[CLI Dashboard](../../docs/en/how-to/operations/cli-dashboard.md) for more.
+[CLI Interactive Shell](../../docs/en/how-to/operations/cli-dashboard.md) for more.
 
 ---
 
