@@ -9,7 +9,7 @@ Manage CLI profiles for talking to multiple Supabase backends from one machine. 
 
 Profiles are stored as JSON files at `~/.lenserfight/profiles/<name>.json` with file mode `0600` (owner read/write only). The active profile name is stored in `~/.lenserfight/profiles/.active`.
 
-See also: [`lf completion`](./completion.md) for shell completion of subcommands, and [Operate LenserFight from the TUI dashboard](/en/how-to/operations/cli-dashboard) for an interactive view that respects the active profile.
+See also: [`lf completion`](./completion.md) for shell completion of subcommands, and [Operate LenserFight from the interactive shell](/en/how-to/operations/cli-dashboard) for an interactive view that respects the active profile.
 
 ## File format
 

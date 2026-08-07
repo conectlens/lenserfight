@@ -2,11 +2,12 @@ import { A, sym, isPlainText, stripAnsi } from '@lenserfight/cli-client'
 
 import { buildCommandInventory } from '../lib/command-inventory'
 import { getHumanActivityFeed } from '../lib/data-services'
+import { hasResolvableAuthToken } from '../lib/has-auth-token'
 import { probeBackendHealth } from '../lib/health-probe'
+import { killActiveShellChild } from '../lib/shell-exec'
 import { truncate } from '../utils/output'
 import { getActiveProfileName } from '../utils/profiles'
 
-import { dispatchInProcess } from './command-dispatch'
 
 // Single sink for full-screen frames used by the non-interactive fallbacks
 // (non-TTY / small-terminal degrade paths below hand off to this; the
@@ -128,6 +129,11 @@ export function tokenise(raw: string): string[] {
 // ─── Recent action-log feed ──────────────────────────────────────────────────
 
 export async function fetchRecentLogs(): Promise<ActionLogRow[]> {
+  // getHumanActivityFeed calls a requireAuth:true RPC — without a resolvable
+  // token that would trip callRpc's auto-recovery (an interactive browser
+  // login prompt) from what is otherwise silent background polling. See
+  // has-auth-token.ts for the full rationale.
+  if (!hasResolvableAuthToken()) return []
   try {
     const feed = await getHumanActivityFeed(10)
     return feed.map((item) => ({
@@ -142,44 +148,17 @@ export async function fetchRecentLogs(): Promise<ActionLogRow[]> {
   }
 }
 
-// ─── Dispatched-command run glue ──────────────────────────────────────────────
-//
-// Runs a command bar selection in-process (see ./command-dispatch.ts) and
-// waits for a keypress before re-mounting the ink screen, mirroring the
-// legacy child-spawn UX (clear, run, "press q/Enter to return") without ever
-// spawning a subprocess.
+// ─── Non-interactive fallback (piped stdin/stdout) ───────────────────────────
 
-const RETURN_KEYS = new Set(['q', 'Q', '\x1b', '\r', '\n'])
-
-function waitForReturnKey(): Promise<void> {
-  return new Promise((resolve) => {
-    try { process.stdin.setRawMode(true) } catch { /* ignore */ }
-    const onData = (buf: Buffer | string) => {
-      const key = buf.toString()
-      if (key === '\x03') { process.stdin.off('data', onData); process.exit(130) }
-      if (RETURN_KEYS.has(key)) { process.stdin.off('data', onData); resolve() }
-    }
-    process.stdin.on('data', onData)
-  })
-}
-
-async function runDispatchedCommand(argv: string[]): Promise<void> {
-  const out = process.stdout
-  out.write(A.showCursor + A.clearScreen + A.homeCursor)
-  out.write(`\n  ${A.bold}${A.brightCyan}${sym.run}  lf ${argv.join(' ')}${A.reset}\n\n`)
-
-  try { process.stdin.setRawMode(false) } catch { /* ignore */ }
-  const { code } = await dispatchInProcess(argv)
-  try { process.stdin.setRawMode(true) } catch { /* ignore */ }
-
-  const status = code === 0
-    ? `${A.brightGreen}${sym.pass} done${A.reset}`
-    : `${A.brightRed}${sym.fail} exited with code ${code}${A.reset}`
-  out.write(`\n  ${status}\n`)
-  out.write(
-    `  ${A.gray}Press ${A.brightYellow}q${A.reset}${A.gray} / ${A.brightYellow}Enter${A.reset}${A.gray} to return…${A.reset}\n`,
+async function renderNonTtyFrame(): Promise<void> {
+  const [profile, healthy] = await Promise.all([getActiveProfileName(), probeBackendHealth()])
+  writeFrame(
+    [
+      `${A.brightMagenta}${A.bold}${sym.fight} LenserFight${A.reset}  ${A.gray}│${A.reset}  profile ${profile}  ${A.gray}│${A.reset}  ${formatHealthStatus(healthy)}`,
+      '',
+      `${A.gray}Non-interactive shell — run individual commands directly, e.g. \`lf status\`.${A.reset}`,
+    ].join('\n'),
   )
-  await waitForReturnKey()
 }
 
 // ─── Small-terminal fallback (non-interactive plain-text frame) ─────────────
@@ -210,16 +189,14 @@ async function renderSmallTerminalFallback(): Promise<void> {
 // ─── Public entry point ──────────────────────────────────────────────────────
 
 export async function runDashboard(): Promise<void> {
-  // Warm the suggestion cache before the command bar can be opened. Failure
+  // Warm the suggestion cache before the input bar can be used. Failure
   // degrades to an empty suggestion list — free-typed commands still work.
   await loadCommandSuggestions().catch(() => undefined)
 
-  const { runInkDashboard, renderInkStatic } = await import('./ink/app')
-
   // Non-TTY / piped output (scripting, CI, `lf < /dev/null`): paint a single
-  // static ink frame and return instead of hanging on raw-mode key handling.
+  // static frame and return instead of hanging on raw-mode key handling.
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    await renderInkStatic()
+    await renderNonTtyFrame()
     return
   }
 
@@ -230,33 +207,24 @@ export async function runDashboard(): Promise<void> {
     return
   }
 
+  const { runInkRepl } = await import('./ink/app')
+
   const out = process.stdout
   out.write(A.altScreenOn + A.hideCursor)
 
   const cleanup = () => {
     try { process.stdin.setRawMode(false) } catch { /* ignore */ }
+    killActiveShellChild()
     out.write(A.showCursor + A.altScreenOff)
   }
 
   process.on('SIGINT', () => { cleanup(); process.exit(130) })
   process.on('SIGTERM', () => { cleanup(); process.exit(143) })
 
-  // Main-screen loop: mount ink, wait for the user's choice, dispatch the
-  // chosen command in-process, then re-mount ink so panels reflect the
-  // updated action log / recent-commands list.
-  for (;;) {
-    const action = await runInkDashboard()
-
-    if (action.type === 'quit') {
-      cleanup()
-      process.exit(action.code ?? 0)
-    }
-
-    // ink has unmounted and released raw mode; re-arm stdin for the
-    // dispatched command and the "press q/Enter to return" prompt below.
-    try { process.stdin.resume() } catch { /* ignore */ }
-    try { process.stdin.setEncoding('utf-8') } catch { /* ignore */ }
-
-    await runDispatchedCommand(action.argv)
-  }
+  // The REPL mounts once for the whole session — no more per-command
+  // unmount/remount. It resolves with an exit code when the user quits
+  // (Ctrl+C while idle, or /quit).
+  const code = await runInkRepl()
+  cleanup()
+  process.exit(code)
 }

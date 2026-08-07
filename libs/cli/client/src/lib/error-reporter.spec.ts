@@ -7,7 +7,7 @@
 
 // Mock exec-context so we can control isDebug
 jest.mock('../lib/exec-context', () => ({
-  getExecContext: jest.fn(() => ({ isLocal: false, isDebug: false, commandStartMs: 0 })),
+  getExecContext: jest.fn(() => ({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })),
 }))
 
 import { getExecContext } from '../lib/exec-context'
@@ -39,9 +39,9 @@ function withNoColor(fn: () => void): void {
 }
 
 function withDebug(fn: () => void): void {
-  mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: true, commandStartMs: 0 })
+  mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: true, commandStartMs: 0, cancelSignal: null })
   try { fn() } finally {
-    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0 })
+    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })
   }
 }
 
@@ -50,7 +50,7 @@ function withDebug(fn: () => void): void {
 describe('reportCliError — default mode', () => {
   beforeEach(() => {
     process.env['NO_COLOR'] = '1' // force plain-text for deterministic assertions
-    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0 })
+    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })
   })
 
   afterEach(() => {
@@ -110,7 +110,7 @@ describe('reportCliError — default mode', () => {
 describe('reportCliError — NO_COLOR mode', () => {
   beforeEach(() => {
     process.env['NO_COLOR'] = '1'
-    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0 })
+    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })
   })
   afterEach(() => { delete process.env['NO_COLOR'] })
 
@@ -147,7 +147,7 @@ describe('reportCliError — NO_COLOR mode', () => {
 
 describe('reportCliError — JSON mode', () => {
   beforeEach(() => {
-    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0 })
+    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })
   })
 
   it('emits valid JSON to stderr', () => {
@@ -190,7 +190,7 @@ describe('reportCliError — debug mode', () => {
   })
   afterEach(() => {
     delete process.env['NO_COLOR']
-    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0 })
+    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })
   })
 
   it('shows more than 2 hints when additional hints exist', () => {
@@ -231,7 +231,7 @@ describe('reportCliError — debug mode', () => {
 describe('reportCliError — context label', () => {
   beforeEach(() => {
     process.env['NO_COLOR'] = '1'
-    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0 })
+    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })
   })
   afterEach(() => { delete process.env['NO_COLOR'] })
 
@@ -271,7 +271,7 @@ describe('reportCliError — context label', () => {
 describe('handleCliError', () => {
   beforeEach(() => {
     process.env['NO_COLOR'] = '1'
-    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0 })
+    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })
     process.exitCode = 0
   })
   afterEach(() => {
@@ -299,7 +299,7 @@ describe('handleCliError', () => {
 describe('accessibility — semantic labels independent of color', () => {
   beforeEach(() => {
     process.env['NO_COLOR'] = '1'
-    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0 })
+    mockGetExecContext.mockReturnValue({ isLocal: false, isDebug: false, commandStartMs: 0, cancelSignal: null })
   })
   afterEach(() => { delete process.env['NO_COLOR'] })
 

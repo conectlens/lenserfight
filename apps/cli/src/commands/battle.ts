@@ -4,7 +4,7 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { homedir } from 'node:os'
 import { type PrivateBattleFrontmatter } from '@lenserfight/types'
-import { callRpc, handleError } from '@lenserfight/cli-client'
+import { callRpc, getExecContext, handleError } from '@lenserfight/cli-client'
 import { generateCreation, normalizeFunding, resolveProfileId } from '../lib/data-services/ai-generate'
 import { wrapBattleLocalAliasCommand } from '../lib/battle-file-alias'
 import { assertSafe } from '../lib/safety'
@@ -1560,16 +1560,23 @@ const templateDelete = defineCommand({
     force: { type: 'boolean', default: false, description: 'Skip confirmation prompt' },
   },
   async run({ args }) {
-    if (!args.force) {
-      const answer = await consola.prompt(`Delete template ${args.id}?`, {
-        type: 'confirm',
-        initial: false,
-      })
-      if (!answer) {
-        consola.info('Aborted.')
-        return
-      }
-    }
+    // consola.prompt() requires a real interactive TTY to render — calling
+    // it unconditionally crashed with ERR_TTY_INIT_FAILED under any
+    // non-interactive invocation (piped stdin, CI, subprocess spawn without
+    // a TTY). assertSafe() is the same FLAG-policy gate the sibling `battle
+    // delete` command above uses: it degrades to a clean, actionable error
+    // instead of trying to open a prompt when there's no TTY to prompt on.
+    await assertSafe({
+      risk: 'HIGH',
+      reversibility: 'IRREVERSIBLE',
+      confirmationPolicy: 'FLAG',
+      forceFlag: '--force',
+      hasForce: args.force,
+      description: `Delete battle template ${args.id}.`,
+      affectedResources: [{ type: 'battle', name: args.id, scope: 'remote' }],
+      rollbackAvailable: false,
+    })
+
     try {
       await callRpc<void>(
         'fn_battles_delete_template',
@@ -3794,24 +3801,28 @@ const streamFeed = defineCommand({
 
       consola.info('Subscribed to battles.battles. Press Ctrl-C to exit.')
 
-      const exit = async () => {
-        try {
-          await client.removeChannel(channel)
-        } catch {
-          /* ignore */
+      // Resolves this run() rather than calling process.exit() — the TUI
+      // REPL dispatches this in-process, so exiting the process here would
+      // kill the whole session instead of just returning to the prompt.
+      await new Promise<void>((resolve) => {
+        let settled = false
+        const exit = async () => {
+          if (settled) return
+          settled = true
+          try {
+            await client.removeChannel(channel)
+          } catch {
+            /* ignore */
+          }
+          resolve()
         }
-        process.exit(0)
-      }
-      process.on('SIGINT', () => {
-        void exit()
-      })
-      process.on('SIGTERM', () => {
-        void exit()
-      })
-
-      // Keep the event loop alive without busy-spinning.
-      await new Promise<void>(() => {
-        /* never resolves; SIGINT exits */
+        process.on('SIGINT', () => void exit())
+        process.on('SIGTERM', () => void exit())
+        const replSignal = getExecContext().cancelSignal
+        if (replSignal) {
+          if (replSignal.aborted) void exit()
+          else replSignal.addEventListener('abort', () => void exit(), { once: true })
+        }
       })
     } catch (err) {
       handleError(err)

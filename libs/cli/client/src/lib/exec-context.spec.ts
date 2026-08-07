@@ -10,6 +10,7 @@ describe('getExecContext', () => {
     expect(ctx.isLocal).toBe(false)
     expect(ctx.isDebug).toBe(false)
     expect(ctx.commandStartMs).toBeGreaterThan(0)
+    expect(ctx.cancelSignal).toBeNull()
   })
 
   it('commandStartMs is a positive integer', () => {
@@ -44,6 +45,14 @@ describe('setExecContext', () => {
     const before = getExecContext().commandStartMs
     setExecContext({ isLocal: true })
     expect(getExecContext().commandStartMs).toBe(before)
+  })
+
+  it('reflects cancelSignal after set, and clears it back to null', () => {
+    const ac = new AbortController()
+    setExecContext({ cancelSignal: ac.signal })
+    expect(getExecContext().cancelSignal).toBe(ac.signal)
+    setExecContext({ cancelSignal: null })
+    expect(getExecContext().cancelSignal).toBeNull()
   })
 })
 

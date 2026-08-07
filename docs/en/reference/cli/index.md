@@ -2,7 +2,7 @@
 
 The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding, lens authoring, runners, battles, invites, and platform operations.
 
-> **Interactive TUI:** Running `lf` with no subcommand opens the interactive [TUI dashboard](/en/how-to/operations/cli-dashboard) — health status, recent agent activity, and a `:` command bar with live autocomplete over every command. It is the recommended starting point for exploration. Pass `--help` to skip the TUI and print top-level help instead.
+> **Interactive shell:** Running `lf` with no subcommand opens an [interactive shell](/en/how-to/operations/cli-dashboard) — a scrollable transcript with a persistent input where every command is typed and run directly, with history, Tab completion, and a fuzzy command palette. It is the recommended starting point for exploration. Pass `--help` to skip the shell and print top-level help instead.
 
 ## System requirements
 

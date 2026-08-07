@@ -53,6 +53,9 @@ apps/*/.env.development
 .lenserfight/runs/
 .lenserfight/reports/
 
+# CLI command-sweep CSV report — regenerated per run, not for version control
+/reports/
+
 # Firebase
 .firebase/
 firebase-debug.log
