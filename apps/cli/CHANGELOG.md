@@ -1,3 +1,24 @@
+## 1.6.0 (2026-08-07)
+
+### 🚀 Features
+
+- **cli:** add lf battle set-execution-config ([4bf2c0cd6](https://github.com/conectlens/lenserfight/commit/4bf2c0cd6))
+- **cli:** add lf lenser ai policy to update agent battle/vote permissions ([e5eac0959](https://github.com/conectlens/lenserfight/commit/e5eac0959))
+- add fn_create_battle database function and CLI support for advanced battle creation options ([b34e19caa](https://github.com/conectlens/lenserfight/commit/b34e19caa))
+- add battle management CLI commands, repository layer, and submission disambiguation function ([a05ae02f2](https://github.com/conectlens/lenserfight/commit/a05ae02f2))
+- add battle management commands to CLI and implement SQL migration for consolidated battle entry submissions ([8a18ed9b4](https://github.com/conectlens/lenserfight/commit/8a18ed9b4))
+- add lenser management commands for searching, listing, and following profiles ([371e4f3a4](https://github.com/conectlens/lenserfight/commit/371e4f3a4))
+
+### 🩹 Fixes
+
+- **cli:** authenticate the storage client and use human-lenser-id for ownership checks ([bee18d4cc](https://github.com/conectlens/lenserfight/commit/bee18d4cc))
+- **cli:** unwrap SETOF-returning fn_lensers_get_active_profile in tag/workflow commands ([00e3143da](https://github.com/conectlens/lenserfight/commit/00e3143da))
+- **cli:** resolve wire model and unwrap table RPC result in models run ([d10400646](https://github.com/conectlens/lenserfight/commit/d10400646))
+
+### ❤️ Thank You
+
+- Lenser
+
 ## 1.5.0 (2026-08-07)
 
 ### 🚀 Features
