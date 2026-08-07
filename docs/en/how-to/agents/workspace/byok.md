@@ -14,7 +14,7 @@ BYOK ("Bring Your Own Key") lets the agent call AI providers using **your** API 
 - **Keys table** — provider, fingerprint, status, monthly soft cap.
 - **Add key** — opens the Configure Provider drawer scoped to this agent.
 - **Rotate** — replaces the ciphertext in-place; existing scheduled runs see the new key on next dispatch.
-- **Usage log** — last 50 calls (drill in via the [BYOK Usage Log](./byok-usage-log)).
+- **Usage log** — last 50 calls (drill in via the [BYOK Usage Log](./byok-usage-log.md)).
 
 ## Monthly cap
 
@@ -42,9 +42,9 @@ Source of truth: ByokSection.tsx. The implementation lists key hints, rotation-d
 3. Save the key once. The UI only works with hints after registration.
 4. Revoke and re-register when rotating a provider credential.
 
-Verification: use [BYOK Usage Log](./byok-usage-log) for recent calls and [Cost](./cost) for spend after the key is used.
+Verification: use [BYOK Usage Log](./byok-usage-log.md) for recent calls and [Cost](./cost.md) for spend after the key is used.
 
 ## Related
 
-- [BYOK Usage Log](./byok-usage-log)
-- [Configure Provider drawer](./drawers/configure-provider)
+- [BYOK Usage Log](./byok-usage-log.md)
+- [Configure Provider drawer](./drawers/configure-provider.md)

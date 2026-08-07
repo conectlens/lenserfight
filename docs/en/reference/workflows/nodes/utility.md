@@ -79,7 +79,7 @@ Write a structured log entry for debugging and audit trails. Use as the final no
 
 ### Related Nodes
 
-[Debug Inspector](#debug-inspector) · [Error Catch](./logic#error-catch) · [Email Send](./communication#email-send)
+[Debug Inspector](#debug-inspector) · [Error Catch](./logic.md#error-catch) · [Email Send](./communication.md#email-send)
 
 ---
 
@@ -164,7 +164,7 @@ Resolve a named secret reference for downstream server-side nodes. Use when a no
 
 ### Related Nodes
 
-[HTTP Request](./storage#http-request) · [Logger](#logger)
+[HTTP Request](./storage.md#http-request) · [Logger](#logger)
 
 ---
 
@@ -211,7 +211,7 @@ Throttle workflow items by key and limit. Use before high-volume API calls to av
 
 ### Related Nodes
 
-[Retry](#retry) · [Loop / Map](./logic#loop-map) · [HTTP Request](./storage#http-request)
+[Retry](#retry) · [Loop / Map](./logic.md#loop-map) · [HTTP Request](./storage.md#http-request)
 
 ---
 
@@ -248,7 +248,7 @@ Read cached data by key. Use to avoid redundant expensive operations (API calls,
 
 ### Related Nodes
 
-[Cache Write](#cache-write) · [If / Condition](./logic#if-condition) · [KV Read](./storage#kv-store-read)
+[Cache Write](#cache-write) · [If / Condition](./logic.md#if-condition) · [KV Read](./storage.md#kv-store-read)
 
 ---
 
@@ -285,7 +285,7 @@ Write data to cache by key with an optional TTL.
 
 ### Related Nodes
 
-[Cache Read](#cache-read) · [KV Write](./storage#kv-store-write)
+[Cache Read](#cache-read) · [KV Write](./storage.md#kv-store-write)
 
 ---
 
@@ -327,7 +327,7 @@ Retry an upstream operation branch with a configured backoff policy.
 
 ### Related Nodes
 
-[Error Catch](./logic#error-catch) · [Rate Limit](#rate-limit) · [Wait / Delay](./logic#wait-delay)
+[Error Catch](./logic.md#error-catch) · [Rate Limit](#rate-limit) · [Wait / Delay](./logic.md#wait-delay)
 
 ---
 
@@ -358,8 +358,8 @@ Pass input through unchanged. Use as a placeholder node while designing a workfl
 
 ### Related Nodes
 
-[Debug Inspector](#debug-inspector) · [Stop / Return](./logic#stop-return)
+[Debug Inspector](#debug-inspector) · [Stop / Return](./logic.md#stop-return)
 
 ---
 
-**See also:** [Node Catalog Index](./) · [Logic Nodes](./logic) · [Storage Nodes](./storage) · [Workflow Studio](/en/how-to/agents/workspace/workflows)
+**See also:** [Node Catalog Index](./) · [Logic Nodes](./logic.md) · [Storage Nodes](./storage.md) · [Workflow Studio](/en/how-to/agents/workspace/workflows)

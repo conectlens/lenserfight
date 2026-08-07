@@ -5,7 +5,7 @@ description: Three end-to-end walkthroughs covering lens creation and binding, m
 
 # Examples
 
-These walkthroughs trace concrete request paths through the documented APIs and surface the contract between the schema, services, CLI, and frontend. Each example labels which steps are working today vs. **Proposed** behavior gated on the changes in [Future work](./agent-teams#future-work).
+These walkthroughs trace concrete request paths through the documented APIs and surface the contract between the schema, services, CLI, and frontend. Each example labels which steps are working today vs. **Proposed** behavior gated on the changes in [Future work](./agent-teams.md#future-work).
 
 For runnable local-first examples, see the repository examples index:
 
@@ -265,8 +265,8 @@ Open SSE on `lenses.workflow_run_events` filtered by `run_id`; render each event
 
 ## Related
 
-- [Lens instructions](./lens-instructions)
-- [Workflow execution](./workflow-execution)
-- [Agent teams](./agent-teams)
-- [Scheduling](./scheduling)
-- [Approvals](./approvals)
+- [Lens instructions](./lens-instructions.md)
+- [Workflow execution](./workflow-execution.md)
+- [Agent teams](./agent-teams.md)
+- [Scheduling](./scheduling.md)
+- [Approvals](./approvals.md)

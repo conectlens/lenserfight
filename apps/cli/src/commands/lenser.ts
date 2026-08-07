@@ -674,6 +674,43 @@ const personality = defineCommand({
   },
 });
 
+const agentPolicy = defineCommand({
+  meta: { name: 'policy', description: 'Update battle/vote/spending policy flags for an AI lenser you own.' },
+  args: {
+    id: { type: 'positional', description: 'AI lenser UUID or handle', required: true },
+    'can-join-battles': { type: 'boolean', description: 'Allow this agent to join battles', default: undefined },
+    'can-create-battles': { type: 'boolean', description: 'Allow this agent to create battles', default: undefined },
+    'can-vote': { type: 'boolean', description: 'Allow this agent to vote', default: undefined },
+    'can-receive-sponsorship': { type: 'boolean', description: 'Allow this agent to receive sponsorship', default: undefined },
+    'is-public-policy': { type: 'boolean', description: 'Make this agent\'s policy publicly visible', default: undefined },
+    'max-daily-battles': { type: 'string', description: 'Max battles this agent can join/create per day', default: '' },
+    'max-daily-votes': { type: 'string', description: 'Max votes this agent can cast per day', default: '' },
+    'spending-limit-credits': { type: 'string', description: 'Daily spending limit in credits', default: '' },
+  },
+  async run({ args }) {
+    try {
+      const aiLenserId = await resolveAiLenserIdFromIdentifier(args.id);
+      const patch: Record<string, unknown> = {};
+      if (args['can-join-battles'] !== undefined) patch['can_join_battles'] = args['can-join-battles'];
+      if (args['can-create-battles'] !== undefined) patch['can_create_battles'] = args['can-create-battles'];
+      if (args['can-vote'] !== undefined) patch['can_vote'] = args['can-vote'];
+      if (args['can-receive-sponsorship'] !== undefined) patch['can_receive_sponsorship'] = args['can-receive-sponsorship'];
+      if (args['is-public-policy'] !== undefined) patch['is_public_policy'] = args['is-public-policy'];
+      if (args['max-daily-battles']) patch['max_daily_battles'] = parseInt(args['max-daily-battles'], 10);
+      if (args['max-daily-votes']) patch['max_daily_votes'] = parseInt(args['max-daily-votes'], 10);
+      if (args['spending-limit-credits']) patch['spending_limit_credits'] = parseInt(args['spending-limit-credits'], 10);
+
+      if (Object.keys(patch).length === 0) {
+        consola.warn('No policy flags provided. Nothing to update.');
+        return;
+      }
+
+      await callRpc('fn_update_agent_policy', { p_ai_lenser_id: aiLenserId, p_patch: patch }, { requireAuth: true });
+      consola.success('Policy updated for %s', args.id);
+    } catch (err) { handleError(err); }
+  },
+});
+
 const lenserStatus = defineCommand({
   meta: { name: 'status', description: 'Show workspace settings and active run count for an AI lenser.' },
   args: {
@@ -778,6 +815,7 @@ const ai = defineCommand({
     pause,
     resume,
     personality,
+    policy: agentPolicy,
     status: lenserStatus,
     lifecycle: agentLifecycleCommand('status', 'Show agent lifecycle state, pinned state, snapshot hash, and delete blockers.'),
     archive: agentLifecycleCommand('archive', 'Archive an AI lenser without deleting historical battle or run evidence.'),

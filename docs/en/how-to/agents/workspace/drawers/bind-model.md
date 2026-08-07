@@ -5,7 +5,7 @@ description: Create or edit a model profile — the binding unit workflows refer
 
 # Bind Model drawer
 
-Opened from the [Models Section](../models).
+Opened from the [Models Section](../models.md).
 
 ## Fields
 
@@ -38,6 +38,6 @@ Source of truth: BindModelDrawer.tsx.
 
 ## Related
 
-- [Models Section](../models)
-- [Configure Provider drawer](./configure-provider)
+- [Models Section](../models.md)
+- [Configure Provider drawer](./configure-provider.md)
 - [AI Providers](/en/reference/ai-providers)

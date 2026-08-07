@@ -91,4 +91,4 @@ Read it end-to-end when you are debugging an "impossible" wave-ordering bug — 
 
 - [Execution Engine — Internals](./execution-engine-internals.md) — sequence diagrams for the same logic.
 - [Workflow Engine Architecture](./workflow-engine-architecture.md) — high-level model.
-- [Workflow status migration](../../../supabase/migrations/20260420000000_workflow_status_alignment.sql) — the Postgres CHECK constraints that mirror `NodeStatus`.
+- Workflow status migration — the Postgres CHECK constraints that mirror `NodeStatus`.

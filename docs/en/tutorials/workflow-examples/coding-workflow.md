@@ -711,4 +711,4 @@ Always set `language` and `test_framework` as root inputs. A model that doesn't 
 
 ---
 
-*Next: [Content Creation Workflows →](./content-creation-workflow)*
+*Next: [Content Creation Workflows →](./content-creation-workflow.md)*

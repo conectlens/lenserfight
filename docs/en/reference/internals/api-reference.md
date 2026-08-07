@@ -91,8 +91,8 @@ Underlying RPCs: `fn_render_version_body`, `fn_get_version_params_with_tools`, `
 
 | Method                       | RPC                                                                                                              |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `getSchedules(workflowId?)`  | [`fn_workflow_get_schedules`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692)   |
-| `upsertSchedule(input)`      | [`fn_upsert_workflow_schedule`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762) |
+| `getSchedules(workflowId?)`  | [`fn_workflow_get_schedules`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692)   |
+| `upsertSchedule(input)`      | [`fn_upsert_workflow_schedule`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762) |
 | `deleteSchedule(scheduleId)` | REST DELETE                                                                                                      |
 
 ## Agents
@@ -123,7 +123,7 @@ Underlying RPCs: `fn_render_version_body`, `fn_get_version_params_with_tools`, `
 
 | Method                            | RPC                                                                                                                                                                                                         |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getWorkspaceBootstrap(handle)`   | [`fn_get_agent_workspace_bootstrap`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L917) — returns teams, members, edges, recent runs, profiles, assignments in one round trip |
+| `getWorkspaceBootstrap(handle)`   | [`fn_get_agent_workspace_bootstrap`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L917) — returns teams, members, edges, recent runs, profiles, assignments in one round trip |
 | `createTeam(input)`               | INSERT into `agents.teams`                                                                                                                                                                                  |
 | `listTeamMembers(teamId)`         | REST                                                                                                                                                                                                        |
 | `listTeamEdges(teamId)`           | REST                                                                                                                                                                                                        |
@@ -149,9 +149,9 @@ Underlying RPCs: `fn_render_version_body`, `fn_get_version_params_with_tools`, `
 
 | Method                                  | RPC                                                                                                                                                                           |
 | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `listProviders()`                       | [`fn_ai_catalog_providers`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L520)                                                                  |
-| `listModels(filters?)`                  | [`fn_ai_catalog_models`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L561) — accepts `provider_key`, `support_level`, `capability`, `modality` |
-| `getModelDetail(providerKey, modelKey)` | [`fn_ai_catalog_model_detail`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L645)                                                               |
+| `listProviders()`                       | [`fn_ai_catalog_providers`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L520)                                                                  |
+| `listModels(filters?)`                  | [`fn_ai_catalog_models`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L561) — accepts `provider_key`, `support_level`, `capability`, `modality` |
+| `getModelDetail(providerKey, modelKey)` | [`fn_ai_catalog_model_detail`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L645)                                                               |
 
 ## Lensers (identity)
 
@@ -184,11 +184,11 @@ The bootstrap payload still includes recent `team_runs`, but the queue itself sh
 
 **Module**: [apps/cli/src/commands/](../../apps/cli/src/commands/)
 
-The CLI consumes the same service layer when run with web-runtime adapters, and the same RPCs when run headless. See [cli-reference.md](./cli-reference) for the command surface.
+The CLI consumes the same service layer when run with web-runtime adapters, and the same RPCs when run headless. See [cli-reference.md](./cli-reference.md) for the command surface.
 
 ## Authentication
 
-All write RPCs require an authenticated session. Owner-only RPCs (anything that mutates `agents.*`) call [`agents.can_manage_ai_lenser()`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) inside the function or via RLS.
+All write RPCs require an authenticated session. Owner-only RPCs (anything that mutates `agents.*`) call [`agents.can_manage_ai_lenser()`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) inside the function or via RLS.
 
 Public-read RPCs (`fn_ai_catalog_providers`, `fn_ai_catalog_models`, `fn_ai_catalog_model_detail`) grant `EXECUTE` to `anon`.
 
@@ -209,6 +209,6 @@ The service layer surfaces these as JS `Error` instances with `code` preserved o
 
 Proposed (not yet implemented):
 
-- **Schedule pause/resume RPCs** — `fn_pause_workflow_schedule`, `fn_resume_workflow_schedule`. See [scheduling.md](./scheduling#future-work).
+- **Schedule pause/resume RPCs** — `fn_pause_workflow_schedule`, `fn_resume_workflow_schedule`. See [scheduling.md](./scheduling.md#future-work).
 - **Team mutation RPCs** — `fn_add_team_member`, `fn_remove_team_member`, `fn_upsert_team_edge` so the client doesn't need INSERT/DELETE on the table directly.
 - **Cross-agent activity feed hardening** — the current feed RPC ships, but needs continued rollout validation and richer filters.

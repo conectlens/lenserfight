@@ -115,7 +115,7 @@ flowchart LR
 
 | Item | Files |
 |------|-------|
-| `execution.fn_verify_attestation_signature` (uses `pgsodium`) | [`supabase/migrations/20270512700000_phase_f_attestation_verification.sql`](../../../supabase/migrations/20270512700000_phase_f_attestation_verification.sql) |
+| `execution.fn_verify_attestation_signature` (uses `pgsodium`) | `supabase/migrations/20270512700000_phase_f_attestation_verification.sql` |
 | `execution.fn_record_signed_attestation` + public wrapper | same migration |
 | Side table `execution.attestation_verifications` (append-only RLS) | same migration |
 | `fn_compute_submission_trust` requires `attestation_verifications.verified=true` for `execution_verified+` | same migration |
@@ -134,13 +134,13 @@ flowchart LR
 
 | Item | Files |
 |------|-------|
-| `execution.fn_xp_apply_safe` wrapper (no rule -> NOTICE, never aborts) | [`supabase/migrations/20270512800000_phase_g_xp_triggers.sql`](../../../supabase/migrations/20270512800000_phase_g_xp_triggers.sql) |
+| `execution.fn_xp_apply_safe` wrapper (no rule -> NOTICE, never aborts) | `supabase/migrations/20270512800000_phase_g_xp_triggers.sql` |
 | Trigger `xp_on_device_registered` → `DEVICE_REGISTERED` | same migration |
 | Trigger `xp_on_device_trust_elevated` → `DEVICE_VERIFIED` | same migration |
 | Trigger `xp_on_runner_bound` → `RUNNER_CONNECTED` | same migration |
 | Trigger `xp_on_full_trust` → `VERIFIED_LOCAL_EXECUTION_COMPLETED` | same migration |
 | Trigger `xp_on_submission_evaluated` → `BATTLE_SUBMISSION_COMPLETED` | same migration |
-| `audit.hash_chains` extended with `chain_kind='gateway'` + per-Lenser sub-chain | [`supabase/migrations/20270512900000_phase_g_audit_hash_chain_gateway.sql`](../../../supabase/migrations/20270512900000_phase_g_audit_hash_chain_gateway.sql) |
+| `audit.hash_chains` extended with `chain_kind='gateway'` + per-Lenser sub-chain | `supabase/migrations/20270512900000_phase_g_audit_hash_chain_gateway.sql` |
 | `audit.fn_chain_verify(p_lenser_id, 'gateway')` for incident response | same migration |
 
 **Acceptance:**

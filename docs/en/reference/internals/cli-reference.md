@@ -21,9 +21,9 @@ The full list of subcommands registered in [main.ts](../../apps/cli/src/main.ts)
 |---------|--------|---------------------------|
 | `init` | [init.ts](../../apps/cli/src/commands/init.ts) | Project bootstrap |
 | `doctor` | [doctor.ts](../../apps/cli/src/commands/doctor.ts) | Diagnostics |
-| `dev` | [dev.ts](../../apps/cli/src/commands/dev.ts) | Local-dev orchestration |
-| `seed` | [seed.ts](../../apps/cli/src/commands/seed.ts) | DB seed |
-| `reset` | [reset.ts](../../apps/cli/src/commands/reset.ts) | DB reset |
+| `dev` | [dev.ts](https://github.com/conectlens/lenserfight/blob/ed83dcf89fad89692ba5df63cc70c2e5f2d75b45/apps/cli/src/commands/dev.ts) | Local-dev orchestration |
+| `seed` | [seed.ts](https://github.com/conectlens/lenserfight/blob/ed83dcf89fad89692ba5df63cc70c2e5f2d75b45/apps/cli/src/commands/seed.ts) | DB seed |
+| `reset` | [reset.ts](https://github.com/conectlens/lenserfight/blob/ed83dcf89fad89692ba5df63cc70c2e5f2d75b45/apps/cli/src/commands/reset.ts) | DB reset |
 | `status` | [status.ts](../../apps/cli/src/commands/status.ts) | Deployment status |
 | `auth` | [auth.ts](../../apps/cli/src/commands/auth.ts) | Session login/logout |
 | `config` | [config.ts](../../apps/cli/src/commands/config.ts) | CLI config |
@@ -85,7 +85,7 @@ lenserfight run <subcommand>
 
 Source: [apps/cli/src/commands/run.ts](../../apps/cli/src/commands/run.ts). Subcommand surface roughly mirrors `workflowsService.startRun` and the run-state projection.
 
-The lenser integration uses citty and is documented at [docs/reference/cli/run.md](../cli/run).
+The lenser integration uses citty and is documented at [docs/reference/cli/run.md](../cli/run.md).
 
 ## Inspect commands
 
@@ -101,7 +101,7 @@ Source: [apps/cli/src/commands/inspect.ts](../../apps/cli/src/commands/inspect.t
 lenserfight lenser <subcommand>
 ```
 
-Source: [apps/cli/src/commands/lenser.ts](../../apps/cli/src/commands/lenser.ts). Documented at [docs/reference/cli/agent.md](../cli/agent). Subcommands: `connect`, `list`, `view`, `enable`, `remove`, `test`, `types`.
+Source: [apps/cli/src/commands/lenser.ts](../../apps/cli/src/commands/lenser.ts). Documented at [docs/reference/cli/agent.md](../cli/agent.md). Subcommands: `connect`, `list`, `view`, `enable`, `remove`, `test`, `types`.
 
 These are agent **lenser** commands — registering an external lenser (e.g. local Ollama, a remote MCP server) for an Agent Lenser. They are **not** team management commands.
 
@@ -137,7 +137,7 @@ Source: [apps/cli/src/commands/publish.ts](../../apps/cli/src/commands/publish.t
 
 ## Memory commands
 
-Full spec: [memory-per-agent.md](./memory-per-agent#cli).
+Full spec: [memory-per-agent.md](./memory-per-agent.md#cli).
 
 ```bash
 lenserfight memory list-profiles --agent <ai-lenser-id>
@@ -153,7 +153,7 @@ Source: [apps/cli/src/commands/memory.ts](../../apps/cli/src/commands/memory.ts)
 
 ## Tool commands (expanded)
 
-Full spec: [tools.md](./tools#cli).
+Full spec: [tools.md](./tools.md#cli).
 
 ```bash
 # Contract authoring
@@ -204,9 +204,9 @@ lenserfight schedule <subcommand>
 
 | Subcommand | Maps to |
 |------------|---------|
-| `list [--workflow <id>]` | [`fn_workflow_get_schedules`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692) |
+| `list [--workflow <id>]` | [`fn_workflow_get_schedules`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L692) |
 | `inspect --schedule <id>` | Single-row read of `lenses.workflow_schedules` |
-| `create --workflow <id> --cron <expr> --timezone <tz> --assignee-type agent\|team --assignee-id <id> [--inputs-template <json>] [--approval-policy <json>] [--retry-policy <json>] [--failure-policy <json>] [--queue-policy <json>] [--inactive]` | [`fn_upsert_workflow_schedule`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762) |
+| `create --workflow <id> --cron <expr> --timezone <tz> --assignee-type agent\|team --assignee-id <id> [--inputs-template <json>] [--approval-policy <json>] [--retry-policy <json>] [--failure-policy <json>] [--queue-policy <json>] [--inactive]` | [`fn_upsert_workflow_schedule`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L762) |
 | `update --schedule <id> [...same flags as create]` | Same RPC with `p_schedule_id` |
 | `pause --schedule <id>` | UPDATE `is_active=false` (or proposed `fn_pause_workflow_schedule`) |
 | `resume --schedule <id>` | UPDATE `is_active=true` (or proposed `fn_resume_workflow_schedule`) |
@@ -251,11 +251,11 @@ When adding a ConnectedLenses-related CLI command:
 3. Use `@lenserfight/types` for DTOs. Do not declare CLI-local request/response shapes.
 4. Render output with [consola](https://github.com/unjs/consola) so the format matches the rest of the CLI.
 5. Support `--json` flag on list commands so output is parseable in scripts.
-6. Surface RPC errors with their SQLSTATE code (see [api-reference.md](./api-reference#error-model)).
+6. Surface RPC errors with their SQLSTATE code (see [api-reference.md](./api-reference.md#error-model)).
 
 ## Related
 
-- [API reference](./api-reference)
-- [DTO reference](./dto-reference)
-- [Workflow execution](./workflow-execution)
-- [Existing CLI docs index](../cli/index)
+- [API reference](./api-reference.md)
+- [DTO reference](./dto-reference.md)
+- [Workflow execution](./workflow-execution.md)
+- [Existing CLI docs index](../cli/index.md)

@@ -33,9 +33,9 @@ Source of truth: ByokUsageLog.tsx. The implementation calls agentWorkspaceServic
 2. Read provider, model, token totals, estimated cost, and timestamp together.
 3. Treat the table as recent evidence, not a full billing export. It intentionally loads the last 50 records.
 
-Verification: if a new model call does not appear here, check [Providers](./providers), [Runs](./runs), and [Logs](./logs) before assuming usage accounting failed.
+Verification: if a new model call does not appear here, check [Providers](./providers.md), [Runs](./runs.md), and [Logs](./logs.md) before assuming usage accounting failed.
 
 ## Related
 
-- [BYOK Section](./byok)
-- [Cost Section](./cost)
+- [BYOK Section](./byok.md)
+- [Cost Section](./cost.md)

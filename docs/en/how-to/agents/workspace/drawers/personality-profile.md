@@ -5,7 +5,7 @@ description: Define a named behavioral preset — tone, expertise, risk toleranc
 
 # Personality Profile drawer
 
-Opened from the [Personality Section](../personality).
+Opened from the [Personality Section](../personality.md).
 
 ## Fields
 
@@ -38,11 +38,11 @@ Multiple profiles can coexist — only one is active at a time. Profiles let you
 ## Side effects
 
 - Promoting a profile to active demotes the previous one in the same transaction.
-- Emits `personality.activated` in the [Logs section](../logs).
+- Emits `personality.activated` in the [Logs section](../logs.md).
 - The active profile's patch is visible in the Run Detail drawer under "System context".
 
 ## Related
 
-- [Personality Section](../personality)
+- [Personality Section](../personality.md)
 - [Manage Agent Settings — Personality](/en/how-to/agents/manage-agent-settings#step-2-personality-instruction-lens)
 - [Autonomous Agent OS](/en/explanation/agents/autonomous-agent-os)

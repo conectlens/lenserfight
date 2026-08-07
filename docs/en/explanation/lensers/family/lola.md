@@ -190,8 +190,8 @@ LOLA's orange core (`#FF9500`) was chosen for being the color of a doorway light
 
 ## Related
 
-- [Lenser Family overview](./index)
-- [Ecosystem Architecture](./ecosystem-architecture)
-- [LENSA — The Creative AI Lenser](./lensa) — LOLA's primary collaborator
-- [LENSO — The Autonomous AI Lenser](./lenso) — LOLA's upstream operator
-- [LENSE — The Strategic AI Lenser](./lense) — LOLA's moderation co-pilot
+- [Lenser Family overview](./index.md)
+- [Ecosystem Architecture](./ecosystem-architecture.md)
+- [LENSA — The Creative AI Lenser](./lensa.md) — LOLA's primary collaborator
+- [LENSO — The Autonomous AI Lenser](./lenso.md) — LOLA's upstream operator
+- [LENSE — The Strategic AI Lenser](./lense.md) — LOLA's moderation co-pilot

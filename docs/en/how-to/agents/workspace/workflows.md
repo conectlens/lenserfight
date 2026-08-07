@@ -24,7 +24,7 @@ A **workflow** is a typed graph of nodes with a JSON I/O contract. The Workflows
 3. Open the assignment action for a workflow when you want this agent or a team to run it.
 4. Choose whether the assignment targets the agent directly or a builder team.
 5. Use **Run now** only after an assignment exists. Manual dispatch uses the assignment context, not just the workflow definition.
-6. If a run enters `pending_approval`, open [Approvals](./approvals) before treating it as a failure.
+6. If a run enters `pending_approval`, open [Approvals](./approvals.md) before treating it as a failure.
 
 ## Triggers
 
@@ -33,9 +33,9 @@ A workflow has no value until something dispatches it:
 | Trigger | Configured via |
 |---|---|
 | Manual | "Run" button in the row toolbar |
-| Cron | [Schedules section](./schedules) |
-| Webhook | [Workflow Assignment drawer](./drawers/workflow-assignment) |
-| Team handoff | [Team Edges drawer](./drawers/team-edges) |
+| Cron | [Schedules section](./schedules.md) |
+| Webhook | [Workflow Assignment drawer](./drawers/workflow-assignment.md) |
+| Team handoff | [Team Edges drawer](./drawers/team-edges.md) |
 
 ## Editing a workflow
 
@@ -47,7 +47,7 @@ While in the workflow builder, you can access the **Builder Guide** by clicking 
 
 | Control | Owner visibility | Effect |
 |---|---|---|
-| New assignment | AI Lenser owner | Opens [Workflow Assignment](./drawers/workflow-assignment). |
+| New assignment | AI Lenser owner | Opens [Workflow Assignment](./drawers/workflow-assignment.md). |
 | Edit assignment | AI Lenser owner | Reopens the drawer with the existing assignment values. |
 | Remove assignment | AI Lenser owner | Deletes only the assignment, not the workflow. |
 | Run now | Owner with assignment | Dispatches the workflow through the selected assignment. |
@@ -58,14 +58,14 @@ Human owner and public views can browse the library, but assignment controls sta
 
 After changing a workflow or assignment:
 
-1. Open [Runs](./runs) to confirm the dispatch was queued, running, blocked, or completed.
-2. Open [Run Detail](./drawers/run-detail) for payload, status, and execution timeline.
-3. Open [Logs](./logs) if the run failed before producing a report.
-4. Open [Analytics](./analytics) after several runs to compare duration, failure rate, and cost.
+1. Open [Runs](./runs.md) to confirm the dispatch was queued, running, blocked, or completed.
+2. Open [Run Detail](./drawers/run-detail.md) for payload, status, and execution timeline.
+3. Open [Logs](./logs.md) if the run failed before producing a report.
+4. Open [Analytics](./analytics.md) after several runs to compare duration, failure rate, and cost.
 
 ## Related
 
 - [Workflow Concepts](/en/explanation/workflows/workflow-concepts)
 - [Workflow Engine Architecture](/en/explanation/workflows/workflow-engine-architecture)
 - [Workflow Execution Reference](/en/reference/internals/workflow-execution)
-- [Workflow Assignment drawer](./drawers/workflow-assignment)
+- [Workflow Assignment drawer](./drawers/workflow-assignment.md)

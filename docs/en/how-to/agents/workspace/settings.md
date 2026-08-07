@@ -52,10 +52,10 @@ Source of truth: SettingsSection.tsx. The implementation loads workspace default
 3. Export the workspace before high-risk edits or deletion requests.
 4. Deletion is a request flow, not an immediate local-only delete.
 
-Verification: after saving settings, reopen [Overview](./overview) to confirm kill-switch and runtime state are reflected.
+Verification: after saving settings, reopen [Overview](./overview.md) to confirm kill-switch and runtime state are reflected.
 
 ## Related
 
 - [Manage Agent Settings (wizard)](/en/how-to/agents/manage-agent-settings)
-- [Approvals Section](./approvals)
-- [Cost Section](./cost)
+- [Approvals Section](./approvals.md)
+- [Cost Section](./cost.md)

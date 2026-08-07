@@ -5,7 +5,7 @@ description: Manage a long-lived, owner-curated knowledge slot for the agent.
 
 # Memory Profile drawer
 
-Opened from the [Memory Section](../memory) (Profiles tab).
+Opened from the [Memory Section](../memory.md) (Profiles tab).
 
 ## Fields
 
@@ -42,6 +42,6 @@ Source of truth: MemoryProfileDrawer.tsx.
 
 ## Related
 
-- [Memory Section](../memory)
-- [Memory Entry drawer](./memory-entry)
+- [Memory Section](../memory.md)
+- [Memory Entry drawer](./memory-entry.md)
 - [Memory Architecture](/en/explanation/agents/memory-architecture)

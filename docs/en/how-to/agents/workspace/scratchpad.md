@@ -27,9 +27,9 @@ The Scratchpad is the **owner-only solo workbench**. Nothing here is visible to 
 
 When a scratchpad draft is ready:
 
-- **Prompt** → save as a [Lens](/en/explanation/lenses/what-is-a-lens) and bind it via [Instructions](./instructions).
-- **Tool call sequence** → graph it as a [Workflow](./workflows).
-- **System prompt** → save as a [Personality profile](./drawers/personality-profile).
+- **Prompt** → save as a [Lens](/en/explanation/lenses/what-is-a-lens) and bind it via [Instructions](./instructions.md).
+- **Tool call sequence** → graph it as a [Workflow](./workflows.md).
+- **System prompt** → save as a [Personality profile](./drawers/personality-profile.md).
 
 
 ## Code-backed workflow
@@ -38,13 +38,13 @@ Source of truth: ScratchpadSection.tsx. The implementation lists scratchpad runs
 
 1. Use Scratchpad for private owner experiments before changing workflows or schedules.
 2. Select a model and memory context deliberately when testing behavior.
-3. Promote only durable findings into [Memory](./memory). Do not promote throwaway drafts.
+3. Promote only durable findings into [Memory](./memory.md). Do not promote throwaway drafts.
 4. Use the result to decide whether a workflow, instruction, or personality update is needed.
 
 Verification: promoted notes should appear in the chosen memory profile, and scratchpad runs should remain separate from scheduled production runs.
 
 ## Related
 
-- [Instructions Section](./instructions)
-- [Workflows Section](./workflows)
-- [Models Section](./models)
+- [Instructions Section](./instructions.md)
+- [Workflows Section](./workflows.md)
+- [Models Section](./models.md)

@@ -25,7 +25,7 @@ flowchart TD
     WA -- triggers --> TR[agents.team_runs]
 ```
 
-Every table on the diagram is committed in [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql).
+Every table on the diagram is committed in [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql).
 
 ### Team edges
 
@@ -45,10 +45,10 @@ Edge types and semantics:
 
 A member resolves four profile bundles, each owned at the AI workspace level:
 
-- [`agents.personality_profiles`](./domain-model#agents-personality-profiles) — `tone`, `expertise_level`, `risk_tolerance`, `autonomy_level`, `communication_style`, `decision_style`, `escalation_behavior`, `system_prompt_patch`.
-- [`agents.memory_profiles`](./domain-model#agents-memory-profiles) — `scope_type`, `isolation_mode`, `retention_days`, `visibility`, `summary_strategy`, `reset_policy`.
-- [`agents.tool_profiles`](./domain-model#agents-tool-profiles) — `allow_tools[]`, `deny_tools[]`, `tool_groups[]`, `provider_overrides`, `requires_approval`.
-- [`agents.model_profiles`](./domain-model#agents-model-profiles) — `provider_key`, `model_id`, `model_key`, `support_level`, `params`.
+- [`agents.personality_profiles`](./domain-model.md#agents-personality-profiles) — `tone`, `expertise_level`, `risk_tolerance`, `autonomy_level`, `communication_style`, `decision_style`, `escalation_behavior`, `system_prompt_patch`.
+- [`agents.memory_profiles`](./domain-model.md#agents-memory-profiles) — `scope_type`, `isolation_mode`, `retention_days`, `visibility`, `summary_strategy`, `reset_policy`.
+- [`agents.tool_profiles`](./domain-model.md#agents-tool-profiles) — `allow_tools[]`, `deny_tools[]`, `tool_groups[]`, `provider_overrides`, `requires_approval`.
+- [`agents.model_profiles`](./domain-model.md#agents-model-profiles) — `provider_key`, `model_id`, `model_key`, `support_level`, `params`.
 
 Profiles are reusable across teams. Marking `is_default=true` makes a profile the implicit binding for new members.
 
@@ -72,7 +72,7 @@ flowchart TD
     I -- no --> K[Mark node blocked<br/>waiting_reason='human_input']
 ```
 
-When no eligible member exists, the engine writes the node row with `status='blocked'` and `waiting_reason='human_input'`. This surfaces as an item in the [approval queue](./approvals).
+When no eligible member exists, the engine writes the node row with `status='blocked'` and `waiting_reason='human_input'`. This surfaces as an item in the [approval queue](./approvals.md).
 
 ## Autonomy levels
 
@@ -85,7 +85,7 @@ Teams operate at one of four autonomy levels, chosen via `agents.workflow_assign
 | **Semi-autonomous** | `{"requiresApproval":true,"mode":"on_block"}` | Run autonomously; pause for owner only when a node blocks (`waiting_reason='human_input'`) |
 | **Autonomous with gates** | `{"requiresApproval":false,"gates":["publish","spend","delete","external_message","schedule_change"]}` | Run autonomously except for the listed gate actions, which always pause |
 
-Gate-action defaults (see [approvals](./approvals#mandatory-gates)):
+Gate-action defaults (see [approvals](./approvals.md#mandatory-gates)):
 
 - Creating another agent
 - Adding/removing team members
@@ -98,14 +98,14 @@ Gate-action defaults (see [approvals](./approvals#mandatory-gates)):
 
 ## Team runs
 
-A [`agents.team_runs`](./domain-model#agents-team-runs) row is created when a workflow assignment is dispatched (manually, by API, or by CRON). It owns:
+A [`agents.team_runs`](./domain-model.md#agents-team-runs) row is created when a workflow assignment is dispatched (manually, by API, or by CRON). It owns:
 
 - `status` ∈ `{queued, running, completed, failed, cancelled, blocked}`
 - `approval_status` ∈ `{pending, approved, rejected, not_required}`
 - `scratchpad jsonb` — team's working memory
 - `workflow_run_id` — link to the underlying `lenses.workflow_runs` row
 
-Per-step rows live in [`agents.agent_run_steps`](./domain-model#agents-agent-run-steps): one per node × member with `lane`, `current_task`, `recent_output_summary`, `blocker_summary`, `payload`. Append-only event log: [`agents.agent_run_events`](./domain-model#agents-agent-run-events).
+Per-step rows live in [`agents.agent_run_steps`](./domain-model.md#agents-agent-run-steps): one per node × member with `lane`, `current_task`, `recent_output_summary`, `blocker_summary`, `payload`. Append-only event log: [`agents.agent_run_events`](./domain-model.md#agents-agent-run-events).
 
 ```mermaid
 sequenceDiagram
@@ -154,7 +154,7 @@ flowchart TD
 |------|--------------|-----------------|
 | Human-Owner | Two tabs. **Agents** = grid of `AgentCard`s for AI lensers owned by this human, with **Create Agent** CTA when empty. **Activity** = cross-agent feed (pending approvals, recent team_runs, schedules). | `agents.ownerships`, `agents.team_runs`, `lenses.workflow_schedules` |
 | Human-Public | Public-visible agents this human owns, no scratchpad, no approvals, no settings. | `agents.ownerships` filtered by `lensers.profiles.visibility='public'` |
-| Agent-Owner | Existing [`AgentControlRoomPage`](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx) with all sections (overview, scratchpad, team, workflows, schedules, memory, personality, tools, models, providers, runs, logs, evaluations, settings). | `fn_get_agent_workspace_bootstrap(handle)` |
+| Agent-Owner | Existing `AgentControlRoomPage` with all sections (overview, scratchpad, team, workflows, schedules, memory, personality, tools, models, providers, runs, logs, evaluations, settings). | `fn_get_agent_workspace_bootstrap(handle)` |
 | Agent-Public | Stripped-down read-only overview: public lenses, public workflows, public stats. No scratchpad, no approvals, no tool/model bindings, no settings. | `agents.ai_lensers` + filtered `lenses.lenses` and `lenses.workflows` where `visibility='public'` |
 
 ### Empty-state contract
@@ -169,7 +169,7 @@ For Human-Owner mode with zero agents:
 
 For Agent-Owner mode with zero teams:
 
-- Reuse the existing `EmptyPanel` pattern at [AgentControlRoomPage.tsx:114-135](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L114-L135).
+- Reuse the existing `EmptyPanel` pattern at AgentControlRoomPage.tsx:114-135.
 - CTA: **Create your first agent team** → inline form already present.
 
 ## Workspace entry contract (implemented)
@@ -195,7 +195,7 @@ flowchart TD
     E -- no --> X
 ```
 
-Authorization helper: [`agents.can_manage_ai_lenser(uuid)`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92).
+Authorization helper: [`agents.can_manage_ai_lenser(uuid)`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92).
 
 ## Future work
 
@@ -203,4 +203,4 @@ The following are **Proposed (not yet implemented)**:
 
 - **Cross-agent activity feed RPC** — `fn_get_human_activity_feed` server-side aggregation to back the `CrossAgentActivityFeed` component currently using a client-side query.
 - **Read-only public agent overview polish** — richer public stats (run count, last active, public automation feed) for Agent-Public mode.
-- **Capability-aware role assignment** — uses the proposed [`instruction_category`](./lens-instructions#future-work) on lens versions to route validation/research/generation lenses to members whose responsibility tag matches.
+- **Capability-aware role assignment** — uses the proposed [`instruction_category`](./lens-instructions.md#future-work) on lens versions to route validation/research/generation lenses to members whose responsibility tag matches.

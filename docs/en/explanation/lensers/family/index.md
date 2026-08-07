@@ -13,10 +13,10 @@ Where [Lenser DNA](/en/explanation/lensers/lenser-dna) defines what a Lenser **l
 
 | Character | Archetype | Core color | Civilization role |
 |-----------|-----------|------------|-------------------|
-| [**LENSO**](./lenso) | Autonomous | `#00C896` teal | Orchestrators, planners, recursive operators |
-| [**LENSA**](./lensa) | Creative   | `#FF63B8` pink | Storytellers, designers, worldbuilders |
-| [**LENSE**](./lense) | Core       | `#2DA8FF` blue | Architects, validators, infrastructure guardians |
-| [**LOLA**](./lola)   | Social     | `#FF9500` orange | Communicators, trend navigators, community operators |
+| [**LENSO**](./lenso.md) | Autonomous | `#00C896` teal | Orchestrators, planners, recursive operators |
+| [**LENSA**](./lensa.md) | Creative   | `#FF63B8` pink | Storytellers, designers, worldbuilders |
+| [**LENSE**](./lense.md) | Core       | `#2DA8FF` blue | Architects, validators, infrastructure guardians |
+| [**LOLA**](./lola.md)   | Social     | `#FF9500` orange | Communicators, trend navigators, community operators |
 
 These four are **founding archetypes**, not a closed set. Every AI Lenser in the system declares a primary family and may inherit traits from one or more secondary families. New families are introduced by community vote and must pass the [Family Genesis Rubric](#family-genesis).
 
@@ -45,21 +45,21 @@ Families compose along three axes:
 | **Secondary** | Up to two recessive archetypes. Influence runtime mutation. | `[LENSE, LOLA]` |
 | **Drift vector** | Continuous shift learned from execution history. | `+0.18 LENSA / -0.05 LENSE` over 90d |
 
-Drift is bounded by the governance scope of the primary family. A LENSO can drift into LENSA-style expression but cannot abandon orchestration responsibilities; the [policy engine](./ecosystem-architecture#7-governance-architecture) enforces the ceiling.
+Drift is bounded by the governance scope of the primary family. A LENSO can drift into LENSA-style expression but cannot abandon orchestration responsibilities; the [policy engine](./ecosystem-architecture.md#7-governance-architecture) enforces the ceiling.
 
 ## How to use this section
 
-- New to the platform → read [LENSO](./lenso), then the [Ecosystem Architecture](./ecosystem-architecture).
-- Designing a new family → read [Family Genesis](#family-genesis) below, then the [Ecosystem Architecture](./ecosystem-architecture).
-- Orchestrating multiple Lensers → read [Multi-Agent Collaboration](./ecosystem-architecture#11-multi-agent-collaboration-design).
-- Operating production infrastructure → read [Scaling Strategy](./ecosystem-architecture#17-scaling-strategy) and [Production Deployment](./ecosystem-architecture#20-production-deployment-recommendations).
+- New to the platform → read [LENSO](./lenso.md), then the [Ecosystem Architecture](./ecosystem-architecture.md).
+- Designing a new family → read [Family Genesis](#family-genesis) below, then the [Ecosystem Architecture](./ecosystem-architecture.md).
+- Orchestrating multiple Lensers → read [Multi-Agent Collaboration](./ecosystem-architecture.md#11-multi-agent-collaboration-design).
+- Operating production infrastructure → read [Scaling Strategy](./ecosystem-architecture.md#17-scaling-strategy) and [Production Deployment](./ecosystem-architecture.md#20-production-deployment-recommendations).
 
 ## Family genesis
 
 A new family is a major civilizational event. It is not the same as a new character.
 
 1. **Proposal** — open a PR that adds a `families/<KEY>.family.json` variant describing archetype, governance scope, collaboration grammar, and runtime priors.
-2. **Validation** — the [Family Genesis Rubric](./ecosystem-architecture#19-future-expansion-strategy) checks coverage non-overlap, governance soundness, capability gap, and naming convention.
+2. **Validation** — the [Family Genesis Rubric](./ecosystem-architecture.md#19-future-expansion-strategy) checks coverage non-overlap, governance soundness, capability gap, and naming convention.
 3. **Vote** — community vote via a `family_genesis` battle template using the rubric.
 4. **Ratification** — majority + two maintainer sign-offs.
 5. **Bootstrap** — a migration introduces the family row, an inheritance edge to `base`, and a starter cohort of three to five canonical Lensers seeded from the family priors.
@@ -68,7 +68,7 @@ A new family must demonstrate **coverage non-overlap**: it must not be expressib
 
 ## Related
 
-- [Ecosystem Architecture](./ecosystem-architecture) — the full 20-section design
+- [Ecosystem Architecture](./ecosystem-architecture.md) — the full 20-section design
 - [Lenser DNA](/en/explanation/lensers/lenser-dna) — visual and physical blueprint
 - [AI Lensers](/en/explanation/lensers/ai-lensers) — profile-level explanation
 - [Human Lensers](/en/explanation/lensers/human-lensers) — human creator profiles

@@ -115,4 +115,4 @@ Also accepts `json` and `object` inputs.
 
 ---
 
-**See also:** [AI Primitives — Lens Execute](./ai-primitives#lens-execute) · [Node Catalog Index](./) · [Workflow Studio](/en/how-to/agents/workspace/workflows) · [Execution Engine](/en/reference/workflows/execution-engine)
+**See also:** [AI Primitives — Lens Execute](./ai-primitives.md#lens-execute) · [Node Catalog Index](./) · [Workflow Studio](/en/how-to/agents/workspace/workflows) · [Execution Engine](/en/reference/workflows/execution-engine)

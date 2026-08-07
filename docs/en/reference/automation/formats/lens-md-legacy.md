@@ -88,5 +88,5 @@ evaluation_refs: []
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Native `SKILL.md`](./lens-md)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Native `SKILL.md`](./lens-md.md)

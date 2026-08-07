@@ -238,7 +238,7 @@ ALTER DATABASE postgres SET app.approval_webhook_url = 'https://example.com/appr
 
 ## RLS duruşu
 
-[`agents.can_manage_ai_lenser()`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) onay verisinin her okuması ve yazmasını kapılar. Yalnızca AI çalışma alanının sahibi veya ortak sahibi şunları yapabilir:
+[`agents.can_manage_ai_lenser()`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) onay verisinin her okuması ve yazmasını kapılar. Yalnızca AI çalışma alanının sahibi veya ortak sahibi şunları yapabilir:
 
 - Bekleyen istekleri gör (`agents.approval_requests_v` veya bootstrap/fleet görünümleri üzerinden okuma).
 - İstekleri `fn_decide_approval` üzerinden çöz.
@@ -272,6 +272,6 @@ Aşağıdakiler **Önerilen (henüz uygulanmadı)**:
   ```
 
 - **Onay UI iyileştirmesi** — özel `/lenser/:handle/ag/approvals` bölümü bugün gönderilir, ancak hâlâ daha zengin diff'leme, filtreleme ve kuyruk analitiği gerektirir.
-- **Bildirim yayılımı** — bekleyen istekleri bildirim hizmeti aracılığıyla insan sahibe iten bir `agents.agent_run_events` dinleyicisi ([libs/data/repositories/src/lib/services/notificationService.ts](../../libs/data/repositories/src/lib/services/notificationService.ts)).
+- **Bildirim yayılımı** — bekleyen istekleri bildirim hizmeti aracılığıyla insan sahibe iten bir `agents.agent_run_events` dinleyicisi (libs/data/repositories/src/lib/services/notificationService.ts).
 - **Zamanlama başına onay zaman aşımı override** — veritabanı genelindeki `app.approval_timeout_hours` GUC'sini override etmek için tek bir iş akışı atamasında `approval_policy.timeoutMinutes`. Genel zaman aşımı Faz K1'de gönderilir; atama başına override'lar önerilen olarak kalır.
 - **Bypass denemeleri için denetim olayı** — ✓ Gönderildi (Faz G). Aktif bir zamanlamada `requiresApproval=false` ayarlandığında, `agents.action_logs` tablosuna bir `approval_bypass_attempted` satırı eklenir.

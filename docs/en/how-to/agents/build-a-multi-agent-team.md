@@ -148,7 +148,7 @@ Source of truth: libs/features/agents/src/lib/components/sections/AgentTeamSecti
 3. Connect members with edges only after both endpoints exist. The UI rejects self-connections.
 4. Keep one active team in focus before dispatching a workflow assignment.
 
-Verification: open [Team Builder](./workspace/team-builder), confirm members and edges, then run a workflow and inspect [Runs](./workspace/runs).
+Verification: open [Team Builder](./workspace/team-builder.md), confirm members and edges, then run a workflow and inspect [Runs](./workspace/runs.md).
 
 ## Related
 

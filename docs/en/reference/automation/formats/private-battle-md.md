@@ -73,7 +73,7 @@ Required sections in the exported report.
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Native `SKILL.md`](./battle-md)
-- [Portable `EVALUATION.md`](./evaluation-md)
-- [Portable `RUN_REPORT.md`](./run-report-md)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Native `SKILL.md`](./battle-md.md)
+- [Portable `EVALUATION.md`](./evaluation-md.md)
+- [Portable `RUN_REPORT.md`](./run-report-md.md)

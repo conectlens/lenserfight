@@ -247,7 +247,7 @@ interface ApprovalRequestView {
 }
 ```
 
-See [approvals.md](./approvals#future-work) for the proposed `agents.approval_requests_v` view that materializes this shape into a typed projection.
+See [approvals.md](./approvals.md#future-work) for the proposed `agents.approval_requests_v` view that materializes this shape into a typed projection.
 
 ## AI Catalog DTOs
 

@@ -139,7 +139,7 @@ See also: [Storage adapters](/en/reference/platform-api/storage-adapters.md).
 
 ## Related
 
-- [What is a Lens?](./what-is-a-lens)
-- [Lenses in LenserFight](./lens-usage)
-- [Connected Lens Workflows](./workflows)
+- [What is a Lens?](./what-is-a-lens.md)
+- [Lenses in LenserFight](./lens-usage.md)
+- [Connected Lens Workflows](./workflows.md)
 - [Glossary](/en/tutorials/getting-started/glossary)

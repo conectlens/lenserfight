@@ -68,5 +68,5 @@ Sensitive data, noisy transcripts, low-confidence claims, and temporary failures
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Legacy `SKILL.md`](./lenser-md-legacy) (references memory policies via `memory_policy_ref`)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Legacy `SKILL.md`](./lenser-md-legacy.md) (references memory policies via `memory_policy_ref`)

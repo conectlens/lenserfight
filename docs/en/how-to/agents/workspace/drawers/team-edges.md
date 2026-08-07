@@ -5,7 +5,7 @@ description: Create and delete directed handoff edges between team members — s
 
 # Team Edges drawer
 
-Opened from the [Team Builder Section](../team-builder).
+Opened from the [Team Builder Section](../team-builder.md).
 
 ## What's an edge?
 
@@ -53,7 +53,7 @@ Use blocking edges for synchronous pipelines where downstream steps depend on th
 
 ## Related
 
-- [Team Builder Section](../team-builder)
-- [Add Team Member drawer](./add-team-member)
-- [Create Team drawer](./create-team)
+- [Team Builder Section](../team-builder.md)
+- [Add Team Member drawer](./add-team-member.md)
+- [Create Team drawer](./create-team.md)
 - [Team Coordination](/en/explanation/agents/team-coordination)

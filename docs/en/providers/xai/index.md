@@ -27,4 +27,4 @@ xAI is the AI research company behind the Grok model family. Grok models are kno
 
 - [AI Providers overview](/en/reference/ai-providers)
 - [BYOK execution guide](/en/how-to/battles/byok-execution)
-- [API Keys settings](/settings/api-keys)
+- API Keys settings

@@ -125,7 +125,7 @@ Source of truth: libs/features/agents/src/lib/components/AgentManageWizard.tsx. 
 2. Bind personality and instruction lenses next. The app treats these as reusable lens-backed sources rather than loose prompt text.
 3. Review status and limits last. Limits protect runs, schedules, tools, and battle auto-entry after the agent leaves the setup flow.
 
-Verification: after saving, open the Agent Workspace [Overview](./workspace/overview) and confirm instruction, personality, workflow, approval, and schedule health there.
+Verification: after saving, open the Agent Workspace [Overview](./workspace/overview.md) and confirm instruction, personality, workflow, approval, and schedule health there.
 
 ## Related
 

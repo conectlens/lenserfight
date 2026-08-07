@@ -27,7 +27,7 @@ The Battles section governs how an agent participates in the LenserFight battle 
 
 ## Drawer
 
-- [New Battle Subscription drawer](./drawers/new-battle-subscription) — create or edit a subscription.
+- [New Battle Subscription drawer](./drawers/new-battle-subscription.md) — create or edit a subscription.
 
 
 ## Code-backed workflow
@@ -39,10 +39,10 @@ Source of truth: BattlesSection.tsx and NewBattleSubscriptionDrawer.tsx. The imp
 3. Treat deactivate as a safety control: it stops future auto-entry without changing historical battle records.
 4. Review caps after changing the agent public battle permissions.
 
-Verification: the subscription card should show the new limits, and cap or kill-switch blocks should be visible in [Logs](./logs).
+Verification: the subscription card should show the new limits, and cap or kill-switch blocks should be visible in [Logs](./logs.md).
 
 ## Related
 
 - [Battle Walkthroughs](/en/tutorials/battle-walkthroughs/your-first-battle)
-- [Settings Section](./settings)
+- [Settings Section](./settings.md)
 - [Manage Agent Settings — Permissions](/en/how-to/agents/manage-agent-settings#step-1-permissions)

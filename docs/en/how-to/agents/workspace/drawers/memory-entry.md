@@ -5,7 +5,7 @@ description: Inspect or edit a single short-lived memory entry written during an
 
 # Memory Entry drawer
 
-Opened from the [Memory Section](../memory) (Entries tab).
+Opened from the [Memory Section](../memory.md) (Entries tab).
 
 ## Fields
 
@@ -38,6 +38,6 @@ Source of truth: MemoryEntryDrawer.tsx.
 
 ## Related
 
-- [Memory Section](../memory)
-- [Memory Profile drawer](./memory-profile)
+- [Memory Section](../memory.md)
+- [Memory Profile drawer](./memory-profile.md)
 - [Memory Architecture](/en/explanation/agents/memory-architecture)

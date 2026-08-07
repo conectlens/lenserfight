@@ -95,7 +95,7 @@ Send an email with mapped subject, body, recipients, and optional attachments.
 
 ### Related Nodes
 
-[File Writer](./storage#file-writer) · [Object Storage Upload](./storage#object-storage-upload) · [Schedule Trigger](./trigger#schedule-trigger) · [Logger](./utility#logger)
+[File Writer](./storage.md#file-writer) · [Object Storage Upload](./storage.md#object-storage-upload) · [Schedule Trigger](./trigger.md#schedule-trigger) · [Logger](./utility.md#logger)
 
 ---
 
@@ -135,7 +135,7 @@ Send a Slack message to a channel using the configured workspace Slack integrati
 
 ### Related Nodes
 
-[Discord Notify](#discord-notify) · [Email Send](#email-send) · [Error Catch](./logic#error-catch)
+[Discord Notify](#discord-notify) · [Email Send](#email-send) · [Error Catch](./logic.md#error-catch)
 
 ---
 
@@ -248,4 +248,4 @@ Send an SMS alert through the configured provider (default: Twilio).
 
 ---
 
-**See also:** [Node Catalog Index](./) · [Integration Nodes](./integration) · [Storage Nodes](./storage) · [Workflow Studio](/en/how-to/agents/workspace/workflows)
+**See also:** [Node Catalog Index](./) · [Integration Nodes](./integration.md) · [Storage Nodes](./storage.md) · [Workflow Studio](/en/how-to/agents/workspace/workflows)

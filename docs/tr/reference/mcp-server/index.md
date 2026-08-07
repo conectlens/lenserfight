@@ -75,5 +75,4 @@ Her araç, bir Supabase RPC işlevine (örneğin `fn_mcp_lens_list`, `fn_battles
 ## Kaynak
 
 - Uygulama: [`apps/mcp-server`](https://github.com/conectlens/lenserfight/tree/main/apps/mcp-server)
-- Edge işlevi: [`supabase/functions/lenserfight-mcp`](https://github.com/conectlens/lenserfight/tree/main/supabase/functions/lenserfight-mcp)
 - Yerel kayıt: [`.mcp.json`](https://github.com/conectlens/lenserfight/blob/main/.mcp.json)

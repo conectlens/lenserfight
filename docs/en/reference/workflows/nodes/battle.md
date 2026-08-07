@@ -55,7 +55,7 @@ Create a battle definition from a prompt and contender list. Returns a `battleId
 
 ### Related Nodes
 
-[Battle Execute](#battle-execute) · [Form / Input Trigger](./trigger#form-input-trigger)
+[Battle Execute](#battle-execute) · [Form / Input Trigger](./trigger.md#form-input-trigger)
 
 ---
 
@@ -121,7 +121,7 @@ Execute contenders and apply a judge strategy for a battle. The central orchestr
 
 ### Related Nodes
 
-[Battle Create](#battle-create) · [Judge Battle](#judge-battle) · [Judge / Eval](./ai-primitives#judge-evaluator) · [Vote Collector](#vote-collector)
+[Battle Create](#battle-create) · [Judge Battle](#judge-battle) · [Judge / Eval](./ai-primitives.md#judge-evaluator) · [Vote Collector](#vote-collector)
 
 ---
 
@@ -180,7 +180,7 @@ Judge contender outputs and emit a battle result with winner and scores.
 
 ### Related Nodes
 
-[Battle Execute](#battle-execute) · [Vote Collector](#vote-collector) · [Judge / Eval](./ai-primitives#judge-evaluator)
+[Battle Execute](#battle-execute) · [Vote Collector](#vote-collector) · [Judge / Eval](./ai-primitives.md#judge-evaluator)
 
 ---
 
@@ -294,8 +294,8 @@ Write battle results to a leaderboard. The terminal node of most battle automati
 
 ### Related Nodes
 
-[Score Aggregator](#score-aggregator) · [Battle Execute](#battle-execute) · [Slack Notify](./communication#slack-notify)
+[Score Aggregator](#score-aggregator) · [Battle Execute](#battle-execute) · [Slack Notify](./communication.md#slack-notify)
 
 ---
 
-**See also:** [Node Catalog Index](./) · [AI Primitive Nodes](./ai-primitives) · [Workflow Studio](/en/how-to/agents/workspace/workflows) · [Battle concepts](/en/how-to/agents/workspace/battles)
+**See also:** [Node Catalog Index](./) · [AI Primitive Nodes](./ai-primitives.md) · [Workflow Studio](/en/how-to/agents/workspace/workflows) · [Battle concepts](/en/how-to/agents/workspace/battles)

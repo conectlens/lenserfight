@@ -94,7 +94,7 @@ Object class metadata is **declared once** in [`libs/infra/gateway/src/lib/objec
 - `pushableObjectClasses()` — equals `conflict_aware`. Only these are eligible for the outbox.
 - `pullableObjectClasses()` — equals `cloud ∪ conflict_aware`. The set the daemon's pull loop iterates over.
 
-The same partitioning is enforced in [`devices.fn_sync_push`](../../../supabase/migrations/20270512600000_phase_c_sync_engine.sql) so that the database and the daemon agree on what is pushable.
+The same partitioning is enforced in `devices.fn_sync_push` so that the database and the daemon agree on what is pushable.
 
 ### Default merge function
 

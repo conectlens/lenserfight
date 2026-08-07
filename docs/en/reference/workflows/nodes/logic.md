@@ -75,7 +75,7 @@ Use Code when no built-in node handles your exact transformation, calculation, o
 
 ### Related Nodes
 
-[JSON Transform](./data#json-transform) · [Switch](#switch) · [Data Mapper](./data#data-mapper)
+[JSON Transform](./data.md#json-transform) · [Switch](#switch) · [Data Mapper](./data.md#data-mapper)
 
 ---
 
@@ -150,7 +150,7 @@ Continue downstream when a boolean condition evaluates true. Drops the item when
 
 ### Related Nodes
 
-[Switch](#switch) · [Score Aggregator](./battle#score-aggregator)
+[Switch](#switch) · [Score Aggregator](./battle.md#score-aggregator)
 
 ---
 
@@ -198,7 +198,7 @@ Map over an array and emit transformed items. Each item in the array is processe
 
 ### Related Nodes
 
-[Split In Batches](#split-in-batches) · [Filter Items](./data#filter-items) · [Aggregate](./data#aggregate)
+[Split In Batches](#split-in-batches) · [Filter Items](./data.md#filter-items) · [Aggregate](./data.md#aggregate)
 
 ---
 
@@ -227,7 +227,7 @@ Pause execution for a duration or until a timestamp. Useful for rate-limiting, s
 
 ### Related Nodes
 
-[Schedule Trigger](./trigger#schedule-trigger) · [Retry](#retry)
+[Schedule Trigger](./trigger.md#schedule-trigger) · [Retry](#retry)
 
 ---
 
@@ -269,7 +269,7 @@ Handle an upstream error and route fallback data. Connect this node to the error
 
 ### Related Nodes
 
-[Try / Catch](#try-catch) · [Retry](#retry) · [Logger](./utility#logger)
+[Try / Catch](#try-catch) · [Retry](#retry) · [Logger](./utility.md#logger)
 
 ---
 
@@ -325,7 +325,7 @@ Merge multiple upstream values into one payload. Use after parallel branches to 
 
 ### Related Nodes
 
-[Split In Batches](#split-in-batches) · [Aggregate](./data#aggregate)
+[Split In Batches](#split-in-batches) · [Aggregate](./data.md#aggregate)
 
 ---
 
@@ -357,7 +357,7 @@ Split a large array into batches for downstream processing.
 
 ### Related Nodes
 
-[Loop / Map](#loop-map) · [Deduplicate](./data#deduplicate)
+[Loop / Map](#loop-map) · [Deduplicate](./data.md#deduplicate)
 
 ---
 

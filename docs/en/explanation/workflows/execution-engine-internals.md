@@ -195,4 +195,4 @@ stateDiagram-v2
 
 - [Workflow Engine Architecture](./workflow-engine-architecture.md) — high-level model and rationale.
 - [Code Walk: workflow-execution.service.ts](./code-walk-workflow-execution-service.md) — annotated tour of the same file.
-- [Workflow status migration](../../../supabase/migrations/20260420000000_workflow_status_alignment.sql) — Postgres CHECK constraints that mirror the engine state machine.
+- Workflow status migration — Postgres CHECK constraints that mirror the engine state machine.

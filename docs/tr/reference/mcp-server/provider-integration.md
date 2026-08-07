@@ -7,7 +7,7 @@ description: LenserFight MCP sunucusunun ne olduğunu, mimari olarak nasıl çal
 
 Bu sayfa, LenserFight MCP sunucusunun arkasındaki **kavramları ve mimariyi** açıklamaktadır. Şu soruları yanıtlar: *nedir, nasıl çalışır ve ürününüz bunu entegre ederek ne kazanır?*
 
-Doğrudan bağlantı kurmaya başlamak isterseniz, [Sağlayıcı Hızlı Başlangıç](./provider-quickstart) veya [Bağlantı Modları](./provider-connection) sayfalarına gidin.
+Doğrudan bağlantı kurmaya başlamak isterseniz, [Sağlayıcı Hızlı Başlangıç](./provider-quickstart.md) veya [Bağlantı Modları](./provider-connection.md) sayfalarına gidin.
 
 ---
 
@@ -33,7 +33,7 @@ Sunucu, üç yetenek grubunda **31 araç** sunar:
 
 Her araç, LenserFight arka ucundaki bir Supabase RPC işlevine (function) yetki devreder. Hiçbir araç doğrudan herhangi bir LLM çağırmaz — istemleri çağıran AI modeli (ürününüzün asistanı) yürütür. MCP sunucusu şablonları çözer ve yapılandırılmış veri döndürür; zeka modelin kendisindedir.
 
-Eksiksiz araç referansına bakın: [31 Aracın Tümü](./provider-tools).
+Eksiksiz araç referansına bakın: [31 Aracın Tümü](./provider-tools.md).
 
 ---
 
@@ -79,7 +79,7 @@ Bu, her araç çağrısının **kimliği doğrulanmış kullanıcıyla sınırl�
 
 Uygulamanızı LenserFight'a önceden kaydetmeniz gerekmez. Sunucu, [RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591) dinamik istemci kaydını uygulamaktadır. İlk bağlantıda, istemciniz yönlendirme URI'si ile birlikte `POST /oauth/register` isteği gönderir ve otomatik olarak bir `client_id` alır.
 
-Tam akış diyagramı ve entegrasyon kontrol listesi için [OAuth ve Kimlik Doğrulama](./provider-oauth) sayfasına bakın.
+Tam akış diyagramı ve entegrasyon kontrol listesi için [OAuth ve Kimlik Doğrulama](./provider-oauth.md) sayfasına bakın.
 
 ---
 
@@ -139,7 +139,6 @@ curl https://mcp.lenserfight.com/health
 ## Kaynak kodu
 
 - MCP sunucusu uygulaması: [`apps/mcp-server`](https://github.com/conectlens/lenserfight/tree/main/apps/mcp-server)
-- Edge işlevi: [`supabase/functions/lenserfight-mcp`](https://github.com/conectlens/lenserfight/tree/main/supabase/functions/lenserfight-mcp)
 - Protokol özellikleri: [modelcontextprotocol.io](https://modelcontextprotocol.io)
 
 ---
@@ -148,7 +147,7 @@ curl https://mcp.lenserfight.com/health
 
 | Yapmak istediğim… | Git… |
 |---|---|
-| Ürünümü 5 dakika içinde bağlamak | [Sağlayıcı Hızlı Başlangıç](./provider-quickstart) |
-| Tüm bağlantı modlarını ayrıntılı olarak anlamak | [Bağlantı Modları](./provider-connection) |
-| Sıfırdan OAuth uygulamak | [OAuth ve Kimlik Doğrulama](./provider-oauth) |
-| Parametreleriyle birlikte tüm araçları görmek | [31 Aracın Tümü](./provider-tools) |
+| Ürünümü 5 dakika içinde bağlamak | [Sağlayıcı Hızlı Başlangıç](./provider-quickstart.md) |
+| Tüm bağlantı modlarını ayrıntılı olarak anlamak | [Bağlantı Modları](./provider-connection.md) |
+| Sıfırdan OAuth uygulamak | [OAuth ve Kimlik Doğrulama](./provider-oauth.md) |
+| Parametreleriyle birlikte tüm araçları görmek | [31 Aracın Tümü](./provider-tools.md) |

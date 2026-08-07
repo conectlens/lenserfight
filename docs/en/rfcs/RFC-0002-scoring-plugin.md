@@ -113,4 +113,4 @@ The RPC is `SECURITY DEFINER` so the worker can write rows without granting `INS
 - [Scoring Plugin — Getting Started](../how-to/contributors/scoring-plugin-getting-started.md)
 - [Adapter Mentorship Paths](../how-to/contributors/adapter-mentorship.md)
 - [RFC-0001: Connector Interface](./RFC-0001-connector-interface.md) — interface stability rules and the registry pattern this RFC mirrors.
-- [Battle Integrity Checklist](../how-to/battles/battle-integrity-checklist) — the integrity gates that any new scoring signal must respect.
+- [Battle Integrity Checklist](../how-to/battles/battle-integrity-checklist.md) — the integrity gates that any new scoring signal must respect.

@@ -7,7 +7,7 @@ description: LenserFight MCP sunucusu tarafından sunulan 31 aracın tamamı iç
 
 LenserFight MCP sunucusu, üç grup altında **31 araç** sunar. Her araç, standart bir MCP `tools/call` isteği aracılığıyla kimliği doğrulanmış herhangi bir üçüncü taraf ürününe sunulmaktadır. Bu sayfa, entegrasyon oluşturan sağlayıcılar için yetkili referans belgesidir.
 
-**Tüm araçlar için kimlik doğrulaması gereklidir.** Her çağrı `Authorization: Bearer lf_mcp_<token>` üst bilgisini içermelidir. Bkz. [OAuth ve Kimlik Doğrulama](./provider-oauth).
+**Tüm araçlar için kimlik doğrulaması gereklidir.** Her çağrı `Authorization: Bearer lf_mcp_<token>` üst bilgisini içermelidir. Bkz. [OAuth ve Kimlik Doğrulama](./provider-oauth.md).
 
 ## Adlandırma ve güvenlik sınıfları
 

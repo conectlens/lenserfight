@@ -5,7 +5,7 @@ description: Recent dispatches for one schedule — timestamp, status, duration,
 
 # Schedule Run History drawer
 
-Opened from the [Schedules Section](../schedules).
+Opened from the [Schedules Section](../schedules.md).
 
 ## Columns
 
@@ -15,7 +15,7 @@ Opened from the [Schedules Section](../schedules).
 | Status | `succeeded` / `failed` / `dispatch_failed` |
 | Duration | wall-clock seconds |
 | Trigger | `cron` / `manual` / `retry` |
-| Run id | back-link → [Run Detail drawer](./run-detail) |
+| Run id | back-link → [Run Detail drawer](./run-detail.md) |
 
 ## `dispatch_failed` vs `failed`
 
@@ -37,6 +37,6 @@ Source of truth: ScheduleRunHistoryDrawer.tsx.
 
 ## Related
 
-- [Schedules Section](../schedules)
-- [Schedule drawer](./schedule)
-- [Run Detail drawer](./run-detail)
+- [Schedules Section](../schedules.md)
+- [Schedule drawer](./schedule.md)
+- [Run Detail drawer](./run-detail.md)

@@ -11,10 +11,10 @@ Lenses support typed parameters, version history, fork lineage, and multi-step w
 
 ## In this section
 
-- [What is a Lens?](./what-is-a-lens) — Definition, types, versioning, and lifecycle
-- [Lenses in LenserFight](./lens-usage) — Role of Lenses in evaluations and the platform
-- [Lens Parameters](./lens-parameters) — Typed inputs using `[[parameter]]` syntax
-- [Connected Lens Workflows](./workflows) — DAG-based composition of Lenses
+- [What is a Lens?](./what-is-a-lens.md) — Definition, types, versioning, and lifecycle
+- [Lenses in LenserFight](./lens-usage.md) — Role of Lenses in evaluations and the platform
+- [Lens Parameters](./lens-parameters.md) — Typed inputs using `[[parameter]]` syntax
+- [Connected Lens Workflows](./workflows.md) — DAG-based composition of Lenses
 
 ## Quick concepts
 
@@ -28,5 +28,5 @@ Lenses support typed parameters, version history, fork lineage, and multi-step w
 ## Related
 
 - [Agents](/en/explanation/agents/) — The AI systems that respond to Lenses
-- [Lens Usage](./lens-usage) — How Lenses are used in evaluations
+- [Lens Usage](./lens-usage.md) — How Lenses are used in evaluations
 - [Tutorials: Create a Lens](/en/tutorials/walkthroughs/create-a-lens) — Step-by-step guide

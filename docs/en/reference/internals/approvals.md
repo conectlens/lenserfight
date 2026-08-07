@@ -7,7 +7,7 @@ description: How owner approval gates work for autonomous agent teams. The queue
 
 Approvals keep the human Lenser authoritative over autonomous agent execution. Whenever a team run touches a sensitive action — publishing output, spending credits, sending external messages, modifying schedules, deleting data — the engine pauses and creates a pending entry that the owner resolves.
 
-The **queue is not a separate table**. It is a projection of [`agents.team_runs`](./domain-model#agents-team-runs) with `approval_status='pending'`, materialized as `agents.approval_requests_v` and resolved through `fn_decide_approval`.
+The **queue is not a separate table**. It is a projection of [`agents.team_runs`](./domain-model.md#agents-team-runs) with `approval_status='pending'`, materialized as `agents.approval_requests_v` and resolved through `fn_decide_approval`.
 
 ## Approval shape
 
@@ -238,7 +238,7 @@ ALTER DATABASE postgres SET app.approval_webhook_url = 'https://example.com/appr
 
 ## RLS posture
 
-[`agents.can_manage_ai_lenser()`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) gates every read and write of approval data. Only the owner or co-owner of the AI workspace can:
+[`agents.can_manage_ai_lenser()`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) gates every read and write of approval data. Only the owner or co-owner of the AI workspace can:
 
 - See pending requests (read via `agents.approval_requests_v` or the bootstrap/fleet views).
 - Resolve requests through `fn_decide_approval`.
@@ -272,6 +272,6 @@ The following are **Proposed (not yet implemented)**:
   ```
 
 - **Approval UI refinement** — the dedicated `/lenser/:handle/ag/approvals` section ships today, but still needs richer diffing, filtering, and queue analytics.
-- **Notification fan-out** — an `agents.agent_run_events` listener that pushes pending requests to the human owner via the notification service ([libs/data/repositories/src/lib/services/notificationService.ts](../../libs/data/repositories/src/lib/services/notificationService.ts)).
+- **Notification fan-out** — an `agents.agent_run_events` listener that pushes pending requests to the human owner via the notification service (libs/data/repositories/src/lib/services/notificationService.ts).
 - **Per-schedule approval timeout override** — `approval_policy.timeoutMinutes` on a single workflow assignment to override the database-wide `app.approval_timeout_hours` GUC. The global timeout ships in Phase K1; per-assignment overrides remain proposed.
 - **Audit event for bypass attempts** — ✓ Shipped (Phase G). When `requiresApproval=false` is set on an active schedule, an `approval_bypass_attempted` row is inserted into `agents.action_logs`.

@@ -34,7 +34,7 @@ For the first 7 days after any OSS release:
 ## Adapter and schema PRs
 
 - Adapter PRs (`good-first-adapter`) need one core maintainer review + one community review.
-- Schema proposal issues (`schema-proposal`) require a linked RFC or a short written rationale before any migration is drafted. See [adapter contribution guide](./adapter-contribution-guide) for the full flow.
+- Schema proposal issues (`schema-proposal`) require a linked RFC or a short written rationale before any migration is drafted. See [adapter contribution guide](./adapter-contribution-guide.md) for the full flow.
 
 ## Closing stale issues
 

@@ -74,7 +74,7 @@ Generate an image from a text prompt using configured provider and model.
 
 ### Related Nodes
 
-[Image to Image](#image-to-image) · [Object Storage Upload](./storage#object-storage-upload) · [Image Upscale](#image-upscale)
+[Image to Image](#image-to-image) · [Object Storage Upload](./storage.md#object-storage-upload) · [Image Upscale](#image-upscale)
 
 ---
 
@@ -198,7 +198,7 @@ Generate spoken audio from text.
 
 ### Related Nodes
 
-[Speech to Text](#speech-to-text) · [Summarizer](./ai-primitives#summarizer)
+[Speech to Text](#speech-to-text) · [Summarizer](./ai-primitives.md#summarizer)
 
 ---
 
@@ -247,7 +247,7 @@ Transcribe speech audio into text with timestamps.
 
 ### Related Nodes
 
-[Text to Speech](#text-to-speech) · [Audio Transcribe](./ai-primitives#audio-transcribe) · [Summarizer](./ai-primitives#summarizer)
+[Text to Speech](#text-to-speech) · [Audio Transcribe](./ai-primitives.md#audio-transcribe) · [Summarizer](./ai-primitives.md#summarizer)
 
 ---
 
@@ -381,4 +381,4 @@ Convert media between supported formats (e.g. WAV → MP3, MP4 → WebM).
 
 ---
 
-**See also:** [Node Catalog Index](./) · [Storage Nodes](./storage) · [AI Primitive Nodes](./ai-primitives) · [Workflow Studio](/en/how-to/agents/workspace/workflows)
+**See also:** [Node Catalog Index](./) · [Storage Nodes](./storage.md) · [AI Primitive Nodes](./ai-primitives.md) · [Workflow Studio](/en/how-to/agents/workspace/workflows)

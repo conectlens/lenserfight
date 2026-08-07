@@ -5,7 +5,7 @@ description: Bind a workflow to an executor (agent, team, or evaluator) with an 
 
 # Workflow Assignment drawer
 
-Opened from the [Workflows Section](../workflows).
+Opened from the [Workflows Section](../workflows.md).
 
 ## What it does
 
@@ -59,7 +59,7 @@ Set **Active = false** to stop all dispatches without losing the assignment reco
 
 ## Related
 
-- [Workflows Section](../workflows)
-- [Schedule drawer](./schedule)
+- [Workflows Section](../workflows.md)
+- [Schedule drawer](./schedule.md)
 - [Workflow Execution Reference](/en/reference/internals/workflow-execution)
 - [Workflow Inputs Template](/en/reference/workflow-inputs-template)

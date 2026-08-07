@@ -34,9 +34,9 @@ export function startBattleFinalizeWorker(): () => void {
     const _cycleStart = performance.now()
     try {
       const n = await runBattleFinalizeCycle()
-      nodeLogger.info({ workerId: 'battle-finalize-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: n, errors: 0 }, 'cycle')
+      nodeLogger.info('cycle', { workerId: 'battle-finalize-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: n, errors: 0 })
     } catch (err) {
-      nodeLogger.error({ workerId: 'battle-finalize-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: 0, errors: 1 }, 'cycle')
+      nodeLogger.error('cycle', { workerId: 'battle-finalize-worker', workerType: 'daemon', cycleMs: Math.round(performance.now() - _cycleStart), processed: 0, errors: 1 })
       nodeLogger.error('battle-finalize: cycle error', {
         message: err instanceof Error ? err.message : String(err),
       })

@@ -7,7 +7,7 @@ description: Understand what the LenserFight MCP server is, how it works archite
 
 This page explains the **concepts and architecture** behind the LenserFight MCP server. It answers: *what is it, how does it work, and what does your product gain by integrating it?*
 
-If you want to jump straight into connecting, go to [Provider Quickstart](./provider-quickstart) or [Connection Modes](./provider-connection).
+If you want to jump straight into connecting, go to [Provider Quickstart](./provider-quickstart.md) or [Connection Modes](./provider-connection.md).
 
 ---
 
@@ -33,7 +33,7 @@ The server provides **31 tools** in three capability groups:
 
 Every tool delegates to a Supabase RPC function in the LenserFight backend. No tool calls any LLM directly — the calling AI model (your product's assistant) executes prompts. The MCP server resolves templates and returns structured data; intelligence lives in the model.
 
-See the complete tool reference: [All 31 Tools](./provider-tools).
+See the complete tool reference: [All 31 Tools](./provider-tools.md).
 
 ---
 
@@ -79,7 +79,7 @@ This means every tool call is **scoped to the authenticated user**. Users can on
 
 You do not need to pre-register your application with LenserFight. The server implements [RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591) dynamic client registration. On first connection, your client calls `POST /oauth/register` with its redirect URI and receives a `client_id` automatically.
 
-See [OAuth & Authentication](./provider-oauth) for the full flow diagram and implementation checklist.
+See [OAuth & Authentication](./provider-oauth.md) for the full flow diagram and implementation checklist.
 
 ---
 
@@ -139,7 +139,6 @@ curl https://mcp.lenserfight.com/health
 ## Source code
 
 - MCP server app: [`apps/mcp-server`](https://github.com/conectlens/lenserfight/tree/main/apps/mcp-server)
-- Edge function: [`supabase/functions/lenserfight-mcp`](https://github.com/conectlens/lenserfight/tree/main/supabase/functions/lenserfight-mcp)
 - Protocol spec: [modelcontextprotocol.io](https://modelcontextprotocol.io)
 
 ---
@@ -148,7 +147,7 @@ curl https://mcp.lenserfight.com/health
 
 | I want to… | Go to… |
 |---|---|
-| Connect my product in 5 minutes | [Provider Quickstart](./provider-quickstart) |
-| Understand all connection modes in detail | [Connection Modes](./provider-connection) |
-| Implement OAuth from scratch | [OAuth & Authentication](./provider-oauth) |
-| See every tool with parameters | [All 31 Tools](./provider-tools) |
+| Connect my product in 5 minutes | [Provider Quickstart](./provider-quickstart.md) |
+| Understand all connection modes in detail | [Connection Modes](./provider-connection.md) |
+| Implement OAuth from scratch | [OAuth & Authentication](./provider-oauth.md) |
+| See every tool with parameters | [All 31 Tools](./provider-tools.md) |

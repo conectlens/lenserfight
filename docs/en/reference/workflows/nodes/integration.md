@@ -59,7 +59,7 @@ Read repository, pull request, issue, or file data from GitHub.
 
 ### Related Nodes
 
-[GitHub PR Review](#github-pr-review) · [Summarizer](./ai-primitives#summarizer) · [Webhook Trigger](./trigger#webhook-trigger)
+[GitHub PR Review](#github-pr-review) · [Summarizer](./ai-primitives.md#summarizer) · [Webhook Trigger](./trigger.md#webhook-trigger)
 
 ---
 
@@ -104,7 +104,7 @@ Create or draft a GitHub pull request review from analysis output.
 
 ### Related Nodes
 
-[GitHub Read](#github-read) · [Agent Execute](./ai-primitives#agent-execute) · [Summarizer](./ai-primitives#summarizer)
+[GitHub Read](#github-read) · [Agent Execute](./ai-primitives.md#agent-execute) · [Summarizer](./ai-primitives.md#summarizer)
 
 ---
 
@@ -419,4 +419,4 @@ Create a Jira issue from workflow output.
 
 ---
 
-**See also:** [Node Catalog Index](./) · [Storage Nodes](./storage) · [Communication Nodes](./communication) · [Workflow Studio](/en/how-to/agents/workspace/workflows)
+**See also:** [Node Catalog Index](./) · [Storage Nodes](./storage.md) · [Communication Nodes](./communication.md) · [Workflow Studio](/en/how-to/agents/workspace/workflows)

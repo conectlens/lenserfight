@@ -47,7 +47,7 @@ stateDiagram-v2
 
 ## Execution trust ladder
 
-`execution.trust_evaluations.trust_level` enum (preserved from [`supabase/migrations/20270511400000_execution_attestations_and_trust.sql`](../../../supabase/migrations/20270511400000_execution_attestations_and_trust.sql)):
+`execution.trust_evaluations.trust_level` enum (preserved from `supabase/migrations/20270511400000_execution_attestations_and_trust.sql`):
 
 | Level | Required facts |
 |-------|----------------|

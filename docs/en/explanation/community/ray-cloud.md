@@ -91,5 +91,5 @@ When a Lens is created (`lenses.fn_lens_create`), the `p_language_code` paramete
 
 ## Related
 
-- [Ray Cloud](/ray) — interactive tag graph
+- Ray Cloud — interactive tag graph
 - [Trending tags feed](/en/reference/community-api/threads) — API contract for tag-filtered feeds

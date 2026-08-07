@@ -82,7 +82,7 @@ Add a remote MCP server entry pointing to the endpoint above. The client must su
 - PKCE (S256 code challenge)
 - RFC 7591 dynamic client registration (or manually supply a `client_id` from a prior registration)
 
-If your client does not support dynamic registration, call `POST /oauth/register` once manually (see [OAuth & Authentication](./provider-oauth)) and hard-code the returned `client_id`.
+If your client does not support dynamic registration, call `POST /oauth/register` once manually (see [OAuth & Authentication](./provider-oauth.md)) and hard-code the returned `client_id`.
 
 ### Custom backend client example (Node.js)
 

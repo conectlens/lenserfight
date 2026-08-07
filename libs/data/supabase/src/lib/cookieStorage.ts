@@ -48,18 +48,27 @@ const getMaxAge = (): string =>
 const getSecure = (): string =>
   window.location.protocol === 'https:' ? '; Secure' : ''
 
+// Guards make getItem/setItem/removeItem safe no-ops when this module is
+// pulled into a non-browser bundle as an unused side effect of a shared
+// barrel import (e.g. apps/worker importing @lenserfight/data/repositories) —
+// this file is otherwise browser-only and never expected to run in Node.
+const hasDocument = (): boolean => typeof document !== 'undefined'
+
 function writeCookie(name: string, value: string): void {
+  if (!hasDocument()) return
   const domain = getCookieDomain()
   document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Domain=${domain}${getMaxAge()}; Path=/; SameSite=Lax${getSecure()}`
 }
 
 function readCookie(name: string): string | null {
+  if (!hasDocument()) return null
   const key = encodeURIComponent(name)
   const match = document.cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`))
   return match ? decodeURIComponent(match[1]) : null
 }
 
 function eraseCookie(name: string): void {
+  if (!hasDocument()) return
   const domain = getCookieDomain()
   document.cookie = `${encodeURIComponent(name)}=; Domain=${domain}; Max-Age=0; Path=/; SameSite=Lax`
 }

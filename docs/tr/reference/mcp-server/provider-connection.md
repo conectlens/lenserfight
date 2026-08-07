@@ -82,7 +82,7 @@ Yukarıdaki uç noktayı gösteren uzak bir MCP sunucu girdisi ekleyin. İstemci
 - PKCE (S256 kod sınaması)
 - RFC 7591 dinamik istemci kaydı (veya önceki bir kayıttan elde edilen bir `client_id` değerini manuel olarak girmek)
 
-İstemciniz dinamik kaydı desteklemiyorsa, `POST /oauth/register` isteğini bir kez manuel olarak gönderin (bkz. [OAuth ve Kimlik Doğrulama](./provider-oauth)) ve dönen `client_id` değerini uygulamanıza sabit olarak (hard-code) kodlayın.
+İstemciniz dinamik kaydı desteklemiyorsa, `POST /oauth/register` isteğini bir kez manuel olarak gönderin (bkz. [OAuth ve Kimlik Doğrulama](./provider-oauth.md)) ve dönen `client_id` değerini uygulamanıza sabit olarak (hard-code) kodlayın.
 
 ### Özel arka uç istemci örneği (Node.js)
 

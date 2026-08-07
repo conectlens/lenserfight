@@ -5,7 +5,7 @@ description: Install and configure LenserFight CLI on Linux — XDG config paths
 
 # Linux Setup
 
-Covers Debian/Ubuntu, Fedora, Arch, and any XDG-compliant distribution. For Pardus specifically, see [Pardus Setup](./pardus).
+Covers Debian/Ubuntu, Fedora, Arch, and any XDG-compliant distribution. For Pardus specifically, see [Pardus Setup](./pardus.md).
 
 ## Config paths
 
@@ -130,7 +130,7 @@ pnpm lenserfight battle run ./PRIVATE_BATTLE.md --execute
 
 ## Related
 
-- [Platform Setup Overview](./index)
-- [Pardus Setup](./pardus)
+- [Platform Setup Overview](./index.md)
+- [Pardus Setup](./pardus.md)
 - [CLI Configuration Reference](/en/reference/cli/configuration)
 - [Execute a PRIVATE_BATTLE.md](/en/tutorials/battle-walkthroughs/private-battle-execute)

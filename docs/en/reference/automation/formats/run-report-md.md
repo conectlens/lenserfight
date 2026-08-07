@@ -64,7 +64,7 @@ Summarize outputs, failures, and next actions.
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Native `SKILL.md`](./colens-md-native)
-- [Native `SKILL.md`](./battle-md)
-- [Portable `EVALUATION.md`](./evaluation-md)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Native `SKILL.md`](./colens-md-native.md)
+- [Native `SKILL.md`](./battle-md.md)
+- [Portable `EVALUATION.md`](./evaluation-md.md)
