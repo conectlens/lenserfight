@@ -18,12 +18,15 @@ async function resolveTagId(slug: string): Promise<{ id: string; name: string } 
 // Shared helper — resolves the authenticated lenser's own UUID.
 // ---------------------------------------------------------------------------
 async function resolveSelfId(): Promise<string | null> {
-  const self = await callRpc<Record<string, unknown>>(
+  // fn_lensers_get_active_profile is SETOF-returning — PostgREST always
+  // wraps the result in a JSON array, even for a single row.
+  const self = await callRpc<Record<string, unknown> | Record<string, unknown>[]>(
     'fn_lensers_get_active_profile',
     {},
     { requireAuth: true }
   )
-  return (self?.id as string) ?? null
+  const row = Array.isArray(self) ? self[0] : self
+  return (row?.id as string) ?? null
 }
 
 // ---------------------------------------------------------------------------
