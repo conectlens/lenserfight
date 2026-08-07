@@ -1,6 +1,6 @@
 ---
 title: lf __inventory
-description: internal: dump the command inventory as JSON
+description: "internal: dump the command inventory as JSON"
 ---
 
 <!-- AUTO-GEN-START -->
