@@ -1,0 +1,52 @@
+# Render Blueprint for apps/worker — a long-running background process
+# (battle job execution, workflow scheduling, vote anomaly detection,
+# webhook drain, async media polling). See apps/worker/Dockerfile and
+# docs/en/reference/worker/overview.md for what it does.
+#
+# Deploy: connect this repo in the Render dashboard, it will auto-detect
+# this file. "type: worker" = always-on process, no public URL, no HTTP
+# health check — Render restarts it if the process exits.
+#
+# Secrets (sync: false) are NOT stored here — set their real values in the
+# Render dashboard under this service's Environment tab after first deploy.
+# Never commit real key values to this file.
+
+services:
+  - type: worker
+    name: lenserfight-battle-worker
+    runtime: docker
+    dockerfilePath: ./apps/worker/Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PLATFORM_API_BATTLE_WORKER_ENABLED
+        value: "true"
+      - key: PLATFORM_API_SCHEDULED_WORKFLOW_WORKER_ENABLED
+        value: "true"
+      - key: PLATFORM_API_TEAM_RUN_WORKER_ENABLED
+        value: "true"
+      - key: FEATURE_WORKER_HEALTH_MONITORING
+        value: "true"
+      - key: BATTLE_WORKER_ID
+        value: render-worker-0
+      # ── Set real values for these in the Render dashboard, not here ──
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GOOGLE_VERTEX_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
