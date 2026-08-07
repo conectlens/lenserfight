@@ -3129,7 +3129,7 @@ const byokKey = defineCommand({
 // ---------------------------------------------------------------------------
 // battle exec — cloud battle BYOK execution with optional web streaming
 // ---------------------------------------------------------------------------
-import { byokKeyResolver, getStreamAdapter as _getStreamAdapter } from '@lenserfight/providers'
+import { byokKeyResolver, getStreamAdapter as _getStreamAdapter, resolveWireModel as _resolveWireModel } from '@lenserfight/providers'
 import type { ProviderMessage as _ProviderMessage } from '@lenserfight/providers'
 
 const exec = defineCommand({
@@ -3191,10 +3191,13 @@ const exec = defineCommand({
 
       const providerA = (args['provider-a'] ||
         String(cfgA['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0]
-      const modelA = args['model-a'] || String(cfgA['model_key'] ?? 'claude-sonnet-4-6')
+      // Catalog keys (e.g. gemini-2.5-flash-vertex) can differ from the real
+      // provider-side model id (e.g. gemini-2.5-flash) — always resolve to
+      // the wire model before it reaches an adapter.
+      const modelA = _resolveWireModel(args['model-a'] || String(cfgA['model_key'] ?? 'claude-sonnet-4-6'))
       const providerB = (args['provider-b'] ||
         String(cfgB['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0]
-      const modelB = args['model-b'] || String(cfgB['model_key'] ?? 'claude-sonnet-4-6')
+      const modelB = _resolveWireModel(args['model-b'] || String(cfgB['model_key'] ?? 'claude-sonnet-4-6'))
 
       const task = String(battle['task_prompt'] ?? '')
       const messages: _ProviderMessage[] = [{ role: 'user', content: task }]
