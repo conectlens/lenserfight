@@ -933,6 +933,50 @@ async function resolveBattleId(idOrSlug: string): Promise<string> {
   return row.id
 }
 
+const setExecutionConfig = defineCommand({
+  meta: {
+    name: 'set-execution-config',
+    description:
+      'Set which provider/model a contender uses when the worker auto-executes the battle (creator only).',
+  },
+  args: {
+    id: { type: 'positional', description: 'Battle UUID or slug', required: true },
+    contender: { type: 'string', description: 'Contender UUID (omit to set the battle-wide default)', default: '' },
+    provider: { type: 'string', description: 'Provider key, e.g. google_vertex', required: true },
+    model: { type: 'string', description: 'Model key, e.g. gemini-3.1-flash-lite-image', required: true },
+    'max-tokens': { type: 'string', description: 'Max tokens (default: 4096)', default: '' },
+    temperature: { type: 'string', description: 'Sampling temperature (default: 0.7)', default: '' },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const battleId = await resolveBattleId(args.id)
+      const row = await callRpc(
+        'fn_battles_set_execution_config',
+        {
+          p_battle_id: battleId,
+          p_contender_id: args.contender || null,
+          p_provider_key: args.provider,
+          p_model_key: args.model,
+          p_max_tokens: args['max-tokens'] ? parseInt(args['max-tokens'], 10) : null,
+          p_temperature: args.temperature ? parseFloat(args.temperature) : null,
+        },
+        { requireAuth: true }
+      )
+      if (args.json) {
+        printJson(row)
+        return
+      }
+      consola.success(
+        'Execution config set: %s/%s%s',
+        args.provider,
+        args.model,
+        args.contender ? ` (contender ${args.contender})` : ' (battle default)'
+      )
+    } catch (err) { handleError(err) }
+  },
+})
+
 const open = defineCommand({
   meta: {
     name: 'open',
@@ -4994,6 +5038,7 @@ export default defineCommand({
     view,
     submit,
     open,
+    'set-execution-config': setExecutionConfig,
     'start-voting': startVoting,
     finalize,
     publish,
