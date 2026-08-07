@@ -84,6 +84,22 @@ const create = defineCommand({
       description: 'Rubric UUID used to score submissions (optional)',
       default: '',
     },
+    'battle-type': {
+      type: 'string',
+      description:
+        'ai_vs_ai | human_vs_human_open_votes | human_vs_human_ai_votes | human_vs_ai | lenser_battle | workflow_battle. Omit to use the platform default.',
+      default: '',
+    },
+    'content-type': {
+      type: 'string',
+      description: 'Expected submission kind: text | code | image | video | audio | ... (default: text)',
+      default: '',
+    },
+    'lens-id': {
+      type: 'string',
+      description: 'Lens UUID to bind — contenders execute this lens instead of freeform text',
+      default: '',
+    },
     json: {
       type: 'boolean',
       description: 'Output result as JSON',
@@ -92,16 +108,43 @@ const create = defineCommand({
   },
   async run({ args }) {
     try {
-      const battle = await callRpc<Record<string, unknown>>(
-        'fn_battles_create',
-        {
-          p_title: args.title,
-          p_slug: args.slug,
-          p_task_prompt: args.task,
-          p_rubric_id: args['rubric-id'] || null,
-        },
-        { requireAuth: true }
-      )
+      // fn_create_battle is the only path that can set battle_type, content_type,
+      // or lens_id — but it always derives its own slug, ignoring --slug.
+      // fn_battles_create (the default) honors --slug exactly but can't set
+      // any of those. Route based on whether the richer fields were requested.
+      const wantsRichCreate = args['battle-type'] || args['content-type'] || args['lens-id']
+
+      let battle: Record<string, unknown>
+      if (wantsRichCreate) {
+        if (args.slug) {
+          consola.warn('--slug is ignored when --battle-type/--content-type/--lens-id is set; the server derives a slug from --title.')
+        }
+        const rows = await callRpc<Array<Record<string, unknown>>>(
+          'fn_create_battle',
+          {
+            p_title: args.title,
+            p_task_prompt: args.task,
+            p_battle_type: args['battle-type'] || 'human_vs_human_open_votes',
+            p_lens_id: args['lens-id'] || null,
+            p_content_type: args['content-type'] || 'text',
+          },
+          { requireAuth: true }
+        )
+        const row = rows?.[0]
+        if (!row) throw new Error('fn_create_battle returned no row')
+        battle = row
+      } else {
+        battle = await callRpc<Record<string, unknown>>(
+          'fn_battles_create',
+          {
+            p_title: args.title,
+            p_slug: args.slug,
+            p_task_prompt: args.task,
+            p_rubric_id: args['rubric-id'] || null,
+          },
+          { requireAuth: true }
+        )
+      }
 
       if (args.json) {
         printJson(battle)
