@@ -1,0 +1,91 @@
+name: Deploy MCP server
+
+# Builds and deploys the `lenserfight-mcp` Cloudflare Worker whenever a push to
+# main actually affects it — either apps/mcp-server itself or any shared lib
+# it depends on (@lenserfight/api, /domain, /infra, /shared). Uses `nx show
+# projects --affected` (same pattern as release-cli.yml) instead of a static
+# path filter so a change to a shared lib the Worker imports isn't missed.
+#
+# Previously this Worker was deployed by hand via `wrangler deploy` from a
+# contributor machine (see docs/en/reference/mcp-server/setup.md) — that's
+# why the Cloudflare dashboard showed only manual, increasingly stale
+# deployments. This workflow replaces that manual step.
+#
+# Gated by the `production` GitHub Environment — configure a required
+# reviewer there (Settings → Environments → production) so this pauses for a
+# maintainer's approval before it ships to the live MCP endpoint. Until that
+# environment protection rule exists, this job runs unattended the moment it
+# appears on main.
+#
+# Required repo secrets:
+#   CLOUDFLARE_API_TOKEN   — Workers Scripts:Edit + Zone:DNS/SSL read on lenserfight.com
+#   CLOUDFLARE_ACCOUNT_ID  — the Cloudflare account that owns the lenserfight-mcp Worker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-mcp-server
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check if mcp-server is affected
+    runs-on: ubuntu-latest
+    outputs:
+      affected: ${{ steps.nx.outputs.affected }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Detect affected
+        id: nx
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "affected=true" >> "$GITHUB_OUTPUT"
+          else
+            affected=$(pnpm nx show projects --affected --base=HEAD~1 --head=HEAD --plain 2>/dev/null || echo '')
+            if echo "$affected" | grep -qw "mcp-server"; then
+              echo "affected=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "affected=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+  deploy:
+    name: Build and deploy Worker
+    needs: check
+    if: needs.check.outputs.affected == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+
+      - name: Deploy lenserfight-mcp
+        run: pnpm nx run mcp-server:deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Verify deployment
+        run: |
+          set -euo pipefail
+          sleep 5
+          status=$(curl -s -o /dev/null -w '%{http_code}' https://mcp.lenserfight.com/health)
+          if [[ "$status" != "200" ]]; then
+            echo "::error::Health check returned HTTP $status after deploy"
+            exit 1
+          fi
+          echo "OK: mcp.lenserfight.com/health returned 200"
