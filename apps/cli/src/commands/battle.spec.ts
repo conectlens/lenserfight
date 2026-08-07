@@ -137,29 +137,31 @@ describe('battle submit', () => {
 
     const submitCmd = await getSubCmd('submit')
     await submitCmd.run?.({
-      args: { id: 'battle-uuid', text: 'My response', url: '', 'run-id': '', json: false },
+      args: { id: 'battle-uuid', text: 'My response', url: '', 'run-id': '', agent: '', json: false },
       cmd: {},
       rawArgs: [],
     })
 
+    // battles.submissions.source_type only accepts
+    // manual|execution_output|hybrid|imported.
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_battles_submit',
       expect.objectContaining({
         p_battle_id: 'battle-uuid',
         p_content_text: 'My response',
-        p_source_type: 'text',
+        p_source_type: 'manual',
       }),
       { requireAuth: true }
     )
     expect(consolaSuccess).toHaveBeenCalled()
   })
 
-  it('uses execution_run source type when --run-id is provided', async () => {
+  it('uses execution_output source type when --run-id is provided', async () => {
     mockCallRpc.mockResolvedValueOnce({ submission_id: 'sub-uuid' })
 
     const submitCmd = await getSubCmd('submit')
     await submitCmd.run?.({
-      args: { id: 'battle-uuid', text: '', url: '', 'run-id': 'run-xyz', json: false },
+      args: { id: 'battle-uuid', text: '', url: '', 'run-id': 'run-xyz', agent: '', json: false },
       cmd: {},
       rawArgs: [],
     })
@@ -168,7 +170,7 @@ describe('battle submit', () => {
       'fn_battles_submit',
       expect.objectContaining({
         p_execution_run_id: 'run-xyz',
-        p_source_type: 'execution_run',
+        p_source_type: 'execution_output',
       }),
       { requireAuth: true }
     )
