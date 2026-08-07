@@ -121,6 +121,14 @@ export interface WorkflowVersionSnapshotRecord {
   edges: WorkflowEdgeRecord[]
 }
 
+/**
+ * Who executes a run. `worker` runs are claimed and driven server-side, which
+ * makes them durable across a closed tab. `client` runs are driven by the
+ * browser and must never be claimed — reserved for `user_byok_local`, whose API
+ * key never leaves the browser and is therefore unreachable by a worker.
+ */
+export type WorkflowRunExecutor = 'worker' | 'client'
+
 export interface WorkflowRunRecord {
   id: string
   workflow_id: string
@@ -320,9 +328,11 @@ export interface WorkflowsRepositoryPort {
     inputs?: Record<string, unknown>,
     globalModelId?: string,
     idempotencyKey?: string,
-    versionId?: string | null
+    versionId?: string | null,
+    executor?: WorkflowRunExecutor
   ): Promise<WorkflowRunRecord>
   getRun(runId: string): Promise<WorkflowRunRecord | null>
+  heartbeatClientRun(runId: string): Promise<void>
   getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]>
   updateNodeResult(
     runId: string,
@@ -648,12 +658,14 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     inputs: Record<string, unknown> = {},
     globalModelId?: string,
     idempotencyKey?: string,
-    versionId?: string | null
+    versionId?: string | null,
+    executor: WorkflowRunExecutor = 'worker'
   ): Promise<WorkflowRunRecord> {
     const payload: Record<string, unknown> = {
       p_workflow_id: workflowId,
       p_inputs: inputs,
       p_global_model_id: globalModelId ?? null,
+      p_executor: executor,
     }
     if (idempotencyKey) payload['p_idempotency_key'] = idempotencyKey
     if (versionId) payload['p_version_id'] = versionId
@@ -753,6 +765,16 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     })
 
     if (error) this.handleError(error)
+  }
+
+  /**
+   * Tells the server this tab is still driving a client-executed run. Silent on
+   * failure by design: a missed beat is recoverable (the next one lands well
+   * inside the liveness window), and surfacing a transient network error here
+   * would interrupt a run that is otherwise healthy.
+   */
+  async heartbeatClientRun(runId: string): Promise<void> {
+    await supabase.rpc('fn_heartbeat_client_workflow_run', { p_run_id: runId })
   }
 
   async appendRunEvent(

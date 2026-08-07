@@ -9,7 +9,7 @@
 
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { createServiceSupabaseClient } from '../lib/supabase'
-import { executeWorkflowRun, withRetry } from './run-workflow-graph'
+import { executeWorkflowRun, loadResumeResults, withRetry } from './run-workflow-graph'
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `worker-${process.pid}`
 const STALE_AFTER_MS = parseInt(process.env['WORKER_WORKFLOW_STALE_AFTER_MS'] ?? '90000', 10)
@@ -61,6 +61,17 @@ export async function recoverNextStaleWorkflow(signal?: AbortSignal): Promise<bo
   }
   const ctx = (Array.isArray(ctxData) ? ctxData[0] : ctxData) as RunExecContext | undefined
 
+  // Resume from the checkpoint the previous attempt left behind. Recovery
+  // re-enters the graph at its roots, so without this every node that already
+  // finished is re-invoked against its provider and re-billed.
+  const resumeResults = await loadResumeResults(serviceClient, claimed.run_id)
+  if (resumeResults.size > 0) {
+    nodeLogger.info('recovery: resuming from checkpoint', {
+      runId: claimed.run_id,
+      completedNodes: resumeResults.size,
+    })
+  }
+
   let finalStatus: 'completed' | 'failed' = 'failed'
   try {
     finalStatus = await executeWorkflowRun(
@@ -71,6 +82,7 @@ export async function recoverNextStaleWorkflow(signal?: AbortSignal): Promise<bo
         contextInputs: ctx?.context_inputs ?? {},
         globalModelId: ctx?.global_model_id ?? null,
         aiLenserId: ctx?.ai_lenser_id ?? null,
+        resumeResults,
       },
       { workerId: WORKER_ID, signal },
     )

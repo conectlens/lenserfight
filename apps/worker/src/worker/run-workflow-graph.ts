@@ -50,6 +50,45 @@ export interface WorkflowRunInput {
   contextInputs: Record<string, unknown>
   globalModelId: string | null
   aiLenserId: string | null
+  /**
+   * Nodes that already completed in an earlier attempt of this run. Supplied by
+   * crash recovery so the engine replays their persisted output instead of
+   * re-invoking the provider — recovery re-enters the graph at its roots, so
+   * without this every finished node is re-run and re-billed.
+   */
+  resumeResults?: ReadonlyMap<string, NodeResult>
+}
+
+/**
+ * Loads the completed node results for a run as engine resume input. Best
+ * effort: if the lookup fails the run is simply re-executed from scratch, which
+ * is the pre-existing behaviour and still correct, just more expensive.
+ */
+export async function loadResumeResults(
+  serviceClient: SupabaseClient,
+  runId: string,
+): Promise<ReadonlyMap<string, NodeResult>> {
+  const resumed = new Map<string, NodeResult>()
+  try {
+    const { data, error } = await serviceClient.rpc('fn_worker_get_completed_node_results', {
+      p_run_id: runId,
+    })
+    if (error) throw error
+    for (const row of (data ?? []) as Array<{ node_id: string; output_data: unknown }>) {
+      resumed.set(row.node_id, {
+        nodeId: row.node_id,
+        status: 'completed',
+        outputData: (row.output_data ?? {}) as Record<string, unknown>,
+      })
+    }
+  } catch (err) {
+    nodeLogger.warn('could not load resume checkpoint — run will re-execute from scratch', {
+      runId,
+      message: err instanceof Error ? err.message : String(err),
+    })
+    return new Map()
+  }
+  return resumed
 }
 
 // Z10: retry helper for transient Supabase RPC/network errors. Does NOT retry
@@ -192,6 +231,9 @@ export async function executeWorkflowRun(
       defaultModelKey: defaultModelId,
       signal,
       delegation: new SupabaseDelegationHandler(serviceClient),
+      ...(input.resumeResults && input.resumeResults.size > 0
+        ? { resumeResults: input.resumeResults }
+        : {}),
 
       async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
         const { data, error } = await serviceClient.rpc('fn_worker_get_lens_template_body', {
@@ -235,6 +277,33 @@ export async function executeWorkflowRun(
           providerByModelKey.set(modelKey, p)
         }
         return p
+      },
+
+      // Stream partial text into workflow_node_results so the builder's progress
+      // panel renders incremental output for worker-executed runs exactly as it
+      // did when the browser drove the graph. Without this, routing a run to the
+      // worker would silently downgrade it from token-by-token streaming to a
+      // single jump from running to completed.
+      async onPartialOutput(nodeId, partial): Promise<void> {
+        const { error } = await serviceClient.rpc('fn_worker_upsert_node_result', {
+          p_run_id: runId,
+          p_node_id: nodeId,
+          p_status: 'streaming',
+          p_output_data: {
+            mediaType: 'text',
+            output: partial.text,
+            text: partial.text,
+            streaming: true,
+          },
+          p_error_message: null,
+          p_resolved_input_snapshot: null,
+          p_provider_route: null,
+        })
+        if (error) {
+          // A dropped partial must never fail the node; the terminal write in
+          // onNodeStatusChange still carries the complete output.
+          nodeLogger.warn('streaming partial write failed', { runId, nodeId, message: error.message })
+        }
       },
 
       async onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void> {

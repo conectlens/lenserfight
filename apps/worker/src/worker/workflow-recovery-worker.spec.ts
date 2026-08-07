@@ -5,6 +5,7 @@ jest.mock('../lib/supabase', () => ({
 }))
 jest.mock('./run-workflow-graph', () => ({
   executeWorkflowRun: jest.fn(),
+  loadResumeResults: jest.fn(async () => new Map()),
   withRetry: jest.fn((fn: () => Promise<unknown>) => fn()),
 }))
 jest.mock('@lenserfight/utils/logger', () => ({
@@ -13,10 +14,11 @@ jest.mock('@lenserfight/utils/logger', () => ({
 
 import { recoverNextStaleWorkflow } from './workflow-recovery-worker'
 import { createServiceSupabaseClient } from '../lib/supabase'
-import { executeWorkflowRun } from './run-workflow-graph'
+import { executeWorkflowRun, loadResumeResults } from './run-workflow-graph'
 
 const mockCreate = createServiceSupabaseClient as jest.MockedFunction<typeof createServiceSupabaseClient>
 const mockExecute = executeWorkflowRun as jest.MockedFunction<typeof executeWorkflowRun>
+const mockLoadResume = loadResumeResults as jest.MockedFunction<typeof loadResumeResults>
 
 const STALE = { run_id: 'run-9', workflow_id: 'wf-9', parent_run_id: null, recursion_depth: 0, previous_status: 'running' }
 const EXEC_CTX = { workflow_id: 'wf-9', context_inputs: { a: 1 }, global_model_id: null, ai_lenser_id: null }
@@ -40,7 +42,10 @@ function buildClient(opts: {
 }
 
 describe('recoverNextStaleWorkflow', () => {
-  beforeEach(() => jest.clearAllMocks())
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockLoadResume.mockResolvedValue(new Map())
+  })
 
   it('returns false when no stale run is claimable', async () => {
     const { client } = buildClient({ claim: null })
@@ -79,5 +84,48 @@ describe('recoverNextStaleWorkflow', () => {
 
     expect(await recoverNextStaleWorkflow()).toBe(true)
     expect(rpc).toHaveBeenCalledWith('fn_worker_set_workflow_run_status', { p_run_id: 'run-9', p_status: 'failed' })
+  })
+
+  // ── Resume from checkpoint ─────────────────────────────────────────────────
+  // Recovery re-enters the graph at its roots, so without a checkpoint every
+  // node that already finished is re-invoked and re-billed.
+
+  it('loads the checkpoint for the claimed run', async () => {
+    const { client } = buildClient({ claim: [STALE], ctx: [EXEC_CTX] })
+    mockCreate.mockReturnValue(client)
+    mockExecute.mockResolvedValue('completed')
+
+    await recoverNextStaleWorkflow()
+
+    expect(mockLoadResume).toHaveBeenCalledWith(expect.anything(), 'run-9')
+  })
+
+  it('passes completed nodes through to the executor as resumeResults', async () => {
+    const checkpoint = new Map([
+      ['node-a', { nodeId: 'node-a', status: 'completed' as const, outputData: { text: 'done' } }],
+    ])
+    const { client } = buildClient({ claim: [STALE], ctx: [EXEC_CTX] })
+    mockCreate.mockReturnValue(client)
+    mockExecute.mockResolvedValue('completed')
+    mockLoadResume.mockResolvedValue(checkpoint)
+
+    await recoverNextStaleWorkflow()
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ runId: 'run-9', resumeResults: checkpoint }),
+      expect.anything(),
+    )
+  })
+
+  it('still executes when the checkpoint is empty', async () => {
+    const { client, rpc } = buildClient({ claim: [STALE], ctx: [EXEC_CTX] })
+    mockCreate.mockReturnValue(client)
+    mockExecute.mockResolvedValue('completed')
+    mockLoadResume.mockResolvedValue(new Map())
+
+    expect(await recoverNextStaleWorkflow()).toBe(true)
+    expect(mockExecute).toHaveBeenCalled()
+    expect(rpc).toHaveBeenCalledWith('fn_worker_set_workflow_run_status', { p_run_id: 'run-9', p_status: 'completed' })
   })
 })

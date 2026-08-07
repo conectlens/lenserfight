@@ -4,6 +4,7 @@ import { type WorkflowRecord,
   type WorkflowEdgeRecord,
   type WorkflowBootstrapRecord,
   type WorkflowRunRecord,
+  type WorkflowRunExecutor,
   type WorkflowNodeResultRecord,
   type WorkflowVersionRecord,
   type WorkflowVersionSnapshotRecord,
@@ -37,6 +38,7 @@ export type {
   WorkflowEdgeRecord,
   WorkflowBootstrapRecord,
   WorkflowRunRecord,
+  WorkflowRunExecutor,
   WorkflowNodeResultRecord,
   WorkflowVersionRecord,
   WorkflowVersionSnapshotRecord,
@@ -119,11 +121,15 @@ export const workflowsService = {
     globalModelId?: string,
     idempotencyKey?: string,
     versionId?: string | null,
+    executor?: WorkflowRunExecutor,
   ): Promise<WorkflowRunRecord> =>
-    workflowsRepo.startRun(workflowId, inputs, globalModelId, idempotencyKey, versionId),
+    workflowsRepo.startRun(workflowId, inputs, globalModelId, idempotencyKey, versionId, executor),
 
   getRun: (runId: string): Promise<WorkflowRunRecord | null> =>
     workflowsRepo.getRun(runId),
+
+  heartbeatClientRun: (runId: string): Promise<void> =>
+    workflowsRepo.heartbeatClientRun(runId),
 
   getNodeResults: (runId: string): Promise<WorkflowNodeResultRecord[]> =>
     workflowsRepo.getNodeResults(runId),

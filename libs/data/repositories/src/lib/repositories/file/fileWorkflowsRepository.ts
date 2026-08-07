@@ -283,6 +283,15 @@ export class FileWorkflowsRepository implements WorkflowsRepositoryPort {
     })
   }
 
+  /**
+   * No-op in file mode: there is no server to prove liveness to, and nothing
+   * reaps runs here. Present so the file repository satisfies the same contract
+   * as the Supabase one.
+   */
+  async heartbeatClientRun(_runId: string): Promise<void> {
+    return
+  }
+
   async updateRunStatus(runId: string, status: string): Promise<void> {
     const run = await runStore.findById(runId)
     if (!run) return
