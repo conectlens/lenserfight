@@ -42,7 +42,15 @@ jobs:
         uses: ./.github/actions/setup-workspace
 
       - name: Build docs (includes changelog data generation)
+        # HotLenses widget instantiates a Supabase client at module load time
+        # (apps/docs/.vitepress/theme/supabaseClient.ts), which VitePress's
+        # SSR pass hits during static generation even though the widget only
+        # fetches client-side in the browser. Placeholder values are enough to
+        # satisfy the client constructor — no network call happens at build time.
         run: pnpm nx build docs
+        env:
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: placeholder-anon-key
 
       - name: Verify changelog routes exist in the built output
         run: |
