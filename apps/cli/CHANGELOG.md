@@ -1,3 +1,14 @@
+## 1.5.0 (2026-08-07)
+
+### 🚀 Features
+
+- implement AI provider system with Google Vertex support, CLI management commands, and database schema updates. ([b46a65cbd](https://github.com/conectlens/lenserfight/commit/b46a65cbd))
+- implement thread and reply data services with workspace switching support for CLI client ([2fd55247b](https://github.com/conectlens/lenserfight/commit/2fd55247b))
+
+### ❤️ Thank You
+
+- Lenser
+
 ## 1.4.0 (2026-08-07)
 
 ### 🚀 Features
