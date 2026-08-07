@@ -1,5 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { battlesService } from '@lenserfight/data/repositories'
+import { normalizeError } from '@lenserfight/shared/error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
@@ -18,7 +19,7 @@ export const useSubmitVote = (battleId?: string) => {
       }
     },
     onError: (error) => {
-      toast.error(error.message ?? 'Failed to submit vote. Please try again.')
+      toast.error(normalizeError(error).message || 'Failed to submit vote. Please try again.')
     },
   })
 }
