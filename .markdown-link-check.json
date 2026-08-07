@@ -13,7 +13,8 @@
     { "pattern": "^mailto:" },
     { "pattern": "^#" },
     { "pattern": "^https?://[^/]*\\.?example\\.(com|org|net)(/|$)" },
-    { "pattern": "%7B" }
+    { "pattern": "%7B" },
+    { "pattern": "^https?://ai\\.google\\.dev/" }
   ],
   "replacementPatterns": [
     {
