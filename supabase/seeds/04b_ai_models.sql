@@ -798,7 +798,7 @@ SET
   ),
   supports_streaming = (
     m.supports_tools
-    OR p.key IN ('openai', 'anthropic', 'google', 'mistral', 'ollama')
+    OR p.key IN ('openai', 'anthropic', 'google', 'google_vertex', 'mistral', 'ollama')
   ),
   status = CASE
     WHEN m.key ILIKE '%preview%' THEN 'preview'
