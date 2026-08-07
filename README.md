@@ -166,7 +166,27 @@ Full command reference, config, and environment variables:
 [CLI docs](docs/en/reference/cli/index.md) ·
 [CLI: Getting Started tutorial](docs/en/tutorials/getting-started/cli-getting-started.md)
 
+**Recommended: install Docker if you plan to use local mode.** Cloud mode (the CLI default) and
+file-workspace commands (`lf battle file`, `lf validate`, `lf workflow run`) need no Docker at
+all. Docker is only required for `lf use local` / `lf --local` and `lf dev`, which spin up a local
+Supabase stack:
+
+- **macOS / Windows:** [Docker Desktop](https://www.docker.com/products/docker-desktop/), then
+  `docker --version` to confirm.
+- **Linux:** [Docker Engine](https://docs.docker.com/engine/install/), then
+  `sudo usermod -aG docker $USER` (log out/in to apply).
+
 ## Quick start (web app)
+
+**Recommended: install Docker first.** The local Supabase stack (Postgres, Auth, Storage,
+Realtime) runs in Docker containers — nothing else in this quick start needs it, but you'll hit
+a wall at `pnpm supabase start` without it.
+
+- **macOS / Windows:** install [Docker Desktop](https://www.docker.com/products/docker-desktop/),
+  then confirm it's running: `docker --version`.
+- **Linux:** install [Docker Engine](https://docs.docker.com/engine/install/) for your
+  distribution, then add your user to the `docker` group so you don't need `sudo` for every
+  command: `sudo usermod -aG docker $USER` (log out/in to apply).
 
 Run the full product — web app, auth, and a local Supabase stack — in one command:
 
