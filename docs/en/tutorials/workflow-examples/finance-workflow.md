@@ -689,4 +689,4 @@ Root inputs:
 
 ---
 
-*Next: [Research Workflows →](./research-workflow)*
+*Next: [Research Workflows →](./research-workflow.md)*

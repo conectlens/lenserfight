@@ -7,7 +7,7 @@ description: Durable outcome records emitted after each run completes — links 
 
 **Route:** `/lenser/<handle>/ag/reports`
 
-A **report** is a durable, post-mortem summary of one run. Where the [Runs section](./runs) shows live status, Reports is the **archive** — even after the underlying run rotates out of hot storage, the report survives.
+A **report** is a durable, post-mortem summary of one run. Where the [Runs section](./runs.md) shows live status, Reports is the **archive** — even after the underlying run rotates out of hot storage, the report survives.
 
 ## Per-report fields
 
@@ -28,7 +28,7 @@ Each report has zero or more linked **incidents** — alerts that fired during t
 
 ## Run trace
 
-The **Run trace** button opens the [Run Detail drawer](./drawers/run-detail) for the originating run.
+The **Run trace** button opens the [Run Detail drawer](./drawers/run-detail.md) for the originating run.
 
 
 ## Code-backed workflow
@@ -38,12 +38,12 @@ Source of truth: ReportsSection.tsx and the run report hooks in useRunReports.ts
 1. Use reports for finished outcomes, not live queue state.
 2. Open the linked run trace when a report contains an incident or unexpected score.
 3. Export reports when you need an external audit or review packet.
-4. Compare reports with [Analytics](./analytics) when investigating recurring failures.
+4. Compare reports with [Analytics](./analytics.md) when investigating recurring failures.
 
 Verification: dispatch a workflow assignment, wait for completion, and confirm a report appears with run metadata and incidents.
 
 ## Related
 
-- [Runs Section](./runs)
-- [Logs Section](./logs)
-- [Analytics Section](./analytics)
+- [Runs Section](./runs.md)
+- [Logs Section](./logs.md)
+- [Analytics Section](./analytics.md)

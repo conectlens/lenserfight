@@ -11,7 +11,9 @@
     { "pattern": "^https?://[^/]+\\.local(/|$)" },
     { "pattern": "^https?://[^/]+\\.internal(/|$)" },
     { "pattern": "^mailto:" },
-    { "pattern": "^#" }
+    { "pattern": "^#" },
+    { "pattern": "^https?://[^/]*\\.?example\\.(com|org|net)(/|$)" },
+    { "pattern": "%7B" }
   ],
   "replacementPatterns": [
     {

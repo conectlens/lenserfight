@@ -46,7 +46,7 @@ export function createMyScoringPlugin(): ScoringPluginV1 {
 }
 ```
 
-The same shape is used by [`examples/scoring/word-count-plugin/src/plugin.ts`](../../../examples/scoring/word-count-plugin/src/plugin.ts).
+The same shape is used by `examples/scoring/word-count-plugin/src/plugin.ts`.
 
 ## 3. Register the plugin
 

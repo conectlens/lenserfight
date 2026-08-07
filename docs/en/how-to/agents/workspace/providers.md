@@ -24,7 +24,7 @@ Credentials are encrypted at rest with the workspace key. Only the **last 4 char
 
 ## Health checks
 
-Clicking **Check** issues a synchronous round-trip to the provider's status endpoint. Failures surface as a row badge and are logged into the [Logs section](./logs).
+Clicking **Check** issues a synchronous round-trip to the provider's status endpoint. Failures surface as a row badge and are logged into the [Logs section](./logs.md).
 
 
 ## Code-backed workflow
@@ -36,10 +36,10 @@ Source of truth: ProvidersSection.tsx and ConfigureProviderDrawer.tsx. The imple
 3. Run a provider test after changing credentials. The drawer records reachability feedback.
 4. Use provider status before debugging workflows; an unreachable provider can explain several failed runs.
 
-Verification: after configuration, create or update a [Model profile](./models), then run a small workflow and inspect [Logs](./logs).
+Verification: after configuration, create or update a [Model profile](./models.md), then run a small workflow and inspect [Logs](./logs.md).
 
 ## Related
 
-- [Configure Provider drawer](./drawers/configure-provider)
-- [BYOK Section](./byok)
+- [Configure Provider drawer](./drawers/configure-provider.md)
+- [BYOK Section](./byok.md)
 - [AI Providers](/en/reference/ai-providers)

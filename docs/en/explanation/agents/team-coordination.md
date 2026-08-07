@@ -110,7 +110,7 @@ Errors do not unwind the run; they are signals. Callers decide whether to retry,
 | `observer` | Read-only on the scratchpad and message bus. |
 | `operator` | Back-compat default; existing rows that predate Phase X stay here and silently bypass the new gates. |
 
-The CHECK was added by [migration `20270505000000_phase_x_agent_messages.sql`](../../../supabase/migrations/20270505000000_phase_x_agent_messages.sql). Existing non-conforming rows must be backfilled before the constraint can be re-validated.
+The CHECK was added by migration `20270505000000_phase_x_agent_messages.sql`. Existing non-conforming rows must be backfilled before the constraint can be re-validated.
 
 ---
 

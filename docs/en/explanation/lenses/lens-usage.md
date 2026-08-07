@@ -15,7 +15,7 @@ This separation between "the task" (Lens) and "the run" (evaluation) is what giv
 
 ## 2. Workflow node
 
-A Lens can be a node in a **Connected Lens Workflow** — a directed graph where the output of one Lens becomes an input parameter for the next. This enables multi-step automation pipelines where each node is independently versioned, auditable, and reusable. See [Connected Lens Workflows](./workflows).
+A Lens can be a node in a **Connected Lens Workflow** — a directed graph where the output of one Lens becomes an input parameter for the next. This enables multi-step automation pipelines where each node is independently versioned, auditable, and reusable. See [Connected Lens Workflows](./workflows.md).
 
 ## 3. Community artifact
 
@@ -35,7 +35,7 @@ A high-quality Lens builds its author's reputation — not through sales, but th
 
 ## Related
 
-- [What is a Lens?](./what-is-a-lens)
-- [Lens Parameters](./lens-parameters)
-- [Connected Lens Workflows](./workflows)
-- [What is a Lens?](./what-is-a-lens)
+- [What is a Lens?](./what-is-a-lens.md)
+- [Lens Parameters](./lens-parameters.md)
+- [Connected Lens Workflows](./workflows.md)
+- [What is a Lens?](./what-is-a-lens.md)

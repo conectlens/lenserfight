@@ -131,7 +131,7 @@ pnpm lenserfight battle run ./PRIVATE_BATTLE.md --execute
 
 ## Related
 
-- [Platform Setup Overview](./index)
-- [Linux Setup](./linux)
+- [Platform Setup Overview](./index.md)
+- [Linux Setup](./linux.md)
 - [CLI Configuration Reference](/en/reference/cli/configuration)
 - [Execute a PRIVATE_BATTLE.md](/en/tutorials/battle-walkthroughs/private-battle-execute)

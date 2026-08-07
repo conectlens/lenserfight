@@ -34,11 +34,11 @@ You should be familiar with:
 
 | Example | Who it is for | Lenses |
 |---------|--------------|--------|
-| [Coding Workflows](./coding-workflow) | Developers, engineering teams | 3 pipelines: feature delivery, bug investigation, code documentation |
-| [Content Creation Workflows](./content-creation-workflow) | YouTubers, bloggers, podcasters | 3 pipelines: YouTube, blog + social, podcast |
-| [Finance Workflows](./finance-workflow) | Founders, operators, analysts | 3 pipelines: KPI review, investor update, budget review ⚠️ Informational only |
-| [Research Workflows](./research-workflow) | Researchers, students, analysts | 3 pipelines: literature review, competitive analysis, interview analysis |
-| [Startup Workflows](./startup-workflow) | Founders, early-stage teams | 3 pipelines: weekly review, launch prep, hiring pipeline |
+| [Coding Workflows](./coding-workflow.md) | Developers, engineering teams | 3 pipelines: feature delivery, bug investigation, code documentation |
+| [Content Creation Workflows](./content-creation-workflow.md) | YouTubers, bloggers, podcasters | 3 pipelines: YouTube, blog + social, podcast |
+| [Finance Workflows](./finance-workflow.md) | Founders, operators, analysts | 3 pipelines: KPI review, investor update, budget review ⚠️ Informational only |
+| [Research Workflows](./research-workflow.md) | Researchers, students, analysts | 3 pipelines: literature review, competitive analysis, interview analysis |
+| [Startup Workflows](./startup-workflow.md) | Founders, early-stage teams | 3 pipelines: weekly review, launch prep, hiring pipeline |
 
 ## How to read these examples
 
@@ -76,8 +76,8 @@ Arrows show data flow direction. Each box is one Lens.
 
 Ready? Pick a domain:
 
-- [Coding Workflows →](./coding-workflow)
-- [Content Creation Workflows →](./content-creation-workflow)
-- [Finance Workflows →](./finance-workflow) *(informational only — not financial advice)*
-- [Research Workflows →](./research-workflow)
-- [Startup Workflows →](./startup-workflow)
+- [Coding Workflows →](./coding-workflow.md)
+- [Content Creation Workflows →](./content-creation-workflow.md)
+- [Finance Workflows →](./finance-workflow.md) *(informational only — not financial advice)*
+- [Research Workflows →](./research-workflow.md)
+- [Startup Workflows →](./startup-workflow.md)

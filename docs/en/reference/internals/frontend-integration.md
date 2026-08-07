@@ -5,7 +5,7 @@ description: Page model and route-resolution contract for the ConnectedLenses fr
 
 # Frontend Integration
 
-The ConnectedLenses frontend lives in `apps/web` and consumes the same service layer as the CLI ([api-reference.md](./api-reference)). This page documents the page model, the route-resolution contract for `/lenser/:handle/ag/overview`, and which components are shipping today vs. proposed.
+The ConnectedLenses frontend lives in `apps/web` and consumes the same service layer as the CLI ([api-reference.md](./api-reference.md)). This page documents the page model, the route-resolution contract for `/lenser/:handle/ag/overview`, and which components are shipping today vs. proposed.
 
 ## Page model
 
@@ -32,7 +32,7 @@ flowchart TD
 | Lens Library                 | [`AILenserLensesPanel`](../../libs/features/profile/src/lib/components/AILenserLensesPanel.tsx) and the lenses tab in [`LenserProfilePage`](../../libs/features/profile/src/lib/pages/LenserProfilePage.tsx) | Shipping               |
 | Lens Editor                  | `CreateLensModal` from `@lenserfight/features/lenses`                                                                                                                                                        | Shipping               |
 | Workflow Canvas              | [`WorkflowBuilderPage`](../../libs/features/workflows/src/lib/pages/WorkflowBuilderPage.tsx) at `/workflows/:id`                                                                                             | Shipping               |
-| Agent Profile (control room) | [`AgentControlRoomPage`](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx) at `/lenser/:handle/ag/:section`                                                                                 | Shipping               |
+| Agent Profile (control room) | `AgentControlRoomPage` at `/lenser/:handle/ag/:section`                                                                                 | Shipping               |
 | Team Scratchpad              | `AgentControlRoomPage` `section='scratchpad'` and `section='team'`                                                                                                                                           | Shipping (read-mostly) |
 | Schedule Manager             | `AgentControlRoomPage` `section='schedules'`                                                                                                                                                                 | Shipping               |
 | Approval Queue               | —                                                                                                                                                                                                            | **Proposed**           |
@@ -96,10 +96,10 @@ Viewer is anyone other than this human.
 
 Viewer can manage the AI workspace (owner or co-owner).
 
-- Renders the existing [`AgentControlRoomPage`](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx) with full sections list (defined at [AgentControlRoomPage.tsx:37-68](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L37-L68)):
+- Renders the existing `AgentControlRoomPage` with full sections list (defined at AgentControlRoomPage.tsx:37-68):
   - `overview / scratchpad / team / workflows / schedules / memory / personality / tools / models / providers / runs / logs / evaluations / settings`.
-- Empty states reuse the existing `EmptyPanel` pattern at [AgentControlRoomPage.tsx:114-135](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L114-L135).
-- Auto-switches to the agent's workspace when the viewer is in a different one (current logic at line [272-279](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L272-L279)).
+- Empty states reuse the existing `EmptyPanel` pattern at AgentControlRoomPage.tsx:114-135.
+- Auto-switches to the agent's workspace when the viewer is in a different one (current logic at line 272-279).
 
 ### Mode 4 — Agent-Public
 
@@ -187,7 +187,7 @@ Follow-up work remains in filtering, richer diff visualization, and notification
 
 ## Authorization in components
 
-- **Read** authorization is enforced by RLS on every `agents.*` table via [`agents.can_manage_ai_lenser()`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92). Components display whatever the API returns; if a row is hidden, the policy did the work.
+- **Read** authorization is enforced by RLS on every `agents.*` table via [`agents.can_manage_ai_lenser()`](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92). Components display whatever the API returns; if a row is hidden, the policy did the work.
 - **Write** authorization is enforced by the same helper at the RPC layer. Components do not gate buttons on ownership — they show the affordance and let the server reject if needed.
 - **Mode selection** (which page mode to render) is computed in the page component from the resolved profile + workspace list. This is a UI concern, not an authorization gate.
 

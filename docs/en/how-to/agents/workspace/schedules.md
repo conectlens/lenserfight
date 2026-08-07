@@ -22,9 +22,9 @@ The Schedules section governs **cron-driven workflow dispatch**. A schedule says
 
 ## Actions
 
-- **New schedule** → opens the [Schedule drawer](./drawers/schedule).
+- **New schedule** → opens the [Schedule drawer](./drawers/schedule.md).
 - **Pause** → toggles `is_active` without deleting.
-- **History** → opens the [Schedule Run History drawer](./drawers/schedule-run-history).
+- **History** → opens the [Schedule Run History drawer](./drawers/schedule-run-history.md).
 - **Delete** → confirmation-gated removal.
 
 ## Health flag
@@ -48,4 +48,4 @@ Verification: a valid schedule should appear in the list, dispatch at the expect
 - [Scheduling Reference](/en/reference/internals/scheduling)
 - [Cron Scheduling Tutorial](/en/tutorials/agent-walkthroughs/cron-scheduling)
 - [Cron Expressions Reference](/en/reference/cron-expressions)
-- [Schedule drawer](./drawers/schedule)
+- [Schedule drawer](./drawers/schedule.md)

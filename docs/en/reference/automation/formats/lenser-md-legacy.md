@@ -91,5 +91,5 @@ Then optionally convert to compact native frontmatter (just `name` + `descriptio
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Native `SKILL.md`](./lenser-md-native)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Native `SKILL.md`](./lenser-md-native.md)

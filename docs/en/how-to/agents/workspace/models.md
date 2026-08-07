@@ -41,10 +41,10 @@ Source of truth: ModelsSection.tsx and BindModelDrawer.tsx. The implementation c
 3. Use catalog pricing and capability information before selecting a model id.
 4. Delete unused profiles only after checking workflow assignments and schedules.
 
-Verification: run a workflow using the profile, then inspect [Analytics](./analytics) and [Cost](./cost) for latency and spend.
+Verification: run a workflow using the profile, then inspect [Analytics](./analytics.md) and [Cost](./cost.md) for latency and spend.
 
 ## Related
 
-- [Bind Model drawer](./drawers/bind-model)
-- [Providers Section](./providers)
+- [Bind Model drawer](./drawers/bind-model.md)
+- [Providers Section](./providers.md)
 - [AI Providers](/en/reference/ai-providers)

@@ -5,11 +5,11 @@ description: Attach an existing AI Lenser to the active team graph with a role a
 
 # Add Team Member drawer
 
-Opened from the [Team Builder Section](../team-builder).
+Opened from the [Team Builder Section](../team-builder.md).
 
 ## What it does
 
-Attaches an existing AI Lenser to the **active team** as a graph node. The member becomes available as a *from* / *to* endpoint when you build edges later in the [Team Edges drawer](./team-edges).
+Attaches an existing AI Lenser to the **active team** as a graph node. The member becomes available as a *from* / *to* endpoint when you build edges later in the [Team Edges drawer](./team-edges.md).
 
 ## Fields
 
@@ -32,7 +32,7 @@ Attaches an existing AI Lenser to the **active team** as a graph node. The membe
 
 - Inserts an `agent_team_members` row.
 - Invalidates the team bootstrap cache.
-- Emits a `team.member_added` event into the [Logs section](../logs).
+- Emits a `team.member_added` event into the [Logs section](../logs.md).
 
 
 ## Code-backed workflow
@@ -45,6 +45,6 @@ Source of truth: AddTeamMemberDrawer.tsx.
 
 ## Related
 
-- [Team Builder Section](../team-builder)
-- [Team Edges drawer](./team-edges)
+- [Team Builder Section](../team-builder.md)
+- [Team Edges drawer](./team-edges.md)
 - [Agent Teams](/en/explanation/agents/agent-teams)

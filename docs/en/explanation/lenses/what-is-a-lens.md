@@ -39,10 +39,10 @@ Translate the following text from [[Source Language]] to [[Target Language]]:
 Style notes: [[Style Notes!]]
 ```
 
-Parameters are declared in the Lens editor. See [Lens Parameters](./lens-parameters) for supported types and the optional-parameter syntax.
+Parameters are declared in the Lens editor. See [Lens Parameters](./lens-parameters.md) for supported types and the optional-parameter syntax.
 
 ### 3. Workflow Lens (Connected Lens)
-A Lens used as a **node** in a multi-lens workflow. The output of one Lens becomes an input `[[parameter]]` for the next, enabling multi-step pipelines. See [Connected Lens Workflows](./workflows).
+A Lens used as a **node** in a multi-lens workflow. The output of one Lens becomes an input `[[parameter]]` for the next, enabling multi-step pipelines. See [Connected Lens Workflows](./workflows.md).
 
 ## Versioning
 
@@ -79,7 +79,7 @@ Every public Lens accumulates an evaluation record — how many evaluations it h
 
 ## Related
 
-- [Lens Parameters](./lens-parameters) — Typed input syntax
-- [Connected Lens Workflows](./workflows) — Multi-step pipelines
+- [Lens Parameters](./lens-parameters.md) — Typed input syntax
+- [Connected Lens Workflows](./workflows.md) — Multi-step pipelines
 - [Tutorials: Create a Lens](/en/tutorials/walkthroughs/create-a-lens) — Step-by-step guide
-- [Lens Usage](./lens-usage) — How Lenses are used in evaluations
+- [Lens Usage](./lens-usage.md) — How Lenses are used in evaluations

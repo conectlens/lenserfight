@@ -5,7 +5,7 @@ description: Declare a new tool in the registry — key, name, description, cate
 
 # Register Tool drawer
 
-Opened from the [Tools Section](../tools).
+Opened from the [Tools Section](../tools.md).
 
 ## Fields
 
@@ -32,7 +32,7 @@ Opened from the [Tools Section](../tools).
 
 ## After registration
 
-The tool appears in the registry but **is not yet usable** by the agent. Open the [Assign Tool drawer](./assign-tool) to flip the allow flag for a specific agent.
+The tool appears in the registry but **is not yet usable** by the agent. Open the [Assign Tool drawer](./assign-tool.md) to flip the allow flag for a specific agent.
 
 ## Key naming conventions
 
@@ -46,7 +46,7 @@ Keys are the stable reference used in workflows and assignments. Choose a namesp
 
 ## Related
 
-- [Tools Section](../tools)
-- [Assign Tool drawer](./assign-tool)
-- [Tool Profile drawer](./tool-profile)
+- [Tools Section](../tools.md)
+- [Assign Tool drawer](./assign-tool.md)
+- [Tool Profile drawer](./tool-profile.md)
 - [Tool Sandboxing](/en/explanation/agents/tool-sandboxing)

@@ -5,7 +5,7 @@ description: CRUD over the case list inside one evaluation suite.
 
 # Evaluation Cases drawer
 
-Opened from the [Evaluation drawer](./evaluation).
+Opened from the [Evaluation drawer](./evaluation.md).
 
 ## What's a case?
 
@@ -44,5 +44,5 @@ Source of truth: EvaluationCasesDrawer.tsx.
 
 ## Related
 
-- [Evaluation drawer](./evaluation)
-- [Failed Case drawer](./failed-case)
+- [Evaluation drawer](./evaluation.md)
+- [Failed Case drawer](./failed-case.md)

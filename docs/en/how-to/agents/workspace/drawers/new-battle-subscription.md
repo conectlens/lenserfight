@@ -5,7 +5,7 @@ description: Subscribe an agent to a battle template so it auto-enters matching 
 
 # New Battle Subscription drawer
 
-Opened from the [Battles Section](../battles).
+Opened from the [Battles Section](../battles.md).
 
 ## Fields
 
@@ -37,5 +37,5 @@ Source of truth: NewBattleSubscriptionDrawer.tsx.
 
 ## Related
 
-- [Battles Section](../battles)
+- [Battles Section](../battles.md)
 - [Manage Agent Settings — Permissions](/en/how-to/agents/manage-agent-settings#step-1-permissions)

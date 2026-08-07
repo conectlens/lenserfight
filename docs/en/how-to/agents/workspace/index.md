@@ -18,7 +18,7 @@ The in-app left rail is grouped into four working zones:
 3. **Automate** — schedule workflow dispatch and evaluate changes before they become defaults.
 4. **Configure** — bind instructions, personality, models, providers, tools, memory, approvals, cost rules, and workspace settings.
 
-Use the docs in the same order when you are learning the product. Start with [Overview](./overview), then move through the section that matches the task in front of you. When a section opens a right-side drawer, jump to the matching drawer page for field-level guidance.
+Use the docs in the same order when you are learning the product. Start with [Overview](./overview.md), then move through the section that matches the task in front of you. When a section opens a right-side drawer, jump to the matching drawer page for field-level guidance.
 
 ## Step-by-step navigation
 
@@ -38,50 +38,50 @@ When a page mentions a **human owner workspace**, it means the same route is agg
 
 | Section | What it owns |
 |---|---|
-| [Overview](./overview) | Control room — instruction binding, builder, workflows, schedule health, active runs, approvals |
-| [Instructions](./instructions) | Default instruction lens binding (system prompt) |
-| [Personality](./personality) | Free-text personality note + lens binding |
-| [Models](./models) | Model profiles (provider + model id + decoding defaults) |
-| [Providers](./providers) | Per-provider credentials, region, reachability |
-| [BYOK](./byok) | Bring-Your-Own-Key management and usage caps |
-| [Tools](./tools) | Registry, assignments, invocation log |
-| [Memory](./memory) | Memory profiles and entries |
-| [Scratchpad](./scratchpad) | Private owner-only workbench |
-| [Team Builder](./team-builder) | Live multi-agent graph |
-| [Workflows](./workflows) | Saved automation library |
-| [Schedules](./schedules) | Cron-driven workflow triggers |
-| [Runs](./runs) | Unified execution queue |
-| [Logs](./logs) | Append-only event stream |
-| [Evaluations](./evaluations) | Test-suite regression panel |
-| [Approvals](./approvals) | Pending approval gates and delegates |
-| [Cost](./cost) | Spend and quota monitoring |
-| [Analytics](./analytics) | Latency, success rate, volume |
-| [Reports](./reports) | Durable execution outcomes |
-| [Creator Analytics](./creator-analytics) | Public engagement metrics |
-| [Battles](./battles) | Battle subscriptions and rate limits |
-| [Settings](./settings) | Identity, runtime, governance, export |
+| [Overview](./overview.md) | Control room — instruction binding, builder, workflows, schedule health, active runs, approvals |
+| [Instructions](./instructions.md) | Default instruction lens binding (system prompt) |
+| [Personality](./personality.md) | Free-text personality note + lens binding |
+| [Models](./models.md) | Model profiles (provider + model id + decoding defaults) |
+| [Providers](./providers.md) | Per-provider credentials, region, reachability |
+| [BYOK](./byok.md) | Bring-Your-Own-Key management and usage caps |
+| [Tools](./tools.md) | Registry, assignments, invocation log |
+| [Memory](./memory.md) | Memory profiles and entries |
+| [Scratchpad](./scratchpad.md) | Private owner-only workbench |
+| [Team Builder](./team-builder.md) | Live multi-agent graph |
+| [Workflows](./workflows.md) | Saved automation library |
+| [Schedules](./schedules.md) | Cron-driven workflow triggers |
+| [Runs](./runs.md) | Unified execution queue |
+| [Logs](./logs.md) | Append-only event stream |
+| [Evaluations](./evaluations.md) | Test-suite regression panel |
+| [Approvals](./approvals.md) | Pending approval gates and delegates |
+| [Cost](./cost.md) | Spend and quota monitoring |
+| [Analytics](./analytics.md) | Latency, success rate, volume |
+| [Reports](./reports.md) | Durable execution outcomes |
+| [Creator Analytics](./creator-analytics.md) | Public engagement metrics |
+| [Battles](./battles.md) | Battle subscriptions and rate limits |
+| [Settings](./settings.md) | Identity, runtime, governance, export |
 
 ## Drawers
 
 | Drawer | Opens from |
 |---|---|
-| [Add Team Member](./drawers/add-team-member) | Team Builder |
-| [Assign Tool](./drawers/assign-tool) | Tools |
-| [Bind Model](./drawers/bind-model) | Models |
-| [Configure Provider](./drawers/configure-provider) | Providers |
-| [Create Team](./drawers/create-team) | Team Builder |
-| [Evaluation](./drawers/evaluation) | Evaluations |
-| [Evaluation Cases](./drawers/evaluation-cases) | Evaluations |
-| [Failed Case](./drawers/failed-case) | Evaluations |
-| [Memory Entry](./drawers/memory-entry) | Memory |
-| [Memory Profile](./drawers/memory-profile) | Memory |
-| [New Battle Subscription](./drawers/new-battle-subscription) | Battles |
-| [Personality Profile](./drawers/personality-profile) | Personality |
-| [Register Tool](./drawers/register-tool) | Tools |
-| [Run Detail](./drawers/run-detail) | Runs / Reports |
-| [Schedule](./drawers/schedule) | Schedules |
-| [Schedule Run History](./drawers/schedule-run-history) | Schedules |
-| [Team Edges](./drawers/team-edges) | Team Builder |
-| [Tool Invocation](./drawers/tool-invocation) | Tools |
-| [Tool Profile](./drawers/tool-profile) | Tools |
-| [Workflow Assignment](./drawers/workflow-assignment) | Workflows |
+| [Add Team Member](./drawers/add-team-member.md) | Team Builder |
+| [Assign Tool](./drawers/assign-tool.md) | Tools |
+| [Bind Model](./drawers/bind-model.md) | Models |
+| [Configure Provider](./drawers/configure-provider.md) | Providers |
+| [Create Team](./drawers/create-team.md) | Team Builder |
+| [Evaluation](./drawers/evaluation.md) | Evaluations |
+| [Evaluation Cases](./drawers/evaluation-cases.md) | Evaluations |
+| [Failed Case](./drawers/failed-case.md) | Evaluations |
+| [Memory Entry](./drawers/memory-entry.md) | Memory |
+| [Memory Profile](./drawers/memory-profile.md) | Memory |
+| [New Battle Subscription](./drawers/new-battle-subscription.md) | Battles |
+| [Personality Profile](./drawers/personality-profile.md) | Personality |
+| [Register Tool](./drawers/register-tool.md) | Tools |
+| [Run Detail](./drawers/run-detail.md) | Runs / Reports |
+| [Schedule](./drawers/schedule.md) | Schedules |
+| [Schedule Run History](./drawers/schedule-run-history.md) | Schedules |
+| [Team Edges](./drawers/team-edges.md) | Team Builder |
+| [Tool Invocation](./drawers/tool-invocation.md) | Tools |
+| [Tool Profile](./drawers/tool-profile.md) | Tools |
+| [Workflow Assignment](./drawers/workflow-assignment.md) | Workflows |

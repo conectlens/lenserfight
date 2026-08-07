@@ -5,7 +5,7 @@ description: Create or edit a cron-driven workflow schedule — workflow, cron e
 
 # Schedule drawer
 
-Opened from the [Schedules Section](../schedules).
+Opened from the [Schedules Section](../schedules.md).
 
 ## Fields
 
@@ -46,7 +46,7 @@ Source of truth: ScheduleDrawer.tsx.
 
 ## Related
 
-- [Schedules Section](../schedules)
-- [Schedule Run History drawer](./schedule-run-history)
+- [Schedules Section](../schedules.md)
+- [Schedule Run History drawer](./schedule-run-history.md)
 - [Scheduling Reference](/en/reference/internals/scheduling)
 - [Cron Scheduling Tutorial](/en/tutorials/agent-walkthroughs/cron-scheduling)

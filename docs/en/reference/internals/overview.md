@@ -11,7 +11,7 @@ The ConnectedLenses agent-orchestration layer is **in preview**. Core workflow e
 
 ConnectedLenses is the agent-orchestration layer of LenserFight. It treats lenses as the reusable unit of instruction and capability, workflows as executable graphs of those lenses, agent teams as scoped executors, schedules as controlled triggers, and approvals as gates that keep human owners authoritative.
 
-The runtime is **already built**. Most of this section documents primitives that ship in [supabase/migrations/20260329115918_oss_schema.sql](../../../supabase/migrations/20260329115918_oss_schema.sql) and [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql](../../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql). What this section adds is a **single canonical specification** so backend, CLI, and frontend work can move in lockstep.
+The runtime is **already built**. Most of this section documents primitives that ship in supabase/migrations/20260329115918_oss_schema.sql and [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql). What this section adds is a **single canonical specification** so backend, CLI, and frontend work can move in lockstep.
 
 ## Why this matters for battles
 
@@ -25,20 +25,20 @@ If you want to compete on the public leaderboard without ever touching cloud com
 
 ## Reading order
 
-1. [Implementation audit](./implementation-audit) — current shipped surfaces, flags, gaps, and debt.
-2. [Domain model](./domain-model) — every table and relationship.
-3. [Lens instructions](./lens-instructions) — how a lens carries an input/output contract and a kind tag.
-4. [Workflow execution](./workflow-execution) — graph execution, SSE events, instruction-resolution priority.
-5. [Agent teams](./agent-teams) — team DAG, role assignment, autonomy levels, the `/lenser/:handle/ag/overview` route contract.
-6. [Scheduling](./scheduling) — `pg_cron` + `lenses.workflow_schedules`.
-7. [Approvals](./approvals) — owner-authoritative gates on autonomous runs.
-8. [API reference](./api-reference) — endpoint groups anchored in the existing service layer.
-9. [DTO reference](./dto-reference) — request/response shapes from `@lenserfight/types`.
-10. [CLI reference](./cli-reference) — what `apps/cli` already exposes.
-11. [Examples](./examples) — three end-to-end walkthroughs.
-12. [Frontend integration](./frontend-integration) — page model and route-resolution contract.
-13. [Memory Per Agent](./memory-per-agent) — per-profile memory entries, dispatch injection, write gate.
-14. [Tools](./tools) — egress classes, approval flow, invocation runtime traces.
+1. [Implementation audit](./implementation-audit.md) — current shipped surfaces, flags, gaps, and debt.
+2. [Domain model](./domain-model.md) — every table and relationship.
+3. [Lens instructions](./lens-instructions.md) — how a lens carries an input/output contract and a kind tag.
+4. [Workflow execution](./workflow-execution.md) — graph execution, SSE events, instruction-resolution priority.
+5. [Agent teams](./agent-teams.md) — team DAG, role assignment, autonomy levels, the `/lenser/:handle/ag/overview` route contract.
+6. [Scheduling](./scheduling.md) — `pg_cron` + `lenses.workflow_schedules`.
+7. [Approvals](./approvals.md) — owner-authoritative gates on autonomous runs.
+8. [API reference](./api-reference.md) — endpoint groups anchored in the existing service layer.
+9. [DTO reference](./dto-reference.md) — request/response shapes from `@lenserfight/types`.
+10. [CLI reference](./cli-reference.md) — what `apps/cli` already exposes.
+11. [Examples](./examples.md) — three end-to-end walkthroughs.
+12. [Frontend integration](./frontend-integration.md) — page model and route-resolution contract.
+13. [Memory Per Agent](./memory-per-agent.md) — per-profile memory entries, dispatch injection, write gate.
+14. [Tools](./tools.md) — egress classes, approval flow, invocation runtime traces.
 
 ## Glossary
 
@@ -50,9 +50,9 @@ If you want to compete on the public leaderboard without ever touching cloud com
 | **Lens**                     | A versioned instruction unit with an input contract, output contract, and `kind` (text / image / video / audio / music / research / pdf / transform / orchestration / validation / routing). | [libs/types/src/lib/contracts.types.ts](../../libs/types/src/lib/contracts.types.ts)                                                                        |
 | **ConnectedLens / Workflow** | A DAG of lens-bound nodes with conditional edges, retries, and SSE-streamed events. Persisted in `lenses.workflows`, `lenses.workflow_nodes`, `lenses.workflow_edges`.                       | [libs/types/src/lib/workflow-events.types.ts](../../libs/types/src/lib/workflow-events.types.ts)                                                            |
 | **Workflow Run**             | A single execution of a workflow, with per-node results, retries, latency, cost, and provenance edges.                                                                                       | `lenses.workflow_runs`, `lenses.workflow_node_results`, `lenses.workflow_run_provenance`                                                                    |
-| **Agent Team**               | An owner-managed group of Agent Lensers connected by typed edges (`delegates`, `reviews`, `reports_to`, `shares_context`, `handoff`).                                                        | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:118](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L118) |
-| **Workflow Assignment**      | Binds a workflow to an agent or team with `approval_policy`, `retry_policy`, `failure_policy`, `queue_policy`.                                                                               | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:234](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L234) |
-| **Team Run**                 | A scoped execution of an assignment by a team. Tracks `status`, `approval_status`, `scratchpad`.                                                                                             | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:256](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L256) |
+| **Agent Team**               | An owner-managed group of Agent Lensers connected by typed edges (`delegates`, `reviews`, `reports_to`, `shares_context`, `handoff`).                                                        | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:118](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L118) |
+| **Workflow Assignment**      | Binds a workflow to an agent or team with `approval_policy`, `retry_policy`, `failure_policy`, `queue_policy`.                                                                               | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:234](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L234) |
+| **Team Run**                 | A scoped execution of an assignment by a team. Tracks `status`, `approval_status`, `scratchpad`.                                                                                             | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:256](https://github.com/conectlens/lenserfight/blob/27f184ff852aa1fcc625e241fb6fe0c3c61d2db6/supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L256) |
 | **Schedule**                 | A `pg_cron`-driven trigger row in `lenses.workflow_schedules` with a timezone, assignee, and policy bundle.                                                                                  | [libs/types/src/lib/workflows.types.ts:11](../../libs/types/src/lib/workflows.types.ts#L11)                                                                 |
 | **Approval**                 | An owner decision on a sensitive action. Materialized today from `team_runs.approval_status='pending'` (no separate queue table).                                                            | `agents.team_runs.approval_status`                                                                                                                          |
 | **Scratchpad**               | An owner-visible JSONB blob (`agents.teams.scratchpad`, `agents.team_runs.scratchpad`) used as the team's working memory between steps.                                                      | `agents.teams.scratchpad`                                                                                                                                   |

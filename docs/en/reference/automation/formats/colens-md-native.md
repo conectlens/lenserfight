@@ -78,7 +78,7 @@ The runner produces a `RUN_REPORT.md` under the user runtime workspace (not `.le
 
 ## Related
 
-- [Markdown Object Formats overview](../markdown-objects)
-- [Legacy `SKILL.md` (portable workflow)](./colens-md-legacy)
-- [Native `SKILL.md`](./lenser-md-native)
-- [Native `SKILL.md`](./battle-md)
+- [Markdown Object Formats overview](../markdown-objects.md)
+- [Legacy `SKILL.md` (portable workflow)](./colens-md-legacy.md)
+- [Native `SKILL.md`](./lenser-md-native.md)
+- [Native `SKILL.md`](./battle-md.md)

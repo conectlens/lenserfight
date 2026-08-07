@@ -23,7 +23,7 @@ The Cost section answers two questions:
 
 ## Daily quota
 
-`max_daily_credits` (set on [Settings → Runtime](./settings)) caps daily spend. When exceeded:
+`max_daily_credits` (set on [Settings → Runtime](./settings.md)) caps daily spend. When exceeded:
 
 - New runs are marked `blocked` with reason `daily_cap_exceeded`.
 - A notification fires to the owner.
@@ -31,7 +31,7 @@ The Cost section answers two questions:
 
 ## Monthly cap
 
-Configured per-BYOK key in the [BYOK section](./byok). Triggers the same `blocked` flow when exceeded.
+Configured per-BYOK key in the [BYOK section](./byok.md). Triggers the same `blocked` flow when exceeded.
 
 ## Why "soft" cap?
 
@@ -43,7 +43,7 @@ A soft cap means already-running steps complete; new dispatches are blocked. Thi
 Source of truth: CostSection.tsx and CostMonitorSection.tsx. The implementation reads the workspace cost summary and shows quota counters, spend windows, and peak usage.
 
 1. Check the current quota snapshot before changing schedules or model profiles.
-2. Compare spend with [Analytics](./analytics) to distinguish model cost from workflow volume.
+2. Compare spend with [Analytics](./analytics.md) to distinguish model cost from workflow volume.
 3. Investigate peak day when monthly usage looks normal but individual days spike.
 4. Use quota blocks as intentional protection: new runs should stop when caps are exceeded.
 
@@ -51,6 +51,6 @@ Verification: after changing model, BYOK, or schedule settings, return here afte
 
 ## Related
 
-- [BYOK Section](./byok)
-- [Settings Section](./settings)
-- [Analytics Section](./analytics)
+- [BYOK Section](./byok.md)
+- [Settings Section](./settings.md)
+- [Analytics Section](./analytics.md)

@@ -27,4 +27,4 @@ Use DALL-E 4 for text-to-image generation lenses that require photorealistic or 
 
 ## Provider documentation
 
-→ [OpenAI DALL-E docs](https://platform.openai.com/docs/models/dall-e)
+→ [OpenAI DALL-E docs](https://developers.openai.com/api/docs/models/dall-e-3)

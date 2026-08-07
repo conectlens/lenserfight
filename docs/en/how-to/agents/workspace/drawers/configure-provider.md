@@ -5,7 +5,7 @@ description: Bind credentials and region for a single AI provider. Credentials a
 
 # Configure Provider drawer
 
-Opened from the [Providers Section](../providers).
+Opened from the [Providers Section](../providers.md).
 
 ## Fields
 
@@ -19,11 +19,11 @@ Opened from the [Providers Section](../providers).
 
 - Plaintext key never leaves the form — it's encrypted before persistence.
 - Ciphertext + fingerprint stored; decryption happens only inside the gateway egress process.
-- Audit log records each rotation (who, when) in the [Logs section](../logs).
+- Audit log records each rotation (who, when) in the [Logs section](../logs.md).
 
 ## Health check
 
-After save, the drawer triggers a synchronous health check against the provider. A failure surfaces a row badge in [Providers](../providers) but does not roll back the save — you can have a configured-but-unreachable provider while you debug.
+After save, the drawer triggers a synchronous health check against the provider. A failure surfaces a row badge in [Providers](../providers.md) but does not roll back the save — you can have a configured-but-unreachable provider while you debug.
 
 
 ## Code-backed workflow
@@ -36,5 +36,5 @@ Source of truth: ConfigureProviderDrawer.tsx.
 
 ## Related
 
-- [Providers Section](../providers)
-- [BYOK Section](../byok)
+- [Providers Section](../providers.md)
+- [BYOK Section](../byok.md)

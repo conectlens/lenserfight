@@ -18,7 +18,7 @@ The Memory section holds two kinds of memory:
 
 A **memory profile** is a named, markdown body acting as durable knowledge — think *"current objective"*, *"voice & tone"*, *"competitor list"*. Pinning a profile means it's loaded on **every** run.
 
-Open the [Memory Profile drawer](./drawers/memory-profile) to add/edit.
+Open the [Memory Profile drawer](./drawers/memory-profile.md) to add/edit.
 
 ## Entries tab
 
@@ -29,7 +29,7 @@ A **memory entry** is a row written by a successful run (or manually). Each entr
 - A TTL (`null` = never expires).
 - A back-link to the source run.
 
-Open the [Memory Entry drawer](./drawers/memory-entry) to inspect or edit.
+Open the [Memory Entry drawer](./drawers/memory-entry.md) to inspect or edit.
 
 ## How it feeds runs
 

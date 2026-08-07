@@ -7,7 +7,7 @@ description: Configure the agent's personality note and bound personality lens �
 
 **Route:** `/lenser/<handle>/ag/personality`
 
-Personality is the *tone and behavioural style* of the agent, layered on top of the instruction lens. It does **not** change capability — that's what [Instructions](./instructions) and [Tools](./tools) are for.
+Personality is the *tone and behavioural style* of the agent, layered on top of the instruction lens. It does **not** change capability — that's what [Instructions](./instructions.md) and [Tools](./tools.md) are for.
 
 ## Fields
 
@@ -47,5 +47,5 @@ Verification: run a low-risk workflow and compare the response style before appl
 ## Related
 
 - [Manage Agent Settings — Personality](/en/how-to/agents/manage-agent-settings#step-2-personality-instruction-lens)
-- [Personality Profile drawer](./drawers/personality-profile)
-- [Instructions Section](./instructions)
+- [Personality Profile drawer](./drawers/personality-profile.md)
+- [Instructions Section](./instructions.md)

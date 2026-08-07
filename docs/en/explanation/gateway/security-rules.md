@@ -19,7 +19,7 @@ These are the security rules that govern the LTG. They are enforced at multiple 
 ## R2 — Least privilege
 
 - **R2.1** — `service_role` is never present in `apps/gateway/` runtime config or `apps/cli/` runtime config.
-- **R2.2** — All sensitive table mutations go through `SECURITY DEFINER` RPCs with `SET search_path` (existing pattern in [`supabase/migrations/20270511200000_devices_schema.sql`](../../../supabase/migrations/20270511200000_devices_schema.sql)).
+- **R2.2** — All sensitive table mutations go through `SECURITY DEFINER` RPCs with `SET search_path` (existing pattern in `supabase/migrations/20270511200000_devices_schema.sql`).
 - **R2.3** — All new tables ENABLE ROW LEVEL SECURITY by default; no policy means no access.
 - **R2.4** — All new RPCs declare `GRANT EXECUTE ... TO authenticated` (or `service_role`) explicitly.
 - **R2.5** — `xp.apply` remains granted to `service_role` only; new XP-minting paths route through DEFINER RPCs that themselves call `xp.apply`.
@@ -103,7 +103,7 @@ A single layer failure cannot silently elevate trust. For example, even if a mal
 
 ## R11 — Config ownership
 
-- **R11.1** — `.lenserfight.json` (project-level, commit-safe): NO secrets, NO tokens, NO keys. Existing `ProjectConfig` shape in [`apps/cli/src/config/project-config.ts`](../../../apps/cli/src/config/project-config.ts) is authoritative.
+- **R11.1** — `.lenserfight.json` (project-level, commit-safe): NO secrets, NO tokens, NO keys. Existing `ProjectConfig` shape in [`apps/cli/src/config/project-config.ts`](https://github.com/conectlens/lenserfight/blob/4f608e59d4619f8ac98b97f3a5c05d87013037fd/apps/cli/src/config/project-config.ts) is authoritative.
 - **R11.2** — `~/.lenserfight/lenserfight.json` (user-level): tokens only; NEVER signing keys.
 - **R11.3** — `~/.lenserfight/gateway/state.json` (daemon-level): non-secret runtime state (last heartbeat, current peer roster cache).
 - **R11.4** — OS keychain: signing keys, optionally BYOK keys.

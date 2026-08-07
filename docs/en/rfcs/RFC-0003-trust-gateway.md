@@ -24,10 +24,10 @@ This RFC promotes the existing `lf gateway` command into a documented, layered p
 
 The LTG preserves the current **provider/model routing** behavior of `lf gateway models` (see [`apps/cli/src/commands/gateway.ts`](../../apps/cli/src/commands/gateway.ts)) and the current **device + lenser trust** RPCs introduced in:
 
-- [`supabase/migrations/20270511200000_devices_schema.sql`](../../supabase/migrations/20270511200000_devices_schema.sql)
-- [`supabase/migrations/20270511300000_runner_device_bindings.sql`](../../supabase/migrations/20270511300000_runner_device_bindings.sql)
-- [`supabase/migrations/20270511400000_execution_attestations_and_trust.sql`](../../supabase/migrations/20270511400000_execution_attestations_and_trust.sql)
-- [`supabase/migrations/20270511500000_xp_rules_device_runner_local_execution.sql`](../../supabase/migrations/20270511500000_xp_rules_device_runner_local_execution.sql)
+- `supabase/migrations/20270511200000_devices_schema.sql`
+- `supabase/migrations/20270511300000_runner_device_bindings.sql`
+- `supabase/migrations/20270511400000_execution_attestations_and_trust.sql`
+- `supabase/migrations/20270511500000_xp_rules_device_runner_local_execution.sql`
 
 It adds three new things on top, and nothing else:
 
@@ -41,9 +41,9 @@ Today the Gateway is a stateless CLI:
 
 - Provider/model routing is a presentation-only concern in [`gateway.ts`](../../apps/cli/src/commands/gateway.ts) (`classifyRoute`).
 - Device approval and lenser binding are short bursts of REST calls against `devices.fn_device_*` and `execution.fn_runner_*`.
-- Battle attestation booleans (`signed`, `gateway_verified`, `device_trusted`, `policy_passed`) are **self-reported by the client** in [`fn_compute_submission_trust`](../../supabase/migrations/20270511400000_execution_attestations_and_trust.sql).
+- Battle attestation booleans (`signed`, `gateway_verified`, `device_trusted`, `policy_passed`) are **self-reported by the client** in `fn_compute_submission_trust`.
 - There is no enforced separation between "transport" and "identity"; private-network trust (Tailscale, mDNS) does not exist as a first-class concept.
-- Sync between devices is implicit; the only durable client-side state is `~/.lenserfight/` and project-local `.lenserfight/` (see [`apps/cli/src/config/project-config.ts`](../../apps/cli/src/config/project-config.ts) and [`apps/cli/src/utils/automation-objects.ts`](../../apps/cli/src/utils/automation-objects.ts)).
+- Sync between devices is implicit; the only durable client-side state is `~/.lenserfight/` and project-local `.lenserfight/` (see [`apps/cli/src/config/project-config.ts`](https://github.com/conectlens/lenserfight/blob/4f608e59d4619f8ac98b97f3a5c05d87013037fd/apps/cli/src/config/project-config.ts) and [`apps/cli/src/utils/automation-objects.ts`](../../apps/cli/src/utils/automation-objects.ts)).
 
 The product needs the Gateway to grow into the **secure boundary** that enables:
 

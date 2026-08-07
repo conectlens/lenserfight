@@ -183,5 +183,5 @@ Her faz güvenilirlik kapısının arkasında bağımsız olarak gönderilebilir
 
 - [`libs/domain/exports/src/lib/types.ts`](../../../../libs/domain/exports/src/lib/types.ts) — `ExportEnvelope`, `ExportManifest`, türler, formatlar, görünürlük
 - [`libs/shared/serializers/src/lib/SerializerRegistry.ts`](../../../../libs/shared/serializers/src/lib/SerializerRegistry.ts) — kayıt + arama
-- [`libs/features/exports/src/lib/orchestrator/ExportOrchestrator.ts`](../../../../libs/features/exports/src/lib/orchestrator/ExportOrchestrator.ts) — denetleyici
+- [`libs/features/exports/src/lib/hooks/useExportRunner.ts`](../../../../libs/features/exports/src/lib/hooks/useExportRunner.ts) — denetleyici
 - [`libs/features/exports/src/lib/components/ExportModal.tsx`](../../../../libs/features/exports/src/lib/components/ExportModal.tsx) — UI giriş noktası

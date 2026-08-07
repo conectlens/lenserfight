@@ -5,7 +5,7 @@ description: Bootstrap a new team graph with a name, coordination style, and aut
 
 # Create Team drawer
 
-Opened from the [Team Builder Section](../team-builder).
+Opened from the [Team Builder Section](../team-builder.md).
 
 ## Fields
 
@@ -34,7 +34,7 @@ Opened from the [Team Builder Section](../team-builder).
 
 ## After creation
 
-The team starts **empty**. Use the [Add Team Member drawer](./add-team-member) to attach AI Lensers, then [Team Edges drawer](./team-edges) to define handoffs.
+The team starts **empty**. Use the [Add Team Member drawer](./add-team-member.md) to attach AI Lensers, then [Team Edges drawer](./team-edges.md) to define handoffs.
 
 
 ## Code-backed workflow
@@ -47,5 +47,5 @@ Source of truth: CreateTeamDrawer.tsx.
 
 ## Related
 
-- [Team Builder Section](../team-builder)
+- [Team Builder Section](../team-builder.md)
 - [Build a Multi-Agent Team](/en/how-to/agents/build-a-multi-agent-team)

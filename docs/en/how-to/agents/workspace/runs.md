@@ -26,7 +26,7 @@ Use the status dropdown to focus on blockers (`blocked` / `failed`). The filter 
 
 ## Drill-in
 
-Click **Inspect** on any row to open the [Run Detail drawer](./drawers/run-detail) for the lifecycle timeline, inputs/outputs, tool calls, logs, and re-run button.
+Click **Inspect** on any row to open the [Run Detail drawer](./drawers/run-detail.md) for the lifecycle timeline, inputs/outputs, tool calls, logs, and re-run button.
 
 ## Human fleet view
 
@@ -48,4 +48,4 @@ Verification: after manual, scheduled, or webhook dispatch, the run should appea
 
 - [Executions](/en/explanation/agents/executions)
 - [Workflow Execution Reference](/en/reference/internals/workflow-execution)
-- [Run Detail drawer](./drawers/run-detail)
+- [Run Detail drawer](./drawers/run-detail.md)

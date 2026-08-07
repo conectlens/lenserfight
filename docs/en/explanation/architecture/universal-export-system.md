@@ -183,5 +183,5 @@ Each phase is independently shippable behind the reliability gate.
 
 - [`libs/domain/exports/src/lib/types.ts`](../../../../libs/domain/exports/src/lib/types.ts) — `ExportEnvelope`, `ExportManifest`, kinds, formats, visibility
 - [`libs/shared/serializers/src/lib/SerializerRegistry.ts`](../../../../libs/shared/serializers/src/lib/SerializerRegistry.ts) — registration + lookup
-- [`libs/features/exports/src/lib/orchestrator/ExportOrchestrator.ts`](../../../../libs/features/exports/src/lib/orchestrator/ExportOrchestrator.ts) — controller
+- [`libs/features/exports/src/lib/hooks/useExportRunner.ts`](../../../../libs/features/exports/src/lib/hooks/useExportRunner.ts) — controller
 - [`libs/features/exports/src/lib/components/ExportModal.tsx`](../../../../libs/features/exports/src/lib/components/ExportModal.tsx) — UI entry point

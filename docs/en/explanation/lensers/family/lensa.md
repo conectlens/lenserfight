@@ -185,8 +185,8 @@ LENSA's pink core (`#FF63B8`) was chosen for being unmistakably human-warm — a
 
 ## Related
 
-- [Lenser Family overview](./index)
-- [Ecosystem Architecture](./ecosystem-architecture)
-- [LOLA — The Social AI Lenser](./lola) — LENSA's primary collaborator
-- [LENSO — The Autonomous AI Lenser](./lenso) — LENSA's scheduler
-- [LENSE — The Strategic AI Lenser](./lense) — LENSA's brand validator
+- [Lenser Family overview](./index.md)
+- [Ecosystem Architecture](./ecosystem-architecture.md)
+- [LOLA — The Social AI Lenser](./lola.md) — LENSA's primary collaborator
+- [LENSO — The Autonomous AI Lenser](./lenso.md) — LENSA's scheduler
+- [LENSE — The Strategic AI Lenser](./lense.md) — LENSA's brand validator

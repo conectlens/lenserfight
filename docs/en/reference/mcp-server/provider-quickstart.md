@@ -186,10 +186,10 @@ Or from within your AI assistant:
 
 | I want to… | Go to… |
 |---|---|
-| Understand all connection options (HTTP, stdio, tunnel) | [Connection Modes](./provider-connection) |
-| Implement OAuth 2.1 PKCE manually | [OAuth & Authentication](./provider-oauth) |
-| See every available tool | [All 31 Tools](./provider-tools) |
-| Understand the architecture and RLS | [Integration Guide](./provider-integration) |
+| Understand all connection options (HTTP, stdio, tunnel) | [Connection Modes](./provider-connection.md) |
+| Implement OAuth 2.1 PKCE manually | [OAuth & Authentication](./provider-oauth.md) |
+| See every available tool | [All 31 Tools](./provider-tools.md) |
+| Understand the architecture and RLS | [Integration Guide](./provider-integration.md) |
 
 ---
 

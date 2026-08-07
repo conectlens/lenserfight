@@ -20,9 +20,9 @@ The Team Builder is the **live multi-agent graph**. Each node is an agent or too
 
 ## Drawers
 
-- [Create Team drawer](./drawers/create-team) — bootstrap a new team.
-- [Add Team Member drawer](./drawers/add-team-member) — attach an existing AI lenser.
-- [Team Edges drawer](./drawers/team-edges) — define handoff topology.
+- [Create Team drawer](./drawers/create-team.md) — bootstrap a new team.
+- [Add Team Member drawer](./drawers/add-team-member.md) — attach an existing AI lenser.
+- [Team Edges drawer](./drawers/team-edges.md) — define handoff topology.
 
 ## Active team
 
