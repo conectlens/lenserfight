@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "lenserfight-changelog-fragment",
+  "title": "LenserFight changelog fragment",
+  "description": "Front matter schema for .changes/<pr-number>.md fragments. Validated by tools/changelog and by .github/workflows/changelog-gate.yml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["category", "scope", "summary", "userImpact", "breaking", "docsImpact"],
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": ["feat", "fix", "security", "deprecation", "breaking", "perf", "docs", "internal"]
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["web", "mobile", "cli", "api", "sdk", "gateway", "supabase", "docs", "infra"]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "userImpact": {
+      "type": "string",
+      "minLength": 1
+    },
+    "breaking": {
+      "type": "boolean"
+    },
+    "migration": {
+      "type": ["string", "null"]
+    },
+    "docsImpact": {
+      "type": "string",
+      "enum": ["none", "updated", "needs-update"]
+    },
+    "knownLimitations": {
+      "type": ["string", "null"]
+    },
+    "verification": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "tests": { "type": ["string", "null"] },
+        "ci": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "breaking": { "const": true } }
+      },
+      "then": {
+        "properties": {
+          "migration": { "type": "string", "minLength": 1 }
+        },
+        "required": ["migration"]
+      }
+    }
+  ]
+}

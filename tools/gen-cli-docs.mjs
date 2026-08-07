@@ -34,6 +34,14 @@ const SENTINEL_END = '<!-- AUTO-GEN-END -->'
 
 const checkMode = process.argv.includes('--check')
 
+// YAML frontmatter scalars need quoting once they contain a `:` — otherwise
+// e.g. `description: internal: dump the inventory` parses as a nested
+// mapping and breaks VitePress's frontmatter loader.
+function yamlScalar(str) {
+  if (!/[:#]/.test(str)) return str
+  return `"${str.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true })
 
 // ─── 1. Discover top-level commands ───────────────────────────────────────
@@ -223,7 +231,7 @@ function renderCommand({ name, description }, src) {
 
 function mergeWithExisting(generated, existingPath) {
   if (!existsSync(existingPath)) {
-    return ['---', `title: lf ${generated.cmdName}`, `description: ${generated.description}`, '---', '', generated.body, ''].join('\n')
+    return ['---', `title: lf ${generated.cmdName}`, `description: ${yamlScalar(generated.description)}`, '---', '', generated.body, ''].join('\n')
   }
   const existing = readFileSync(existingPath, 'utf-8')
   const startIdx = existing.indexOf(SENTINEL_START)

@@ -36,7 +36,7 @@ beforeEach(() => {
 })
 
 describe('lf whats-new', () => {
-  it('shows changelog link when no CHANGELOG.md is found', async () => {
+  it('shows changelog link when no Product Changelog file is found', async () => {
     mockExistsSync.mockReturnValue(false)
 
     await whatsNewCmd?.run?.({ args: { releases: '3', json: false }, cmd: {}, rawArgs: [] })
@@ -47,7 +47,7 @@ describe('lf whats-new', () => {
     expect(allInfoCalls + allWarnCalls).toMatch(/changelog|docs\.lenserfight\.com/i)
   })
 
-  it('parses and displays releases when CHANGELOG.md exists', async () => {
+  it('parses and displays releases when the Product Changelog file exists', async () => {
     mockExistsSync.mockReturnValue(true)
     mockReadFileSync.mockReturnValue(
       `## [1.2.0] - 2026-05-01\n### Added\n- New feature A\n\n## [1.1.0] - 2026-04-01\n### Fixed\n- Bug fix B\n` as never,

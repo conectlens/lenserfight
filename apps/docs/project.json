@@ -9,14 +9,22 @@
   ],
   "// targets": "to see all targets run: nx show project docs --web",
   "targets": {
+    "changelog-data": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/changelog/cli.mjs"
+      }
+    },
     "serve": {
       "executor": "nx:run-commands",
+      "dependsOn": ["changelog-data"],
       "options": {
         "command": "npm exec vitepress dev apps/docs -- --port 3002"
       }
     },
     "build": {
       "executor": "nx:run-commands",
+      "dependsOn": ["changelog-data"],
       "options": {
         "command": "npm exec vitepress build apps/docs"
       }

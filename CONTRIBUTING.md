@@ -94,11 +94,28 @@ Do not include secrets, private keys, provider credentials, customer data, regul
 
 Maintainers should consider adding a DCO sign-off or CLA only if contribution provenance becomes hard to audit or commercial relicensing is planned. Until then, the MIT License plus clear PR provenance expectations are the lightweight baseline.
 
+## Changelog fragments
+
+Every user-facing pull request needs a `.changes/<pr-number>.md` fragment — see
+[`.changes/README.md`](.changes/README.md) for the format. It's the only source of
+prose for the [Product Changelog](https://docs.lenserfight.com/en/changelog) and for
+the category/impact/verification fields on
+[Main Branch Activity](https://docs.lenserfight.com/en/changelog/main); we don't
+generate either from commit messages. `.github/workflows/changelog-gate.yml` blocks a
+PR that has neither a fragment nor a `changelog:none` label with a reason comment.
+Internal-only changes (refactors, CI, tests) use `category: internal` in the fragment
+rather than skipping it, so they're still visible on the Main Branch Activity ledger.
+
+A merged PR is not a released change — see
+[Product Changelog vs. Main Branch Activity](docs/en/explanation/changelog-system.md)
+for what "merged," "unreleased," and "released" each actually mean here.
+
 ## PR checklist
 
 Before opening a pull request, verify:
 
 - [ ] `pnpm smoke` exits 0 (or `pnpm nx build cli && pnpm nx run web:build` for UI-only changes)
+- [ ] `.changes/<pr-number>.md` fragment added, or `changelog:none` label + reason comment
 - [ ] Any migration is in a new file under `supabase/migrations/` — do **not** edit existing migrations
 - [ ] New migration has a matching pgTAP test (or a comment explaining why it doesn't need one)
 - [ ] `pnpm run-pgtap` passes against the new migration

@@ -41,3 +41,5 @@ features:
 ---
 
 > **Çeviri notu:** Bu belgeler aktif olarak Türkçeye çevrilmektedir. Eksik sayfalar için [İngilizce belgelere](/en/tutorials/getting-started/overview) başvurabilirsiniz.
+
+<LatestUpdates locale="tr" />

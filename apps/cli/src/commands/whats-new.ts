@@ -5,18 +5,22 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { currentScriptUrl } from '../lib/current-script-url';
 
-const CHANGELOG_LINK = 'https://docs.lenserfight.com/changelog';
+const CHANGELOG_LINK = 'https://docs.lenserfight.com/en/changelog';
 
-/** Walk up from the CLI binary to find the repo root CHANGELOG.md. */
+// Same '## [version] - date' heading format as CHANGELOG.md used to have —
+// see tools/changelog/src/build-product-changelog.mjs `cutRelease`.
+const CHANGELOG_RELATIVE_PATH = 'docs/en/changelog.md';
+
+/** Walk up from the CLI binary to find the repo's Product Changelog source. */
 function findChangelog(): string | null {
   const thisDir = dirname(fileURLToPath(currentScriptUrl));
   const candidates = [
     // Running from dist/ → go up two levels to repo root
-    resolve(thisDir, '..', '..', '..', '..', 'CHANGELOG.md'),
+    resolve(thisDir, '..', '..', '..', '..', CHANGELOG_RELATIVE_PATH),
     // Running from source ts-node
-    resolve(thisDir, '..', '..', '..', '..', '..', 'CHANGELOG.md'),
+    resolve(thisDir, '..', '..', '..', '..', '..', CHANGELOG_RELATIVE_PATH),
     // CWD fallback
-    resolve(process.cwd(), 'CHANGELOG.md'),
+    resolve(process.cwd(), CHANGELOG_RELATIVE_PATH),
   ];
   return candidates.find(existsSync) ?? null;
 }
@@ -94,7 +98,7 @@ export default defineCommand({
     const releases = parseReleases(content, count);
 
     if (!releases.length) {
-      consola.info('No releases found in CHANGELOG.md.');
+      consola.info('No releases found in the Product Changelog.');
       consola.info('Full changelog: %s', CHANGELOG_LINK);
       return;
     }
