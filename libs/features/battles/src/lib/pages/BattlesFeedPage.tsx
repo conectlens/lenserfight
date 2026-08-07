@@ -11,6 +11,7 @@ import { BattleTemplateCarousel } from '../components/BattleTemplateCarousel'
 import { deriveBattleType } from '../util/battle-type-codec'
 import { useBattlesFeed } from '../hooks/query/useBattlesFeed'
 import type { BattlesFeedSortBy } from '../hooks/query/useBattlesFeed'
+import { useMyUnpublishedBattles } from '../hooks/query/useMyUnpublishedBattles'
 
 import type { BattleType } from '../types/battle.types'
 
@@ -76,6 +77,8 @@ export function BattlesFeedPage() {
     sortBy,
     typeFilter
   )
+
+  const { data: myUnpublished } = useMyUnpublishedBattles()
 
   const { data: templateData, isLoading: templatesLoading } = useQuery({
     queryKey: ['public-battle-templates', null],
@@ -161,6 +164,37 @@ export function BattlesFeedPage() {
           />
         </div>
       </div>
+
+      {myUnpublished && myUnpublished.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-greyscale-500 mb-2">
+            Your unpublished battles ({myUnpublished.length})
+          </h2>
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+            {myUnpublished.map((b) => (
+              <div key={b.id} className="break-inside-avoid mb-3">
+                <BattleCard
+                  id={b.id}
+                  slug={b.slug}
+                  title={b.title}
+                  status={b.status}
+                  totalVoteCount={b.total_vote_count}
+                  battleType={deriveBattleType(b)}
+                  contentType={b.content_type}
+                  voterEligibility={b.voter_eligibility}
+                  votingOpensAt={b.voting_opens_at}
+                  votingClosesAt={b.voting_closes_at}
+                  contenderAName={b.contender_a_name}
+                  contenderAType={b.contender_a_type}
+                  contenderBName={b.contender_b_name}
+                  contenderBType={b.contender_b_type}
+                  winnerSlot={b.winner_slot}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <BattleTemplateCarousel
         templates={templateData ?? []}

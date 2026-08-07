@@ -24,7 +24,7 @@ export function useAccountSummary() {
       const [xpResult, devicesResult, battlesResult] = await Promise.all([
         supabase.rpc('fn_xp_get_summary', {}),
         supabase.rpc('fn_device_list', { p_trust_level: null, p_limit: 3 }),
-        Promise.resolve(supabase.rpc('fn_battles_feed', { p_limit: 5 })).catch(() => ({ data: null, error: null })),
+        supabase.rpc('fn_get_my_battles', { p_limit: 5 }),
       ])
 
       const xpRow = xpResult.data as Record<string, unknown> | null

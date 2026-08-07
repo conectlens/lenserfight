@@ -358,6 +358,10 @@ export interface BattleFeedItemRecord {
   content_type: string | null
 }
 
+export interface MyBattleItemRecord extends BattleFeedItemRecord {
+  created_at: string
+}
+
 export interface BattlesFeedOptions {
   status?: string
   battleType?: BattleType
@@ -402,6 +406,7 @@ export interface BattlesRepositoryPort {
     sortBy?: 'newest' | 'most_votes' | 'trending'
   ): Promise<BattleRecord[]>
   getBattlesFeedItems(options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]>
+  getMyBattles(status?: string, limit?: number, cursor?: string): Promise<MyBattleItemRecord[]>
   getContenders(battleId: string): Promise<ContenderRecord[]>
   getSubmissions(battleId: string): Promise<SubmissionRecord[]>
   getVoteAggregates(battleId: string): Promise<VoteAggregateRecord[]>
@@ -691,6 +696,16 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     })
     if (error) this.handleError(error)
     return (data ?? []) as BattleFeedItemRecord[]
+  }
+
+  async getMyBattles(status?: string, limit = 20, cursor?: string): Promise<MyBattleItemRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_my_battles', {
+      p_status: status ?? null,
+      p_limit: limit,
+      p_cursor: cursor ?? null,
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as MyBattleItemRecord[]
   }
 
   private generateSlug(title: string): string {
