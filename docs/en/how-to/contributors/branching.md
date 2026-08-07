@@ -50,7 +50,7 @@ refactor/profile-cache-cleanup
 
 Every user-facing PR needs a `.changes/<pr-number>.md` fragment — see
 [`.changes/README.md`](https://github.com/conectlens/lenserfight/blob/main/.changes/README.md)
-and [Product Changelog vs. Main Branch Activity](/en/explanation/changelog-system).
+and [Product Changelog vs. Main Branch Activity](../../explanation/changelog-system.md).
 
 ## Commit types and version impact
 

@@ -17,12 +17,12 @@ bağlantı verir.
 > ⚠️ **Çeviri durumu:** Sayfa metni Türkçe'dir. Ancak her bir değişiklik kaydının içeriği
 > (özet, kullanıcı etkisi) şu an yalnızca İngilizce kaynaktan geliyor — henüz çevrilmiş
 > bir kayıt akışı yok. Yarım çeviri göstermek yerine İngilizce içeriği olduğu gibi
-> gösteriyoruz. Tam İngilizce sürüm için [/en/changelog](/en/changelog) sayfasına bakın.
+> gösteriyoruz. Tam İngilizce sürüm için [/en/changelog](../en/changelog.md) sayfasına bakın.
 
 Henüz yayınlanmamış ama `main` dalına birleştirilmiş değişiklikler için
-[Ana Dal Etkinliği](/tr/changelog/main) sayfasına bakın. Bu iki sayfanın neden ayrı
+[Ana Dal Etkinliği](./changelog/main.md) sayfasına bakın. Bu iki sayfanın neden ayrı
 olduğunu öğrenmek için
-[Değişiklik Günlüğü Sistemi](/en/explanation/changelog-system) açıklamasına bakın
+[Değişiklik Günlüğü Sistemi](../en/explanation/changelog-system.md) açıklamasına bakın
 (bu açıklama sayfası henüz Türkçe'ye çevrilmedi).
 
 ## Yayınlanmamış
@@ -37,7 +37,7 @@ tarihli bir sürüm bölümüne damgalanır.
 ## 2026-08 öncesi geçmiş
 
 Bu değişiklik günlüğü, insan tarafından derlenen (bu sayfa) ve mekanik olarak üretilen
-([Ana Dal Etkinliği](/tr/changelog/main)) yüzeylere ayrılmadan önceki sürümler, dosya
+([Ana Dal Etkinliği](./changelog/main.md)) yüzeylere ayrılmadan önceki sürümler, dosya
 olarak değil, bu deponun git geçmişinde saklanır — nasıl erişileceği için kök
 [`CHANGELOG.md`](https://github.com/conectlens/lenserfight/blob/main/CHANGELOG.md)
 dosyasına bakın. [Etiketlere](https://github.com/conectlens/lenserfight/tags)

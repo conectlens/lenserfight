@@ -8,7 +8,7 @@ description: Why LenserFight has two separate changelog surfaces, how they're ge
 LenserFight publishes two deliberately different pages, and conflating them is exactly
 the failure mode this page exists to prevent:
 
-| | [Product Changelog](/en/changelog) | [Main Branch Activity](/en/changelog/main) |
+| | [Product Changelog](../changelog.md) | [Main Branch Activity](../changelog/main.md) |
 |---|---|---|
 | Audience | End users deciding whether to upgrade | Contributors, integrators, auditors |
 | Authored by | A maintainer, by hand | Generated on every build |
@@ -20,7 +20,7 @@ the failure mode this page exists to prevent:
 
 Being merged to `main` means the change passed review and CI. It does **not** mean it
 has shipped to users, and it can still be reverted before anything ships. The
-[Main Branch Activity](/en/changelog/main) ledger says this explicitly in its banner
+[Main Branch Activity](../changelog/main.md) ledger says this explicitly in its banner
 and labels every entry `Unreleased`, `Released`, or `Internal` — never inferred from
 the commit message, only from whether the commit is reachable from a published release
 tag.

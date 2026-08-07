@@ -12,9 +12,9 @@ limitations, organized by release. Every entry links back to the pull request, c
 tag, or GitHub Release it came from.
 
 Looking for everything merged to `main` — including work that hasn't shipped yet? See
-[Main Branch Activity](/en/changelog/main). Looking for what the two pages are and how
+[Main Branch Activity](./changelog/main.md). Looking for what the two pages are and how
 they're generated? See
-[Product Changelog vs. Main Branch Activity](/en/explanation/changelog-system).
+[Product Changelog vs. Main Branch Activity](./explanation/changelog-system.md).
 
 Package-specific changelogs are linked from the relevant entries below, and stay
 separate from this platform-level log:
@@ -28,7 +28,7 @@ separate from this platform-level log:
 No version has been cut under this system yet — pending changes accumulate as
 [changelog fragments](https://github.com/conectlens/lenserfight/tree/main/.changes)
 and are stamped into a dated version section here by a maintainer running
-`pnpm changelog:cut`. Check [Main Branch Activity](/en/changelog/main) for what has
+`pnpm changelog:cut`. Check [Main Branch Activity](./changelog/main.md) for what has
 already merged to `main` in the meantime.
 
 <!-- changelog:cut-here -->
@@ -36,7 +36,7 @@ already merged to `main` in the meantime.
 ## Pre-2026-08 history
 
 Releases before this changelog was split into curated (this page) and mechanically
-generated ([Main Branch Activity](/en/changelog/main)) surfaces are recorded in this
+generated ([Main Branch Activity](./changelog/main.md)) surfaces are recorded in this
 repository's git history rather than a hand-maintained file — see the root
 [`CHANGELOG.md`](https://github.com/conectlens/lenserfight/blob/main/CHANGELOG.md) for
 how to recover it, or browse [tags](https://github.com/conectlens/lenserfight/tags) and

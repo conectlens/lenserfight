@@ -8,7 +8,7 @@ layout: doc
 
 Every pull request or direct commit merged into `main`, generated on every build from
 git history and pull request metadata — never hand-written. See
-[Product Changelog vs. Main Branch Activity](/en/explanation/changelog-system) for why
-this page exists separately from the [Product Changelog](/en/changelog).
+[Product Changelog vs. Main Branch Activity](../explanation/changelog-system.md) for why
+this page exists separately from the [Product Changelog](../changelog.md).
 
 <MainBranchActivity locale="en" />

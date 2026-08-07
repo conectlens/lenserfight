@@ -10,8 +10,8 @@ lang: tr
 
 `main` dalına birleştirilen her pull request veya doğrudan commit, her derlemede git
 geçmişinden ve pull request meta verilerinden mekanik olarak üretilir — elle yazılmaz.
-Bu sayfanın neden [Değişiklik Günlüğü](/tr/changelog) sayfasından ayrı olduğunu öğrenmek
-için [Değişiklik Günlüğü Sistemi](/en/explanation/changelog-system) açıklamasına bakın
+Bu sayfanın neden [Değişiklik Günlüğü](../changelog.md) sayfasından ayrı olduğunu öğrenmek
+için [Değişiklik Günlüğü Sistemi](../../en/explanation/changelog-system.md) açıklamasına bakın
 (henüz Türkçe'ye çevrilmedi).
 
 > ⚠️ Aşağıdaki kayıt içerikleri (PR başlıkları, kategori, kullanıcı etkisi) İngilizce

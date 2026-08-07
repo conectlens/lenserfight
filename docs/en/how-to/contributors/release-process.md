@@ -24,7 +24,7 @@ Version bumps are determined by Conventional Commits (see [Branching and Version
 ## Changelog
 
 There are three separate changelog surfaces — see
-[Product Changelog vs. Main Branch Activity](/en/explanation/changelog-system) for the
+[Product Changelog vs. Main Branch Activity](../../explanation/changelog-system.md) for the
 full picture:
 
 - **[Product Changelog](https://docs.lenserfight.com/en/changelog)** (`docs/en/changelog.md`) —
@@ -40,9 +40,9 @@ full picture:
 
 Every user-facing PR needs a `.changes/<pr-number>.md` fragment (or an approved
 `changelog:none` label) — see [`.changes/README.md`](https://github.com/conectlens/lenserfight/blob/main/.changes/README.md).
-`CHANGELOG.md` at the repo root is now a short pointer to the pages above and to
-[`CHANGELOG.legacy.md`](https://github.com/conectlens/lenserfight/blob/main/CHANGELOG.legacy.md)
-(pre-2026-08 history) — it is no longer where release notes are written.
+`CHANGELOG.md` at the repo root is now a short pointer to the pages above; it is no
+longer where release notes are written. The pre-2026-08 history isn't in the working
+tree, but it's recoverable from git history — see the root `CHANGELOG.md` for how.
 
 ## First public GitHub Release (paste template)
 

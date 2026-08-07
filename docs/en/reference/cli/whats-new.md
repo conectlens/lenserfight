@@ -5,7 +5,7 @@ description: Print the most recent LenserFight release notes from the Product Ch
 
 # `lf whats-new`
 
-Print the most recent release entries from the repo's [Product Changelog](/en/changelog) source (`docs/en/changelog.md`). Each entry is the body of a top-level `## [version] - date` heading. The command walks upward from the CLI binary to find that file, falling back to the current working directory and finally to the hosted changelog URL. Version sections only exist once a maintainer has cut a release with `pnpm changelog:cut` — see [Product Changelog vs. Main Branch Activity](/en/explanation/changelog-system).
+Print the most recent release entries from the repo's [Product Changelog](../../changelog.md) source (`docs/en/changelog.md`). Each entry is the body of a top-level `## [version] - date` heading. The command walks upward from the CLI binary to find that file, falling back to the current working directory and finally to the hosted changelog URL. Version sections only exist once a maintainer has cut a release with `pnpm changelog:cut` — see [Product Changelog vs. Main Branch Activity](../../explanation/changelog-system.md).
 
 ```bash
 lf whats-new            # latest release
