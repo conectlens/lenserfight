@@ -507,7 +507,7 @@ export const exec = defineCommand({
     // ── BYOK mode ────────────────────────────────────────────────────────────
     if (args.byok) {
       const provider = args.byok as TextProvider;
-      const validProviders: TextProvider[] = ['openai', 'anthropic', 'google', 'mistral'];
+      const validProviders: TextProvider[] = ['openai', 'anthropic', 'google', 'google_vertex', 'mistral'];
       if (!validProviders.includes(provider)) {
         consola.error('Unknown BYOK provider: %s. Valid: %s', provider, validProviders.join(', '));
         process.exitCode = 1;

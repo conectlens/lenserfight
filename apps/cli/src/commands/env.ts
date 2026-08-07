@@ -161,7 +161,7 @@ export default defineCommand({
     )
 
     console.log(`\n${c.bold('BYOK Provider Keys')}`)
-    for (const provider of ['openai', 'anthropic', 'google', 'mistral'] as const) {
+    for (const provider of ['openai', 'anthropic', 'google', 'google_vertex', 'mistral'] as const) {
       const has = byokKeyResolver.has(provider)
       console.log(
         `  ${has ? c.success(sym.pass) : c.muted(sym.dot)} ${provider}: ${has ? c.muted('configured (hidden)') : 'not set'}`,

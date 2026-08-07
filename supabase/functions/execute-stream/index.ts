@@ -29,11 +29,11 @@ import {
   resolveChainabitToken,
   ProviderNotConnectedError,
 } from '../_shared/provider-token.ts'
-import { lookupModel } from '../_shared/providers/model-registry.ts'
+import { lookupModel, resolveWireModel } from '../_shared/providers/model-registry.ts'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Provider = 'openai' | 'anthropic' | 'google' | 'mistral'
+type Provider = 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'mistral'
 
 interface StreamBody {
   provider: Provider
@@ -179,6 +179,46 @@ async function streamGoogle(
     signal,
   })
   if (!response.ok) throw new Error(`Google ${response.status}: ${(await response.text()).slice(0, 200)}`)
+  await pumpGoogleStream(response.body!, signal, emit)
+}
+
+// Vertex AI Express Mode: same streamGenerateContent wire format as the
+// Gemini Developer API, served from the Vertex publisher-model path instead.
+// See libs/providers/src/lib/google-vertex.ts for the client-side twin.
+async function streamGoogleVertex(
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  maxTokens: number,
+  temperature: number | undefined,
+  signal: AbortSignal,
+  emit: (event: string, data: unknown) => void,
+): Promise<void> {
+  const systemMessages = messages.filter((m) => m.role === 'system')
+  const nonSystem = messages.filter((m) => m.role !== 'system')
+  const url = `https://aiplatform.googleapis.com/v1/publishers/google/models/${model}:streamGenerateContent?alt=sse`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      contents: nonSystem.map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      })),
+      ...(systemMessages.length > 0
+        ? { system_instruction: { parts: [{ text: systemMessages.map((m) => m.content).join('\n') }] } }
+        : {}),
+      generationConfig: {
+        maxOutputTokens: maxTokens,
+        ...(temperature !== undefined ? { temperature } : {}),
+      },
+    }),
+    signal,
+  })
+  if (!response.ok) throw new Error(`Google Vertex ${response.status}: ${(await response.text()).slice(0, 200)}`)
   await pumpGoogleStream(response.body!, signal, emit)
 }
 
@@ -401,7 +441,7 @@ serve(async (req: Request): Promise<Response> => {
 
   const { provider, model, messages, funding_source, key_ref_id, max_tokens, temperature, lens_id, version_id } = body
 
-  const SUPPORTED: Provider[] = ['openai', 'anthropic', 'google', 'mistral']
+  const SUPPORTED: Provider[] = ['openai', 'anthropic', 'google', 'google_vertex', 'mistral']
   if (!SUPPORTED.includes(provider)) return errResponse('unsupported_provider', `Provider "${provider}" not supported`, 400, req)
   if (!model || !messages?.length) return errResponse('missing_fields', 'model and messages are required', 400, req)
 
@@ -478,6 +518,7 @@ serve(async (req: Request): Promise<Response> => {
         if (provider === 'openai') await streamOpenAI(apiKey, model, messages, maxTokens, temperature, signal, emit)
         else if (provider === 'anthropic') await streamAnthropic(apiKey, model, messages, maxTokens, temperature, signal, emit)
         else if (provider === 'google') await streamGoogle(apiKey, model, messages, maxTokens, temperature, signal, emit)
+        else if (provider === 'google_vertex') await streamGoogleVertex(apiKey, resolveWireModel(model), messages, maxTokens, temperature, signal, emit)
         else if (provider === 'mistral') await streamMistral(apiKey, model, messages, maxTokens, temperature, signal, emit)
 
       } else {

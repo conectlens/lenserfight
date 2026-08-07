@@ -13,6 +13,7 @@ export interface ModelDescriptor {
     | 'openai'
     | 'anthropic'
     | 'google'
+    | 'google_vertex'
     | 'mistral'
     | 'ollama'
     | 'stability'
@@ -68,6 +69,11 @@ const MODELS: ModelDescriptor[] = [
   { key: 'gemini-2.5-flash',              provider: 'google', wireModel: 'gemini-2.5-flash',       kind: 'text' },
   { key: 'gemini-3.1-flash-lite-preview', provider: 'google', wireModel: 'gemini-3.1-flash-lite',  kind: 'text' },
   { key: 'gemini-2.5-flash-lite',         provider: 'google', wireModel: 'gemini-2.5-flash-lite',  kind: 'text' },
+
+  // Same Gemini models, routed through Vertex AI (Express Mode API key)
+  // instead of the Gemini Developer API. See ../../execute-stream/index.ts streamGoogleVertex.
+  { key: 'gemini-2.5-pro-vertex',   provider: 'google_vertex', wireModel: 'gemini-2.5-pro',   kind: 'text' },
+  { key: 'gemini-2.5-flash-vertex', provider: 'google_vertex', wireModel: 'gemini-2.5-flash', kind: 'text' },
 
   // Google media — Imagen 3 shut down June 2025. Imagen 4 GA only.
   // veo-3.0-generate-001 is the stable GA Veo 3; veo-2.0-generate-001 is legacy.

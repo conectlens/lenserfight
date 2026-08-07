@@ -105,6 +105,32 @@ async function probeProvider(
     }
   }
 
+  // Vertex Express Mode has no key-only "list models" endpoint like the
+  // Gemini Developer API — every real endpoint is POST. Probe with a minimal
+  // generateContent call instead of the generic GET path below.
+  if (providerKey === 'google_vertex') {
+    const url = 'https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-flash-lite:generateContent'
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] }),
+        signal: AbortSignal.timeout(8_000),
+      })
+      if (res.ok) return { ok: true, message: 'Provider responded successfully.' }
+      if (res.status === 401 || res.status === 403) {
+        return { ok: false, message: 'Invalid API key — authentication rejected.' }
+      }
+      return { ok: false, message: `Provider returned HTTP ${res.status}.` }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('timed out') || msg.includes('AbortError')) {
+        return { ok: false, message: 'Provider connection timed out (8s).' }
+      }
+      return { ok: false, message: `Connection failed: ${msg}` }
+    }
+  }
+
   const probeMap: Record<string, ProbeConfig> = {
     anthropic: {
       url: 'https://api.anthropic.com/v1/models',

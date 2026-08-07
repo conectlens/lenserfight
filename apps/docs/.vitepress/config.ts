@@ -384,6 +384,7 @@ const EN_REFERENCE_SIDEBAR = [
           { text: 'OpenAI', link: '/en/reference/ai-providers/openai' },
           { text: 'Anthropic', link: '/en/reference/ai-providers/anthropic' },
           { text: 'Google', link: '/en/reference/ai-providers/google' },
+          { text: 'Google Vertex AI', link: '/en/reference/ai-providers/google-vertex' },
           { text: 'Mistral', link: '/en/reference/ai-providers/mistral' },
           { text: 'Stability AI', link: '/en/reference/ai-providers/stability' },
           { text: 'ElevenLabs', link: '/en/reference/ai-providers/elevenlabs' },

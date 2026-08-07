@@ -26,7 +26,7 @@ interface GeminiResponse {
 
 // ─── Message Transformation ───────────────────────────────────────────────────
 
-function toGeminiParts(msg: ProviderMessage): GeminiPart[] {
+export function toGeminiParts(msg: ProviderMessage): GeminiPart[] {
   if (typeof msg.content === 'string') return [{ text: msg.content }];
 
   return msg.content.map((part): GeminiPart => {
@@ -55,7 +55,7 @@ function toGeminiParts(msg: ProviderMessage): GeminiPart[] {
   });
 }
 
-function buildGeminiBody(
+export function buildGeminiBody(
   model: string,
   messages: ProviderMessage[],
   options: ProviderRequestOptions
