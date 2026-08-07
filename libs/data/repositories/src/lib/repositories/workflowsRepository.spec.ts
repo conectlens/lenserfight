@@ -446,6 +446,55 @@ describe('SupabaseWorkflowsRepository', () => {
       mockRpc.mockResolvedValueOnce({ data: null, error: new Error('start error') })
       await expect(repo.startRun(WF_ID)).rejects.toThrow('start error')
     })
+
+    // The executor decides who runs the graph. Defaulting to 'worker' is what
+    // makes a run survive a closed tab; 'client' is reserved for BYOK runs whose
+    // key never leaves the browser.
+    it('defaults the executor to worker so a run is durable without a tab', async () => {
+      mockRpc
+        .mockResolvedValueOnce({ data: RUN_ID, error: null })
+        .mockResolvedValueOnce({ data: [fakeRun], error: null })
+      await repo.startRun(WF_ID)
+      expect(mockRpc).toHaveBeenNthCalledWith(1, 'fn_start_workflow_run', expect.objectContaining({
+        p_executor: 'worker',
+      }))
+    })
+
+    it('forwards an explicit client executor', async () => {
+      mockRpc
+        .mockResolvedValueOnce({ data: RUN_ID, error: null })
+        .mockResolvedValueOnce({ data: [fakeRun], error: null })
+      await repo.startRun(WF_ID, {}, undefined, undefined, null, 'client')
+      expect(mockRpc).toHaveBeenNthCalledWith(1, 'fn_start_workflow_run', expect.objectContaining({
+        p_executor: 'client',
+      }))
+    })
+
+    it('forwards an explicit worker executor', async () => {
+      mockRpc
+        .mockResolvedValueOnce({ data: RUN_ID, error: null })
+        .mockResolvedValueOnce({ data: [fakeRun], error: null })
+      await repo.startRun(WF_ID, {}, undefined, undefined, null, 'worker')
+      expect(mockRpc).toHaveBeenNthCalledWith(1, 'fn_start_workflow_run', expect.objectContaining({
+        p_executor: 'worker',
+      }))
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // heartbeatClientRun — liveness for browser-driven runs
+  // ---------------------------------------------------------------------------
+  describe('heartbeatClientRun', () => {
+    it('calls fn_heartbeat_client_workflow_run with the run id', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: null })
+      await repo.heartbeatClientRun(RUN_ID)
+      expect(mockRpc).toHaveBeenCalledWith('fn_heartbeat_client_workflow_run', { p_run_id: RUN_ID })
+    })
+
+    it('swallows RPC errors — a dropped beat must not interrupt a healthy run', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('network') })
+      await expect(repo.heartbeatClientRun(RUN_ID)).resolves.toBeUndefined()
+    })
   })
 
   // ---------------------------------------------------------------------------
