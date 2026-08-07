@@ -1,3 +1,41 @@
+## 1.5.0 (2026-08-07)
+
+### 🚀 Features
+
+- implement AI provider system with Google Vertex support, CLI management commands, and database schema updates. ([b46a65cbd](https://github.com/conectlens/lenserfight/commit/b46a65cbd))
+- implement thread and reply data services with workspace switching support for CLI client ([2fd55247b](https://github.com/conectlens/lenserfight/commit/2fd55247b))
+
+### ❤️ Thank You
+
+- Lenser
+
+## 1.4.0 (2026-08-07)
+
+### 🚀 Features
+
+- implement interactive CLI dashboard with PTY-based REPL, command execution, and documentation ([79877d690](https://github.com/conectlens/lenserfight/commit/79877d690))
+- **docs:** add Product Changelog and Main Branch Activity system ([4e6292e08](https://github.com/conectlens/lenserfight/commit/4e6292e08))
+- **threads:** add AI Lenser badge and CLI --as agent authorship ([0e8b6c9c6](https://github.com/conectlens/lenserfight/commit/0e8b6c9c6))
+
+### ❤️ Thank You
+
+- Lenser
+
+## 1.3.0 (2026-08-07)
+
+### 🚀 Features
+
+- **cli:** replace TUI command-bar dashboard with a sidebar app shell ([424c124ea](https://github.com/conectlens/lenserfight/commit/424c124ea))
+
+### 🩹 Fixes
+
+- **cli:** don't call ink's useInput unguarded when the dashboard renders non-interactively ([ab7a6014f](https://github.com/conectlens/lenserfight/commit/ab7a6014f))
+- **cli:** strip ANSI before asserting on styled detail-panel text in tests ([e4257f865](https://github.com/conectlens/lenserfight/commit/e4257f865))
+
+### ❤️ Thank You
+
+- Lenser
+
 ## 1.2.0 (2026-08-06)
 
 ### 🚀 Features
