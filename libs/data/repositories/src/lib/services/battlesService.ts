@@ -4,6 +4,7 @@ import {
   BattleCommentRecord,
   GlobalMessageRecord,
   BattleFeedItemRecord,
+  MyBattleItemRecord,
   BattlesFeedOptions,
   ContenderRecord,
   VoteAggregateRecord,
@@ -24,7 +25,7 @@ import {
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput, ScheduleBattleInput, ChatCursor, AiJudgeVerdictRecord, DLQEntryRecord, PublicExecutionJobRecord }
+export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, MyBattleItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput, ScheduleBattleInput, ChatCursor, AiJudgeVerdictRecord, DLQEntryRecord, PublicExecutionJobRecord }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -145,6 +146,9 @@ export const battlesService = {
 
   getBattlesFeedItems: (options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]> =>
     battlesRepo.getBattlesFeedItems(options),
+
+  getMyBattles: (status?: string, limit?: number, cursor?: string): Promise<MyBattleItemRecord[]> =>
+    battlesRepo.getMyBattles(status, limit, cursor),
 
   getMyVote: (battleId: string): Promise<{ vote_value: string } | null> =>
     battlesRepo.getMyVote(battleId),
