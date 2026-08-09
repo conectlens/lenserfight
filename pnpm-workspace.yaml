@@ -62,3 +62,25 @@ overrides:
   'brace-expansion@^5.0.0': '>=5.0.8 <6'
   'js-yaml@^3.0.0': '>=3.15.0 <4'
   'js-yaml@^4.0.0': '>=4.3.0 <5'
+  # GHSA-28wg-ghj8-5hjv and GHSA-2v37-7h3g-55p8 — unbounded loops in nanoid's
+  # non-secure and custom generators. Every consumer in the tree (postcss,
+  # @react-navigation/routers, expo-router) already resolves inside 3.x, so
+  # this floor is a patch lift with no API change.
+  'nanoid@^3.0.0': '>=3.3.17 <4'
+
+# Advisories that cannot be resolved by raising a floor. Each entry needs a
+# reason and an exit condition — an ignore without one silently becomes
+# permanent. Prefer an `overrides` floor above whenever a patch exists inside
+# the current major.
+auditConfig:
+  ignoreGhsas:
+    # GHSA-w3rx-r6r6-pgpr, GHSA-5p2g-fcmc-qvqq — denial of service via
+    # infinite loops in image-size's ICNS, JXL and HEIF parsers. The only
+    # consumer is metro@0.83.3's bundler, so these parsers run at build time
+    # over images already committed to this repo; the vulnerable code is never
+    # shipped to users. The first patched release (2.0.3) is a breaking major
+    # that metro's 1.x API does not support, so forcing it would risk mobile
+    # bundling to fix a build-time-only issue.
+    # Exit: drop both once metro depends on image-size >=2.0.3.
+    - 'GHSA-w3rx-r6r6-pgpr'
+    - 'GHSA-5p2g-fcmc-qvqq'
