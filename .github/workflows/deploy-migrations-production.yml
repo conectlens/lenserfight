@@ -44,26 +44,31 @@ jobs:
           version: latest
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Link production project
-        run: >
-          supabase link
-          --project-ref "${{ secrets.PROD_SUPABASE_PROJECT_REF }}"
-          --password "${{ secrets.PROD_SUPABASE_DB_PASSWORD }}"
+      - name: Build database connection string
+        id: db
+        run: |
+          ENCODED_PASSWORD=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$PROD_SUPABASE_DB_PASSWORD")
+          echo "::add-mask::$ENCODED_PASSWORD"
+          echo "url=postgresql://postgres:${ENCODED_PASSWORD}@db.${PROD_SUPABASE_PROJECT_REF}.supabase.co:5432/postgres" >> "$GITHUB_OUTPUT"
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROD_SUPABASE_DB_PASSWORD: ${{ secrets.PROD_SUPABASE_DB_PASSWORD }}
+          PROD_SUPABASE_PROJECT_REF: ${{ secrets.PROD_SUPABASE_PROJECT_REF }}
 
+      # supabase link fails today with a SchemaError from the Management API's
+      # "get api keys" response (unrelated to this workflow's migrations).
+      # Connecting straight via --db-url skips that call entirely.
       - name: Show pending migrations
-        run: supabase migration list --linked --password "${{ secrets.PROD_SUPABASE_DB_PASSWORD }}"
+        run: supabase migration list --db-url "${{ steps.db.outputs.url }}"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Apply migrations
-        run: supabase db push --linked --yes --password "${{ secrets.PROD_SUPABASE_DB_PASSWORD }}"
+        run: supabase db push --db-url "${{ steps.db.outputs.url }}" --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Confirm migration history
         if: always()
-        run: supabase migration list --linked --password "${{ secrets.PROD_SUPABASE_DB_PASSWORD }}"
+        run: supabase migration list --db-url "${{ steps.db.outputs.url }}"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

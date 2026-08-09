@@ -62,6 +62,14 @@ describe('battleService', () => {
       expect(r).toEqual({ submitted: true });
     });
 
+    it('submitRun calls fn_mcp_battle_submit_run with contender_id', async () => {
+      const { sb, rpc } = makeSb({ data: null });
+      await battleService.submitRun(sb, { battle_id: 'b', contender_id: 'c', content_text: 'x' });
+      expect(rpc).toHaveBeenCalledWith('fn_mcp_battle_submit_run', {
+        p_battle_id: 'b', p_contender_id: 'c', p_content_text: 'x',
+      });
+    });
+
     it('setStatus maps invalid_status_transition to INVALID_TRANSITION', async () => {
       const { sb } = makeSb({ error: { message: 'invalid_status_transition: draft → published' } });
       await expect(battleService.setStatus(sb, { battle_id: 'b', status: 'published' }))

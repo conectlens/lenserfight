@@ -120,7 +120,7 @@ export const battleService = {
   },
 
   async submitRun(sb: SupabaseClient, args: SubmitRunArgs): Promise<unknown> {
-    const { data, error } = (await sb.rpc('fn_battles_submit' as never, {
+    const { data, error } = (await sb.rpc('fn_mcp_battle_submit_run' as never, {
       p_battle_id: args.battle_id,
       p_contender_id: args.contender_id,
       p_content_text: args.content_text,
