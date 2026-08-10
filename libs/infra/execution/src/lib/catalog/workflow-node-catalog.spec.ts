@@ -9,6 +9,7 @@ import {
   getWorkflowNodesByCategory,
   searchWorkflowNodeCatalog,
   validateWorkflowNodeCatalog,
+  validateWorkflowNodeConfig,
 } from './workflow-node-catalog'
 
 describe('workflow node catalog', () => {
@@ -83,5 +84,46 @@ describe('workflow node compatibility', () => {
     expect(areWorkflowNodesCompatible('data_mapper', 'email_send')).toBe(true)
     expect(areWorkflowNodesCompatible('lens', 'output_parser')).toBe(true)
     expect(areWorkflowNodesCompatible('output_parser', 'email_send')).toBe(true)
+  })
+})
+
+describe('validateWorkflowNodeConfig', () => {
+  it('flags a node type with no matching catalog entry', () => {
+    expect(validateWorkflowNodeConfig('not_a_real_node', {})).toEqual({
+      unknownType: true,
+      missingRequiredFields: [],
+    })
+  })
+
+  it('lists every missing requiredConfig key for a known node type', () => {
+    const result = validateWorkflowNodeConfig('email_send', {})
+    expect(result.unknownType).toBe(false)
+    expect(result.missingRequiredFields).toEqual(expect.arrayContaining(['to', 'subject', 'body']))
+  })
+
+  it('accepts a required field set directly on config', () => {
+    const result = validateWorkflowNodeConfig('http_request', { url: 'https://api.github.com' })
+    expect(result.missingRequiredFields).toEqual([])
+  })
+
+  it('accepts a required field set via param_overrides, including the __-prefixed form', () => {
+    expect(
+      validateWorkflowNodeConfig('http_request', { param_overrides: { url: '$.repoUrl' } })
+        .missingRequiredFields
+    ).toEqual([])
+    expect(
+      validateWorkflowNodeConfig('http_request', { param_overrides: { __url: '$.repoUrl' } })
+        .missingRequiredFields
+    ).toEqual([])
+  })
+
+  it('treats an empty string as missing', () => {
+    const result = validateWorkflowNodeConfig('http_request', { url: '' })
+    expect(result.missingRequiredFields).toEqual(['url'])
+  })
+
+  it('has no required fields to report for a node type with none', () => {
+    const result = validateWorkflowNodeConfig('manual_trigger', {})
+    expect(result).toEqual({ unknownType: false, missingRequiredFields: [] })
   })
 })

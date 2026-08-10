@@ -94,6 +94,77 @@ describe('validate_workflow tool', () => {
     expect(result.warnings.map((issue) => issue.code)).toContain('TRIGGER_MISSING')
   })
 
+  it('accepts a tool node whose config satisfies the catalog requiredConfig', () => {
+    const result = validateWorkflowGraph({
+      workflow: {},
+      nodes: [{ id: 'http-1', label: 'Fetch PR', config: { node_type: 'http_request', url: 'https://api.github.com' } }],
+      edges: [],
+    })
+
+    expect(result.valid).toBe(true)
+    expect(result.errors).toEqual([])
+  })
+
+  it('flags a tool node missing a catalog requiredConfig field', () => {
+    const result = validateWorkflowGraph({
+      workflow: {},
+      nodes: [{ id: 'http-1', label: 'Fetch PR', config: { node_type: 'http_request' } }],
+      edges: [],
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'NODE_CONFIG_FIELD_MISSING', node_id: 'http-1' })
+    )
+  })
+
+  it('accepts a required field supplied via param_overrides', () => {
+    const result = validateWorkflowGraph({
+      workflow: {},
+      nodes: [
+        {
+          id: 'http-1',
+          label: 'Fetch PR',
+          config: { node_type: 'http_request', param_overrides: { url: '$.repoUrl' } },
+        },
+      ],
+      edges: [],
+    })
+
+    expect(result.valid).toBe(true)
+  })
+
+  it('flags a node type that is not in the workflow node catalog', () => {
+    const result = validateWorkflowGraph({
+      workflow: {},
+      nodes: [{ id: 'ghost-1', label: 'Ghost', config: { node_type: 'not_a_real_node' } }],
+      edges: [],
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'NODE_TYPE_UNKNOWN', node_id: 'ghost-1' })
+    )
+  })
+
+  it('flags a trigger node missing its catalog requiredConfig field', () => {
+    const result = validateWorkflowGraph({
+      workflow: {},
+      nodes: [
+        { id: 'trigger-1', label: 'On schedule', config: { node_type: 'schedule_trigger' } },
+        { id: 'lens-1', label: 'Research Lens', lens_id: 'internal-lens-id', config: {} },
+      ],
+      edges: [
+        { id: 'edge-1', source_node_id: 'trigger-1', target_node_id: 'lens-1', target_param_label: 'context' },
+      ],
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ code: 'NODE_CONFIG_FIELD_MISSING', node_id: 'trigger-1' })
+    )
+  })
+
   it('returns NOT_FOUND when the graph is unavailable', async () => {
     ;(workflowService.getGraph as jest.Mock).mockResolvedValue(null)
     const tool = captureTool(registerWorkflowValidate)

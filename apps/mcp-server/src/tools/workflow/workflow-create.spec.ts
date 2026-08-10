@@ -66,6 +66,7 @@ describe('create_workflow tool', () => {
             kind: 'tool',
             name: 'Publish to Notion',
             node_type: 'notion_write',
+            config: { databaseId: 'notion-digest-db' },
             connector: {
               provider: 'notion',
               connection_ref: 'notion-workspace',
