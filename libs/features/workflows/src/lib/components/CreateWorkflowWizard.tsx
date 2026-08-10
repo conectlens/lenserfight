@@ -8,12 +8,12 @@ import {
 } from '@lenserfight/features/lens-kinds'
 import { FundingSourceToggle, GenerateWithAIButton, useFundingSource } from '@lenserfight/features/lenses'
 import { useChainabitConnection } from '@lenserfight/features/store'
-import { Alert, Button, StepWizard } from '@lenserfight/ui/components'
+import { Alert, Button, HelpButton, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { DialogFooterContext, DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { CalendarClock, Check, GitBranch, GitFork, KeyRound, Layers, Sparkles, Upload } from 'lucide-react'
+import { CalendarClock, Check, GitBranch, GitFork, KeyRound, Layers, Play, Sparkles, Upload } from 'lucide-react'
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -51,30 +51,39 @@ const VISIBILITY_OPTIONS = [
   { value: 'unlisted', label: 'Unlisted' },
 ] as const
 
+// Rendered as the header action on every wizard step (GRASP: Information
+// Expert — the wizard owns its own docs entry point, same pattern as
+// SectionPage's docsPath).
+const WIZARD_DOCS_ACTION = <HelpButton path="/guides/workflow-builder" label="Docs" />
+
 const WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Details',
     title: 'Build a Connected Lens workflow',
     description: 'Give your workflow a name and visibility, then pick the starting lenses.',
     icon: <GitBranch size={20} />,
+    action: WIZARD_DOCS_ACTION,
   },
   {
     label: 'Funding & Model',
     title: 'Choose how to run',
     description: 'Select a funding source and default AI model for this workflow.',
     icon: <KeyRound size={20} />,
+    action: WIZARD_DOCS_ACTION,
   },
   {
     label: 'Add Lenses',
     title: 'Choose starting lenses',
     description: 'Pick one or more lenses to add as nodes. You can always add more in the canvas editor.',
     icon: <Layers size={20} />,
+    action: WIZARD_DOCS_ACTION,
   },
   {
     label: 'Schedule',
-    title: 'Schedule your workflow',
-    description: 'Set up a recurring CRON schedule — optional, skip anytime.',
+    title: 'Run your workflow',
+    description: 'Runs manually by default. Add a recurring CRON schedule if you want it to run on its own — optional.',
     icon: <CalendarClock size={20} />,
+    action: WIZARD_DOCS_ACTION,
   },
 ]
 
@@ -263,7 +272,10 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
 
 export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel, editMode, initialWorkflow, initialTemplateId }) => {
   const navigate = useNavigate()
-  const [showTemplatePicker, setShowTemplatePicker] = useState(!editMode)
+  // Defaults to the blank wizard (Details step) for the common case of "I just
+  // want to create a workflow." Templates are reached via the "Browse
+  // templates" action instead of gating every new workflow behind them.
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
   const { data: templates = [], isLoading: templatesLoading } = useTemplateWorkflows(12)
   const { mutate: forkTemplate, isPending: isForking } = useMutation({
@@ -298,6 +310,10 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
 
   const cronPanelRef = useRef<WorkflowCronPanelRef>(null)
   const initialTemplateForkedRef = useRef(false)
+  // Manual is the default: a workflow is fully usable without a schedule, and
+  // the Schedule step should make that explicit instead of implying every
+  // workflow must be automated.
+  const [scheduleMode, setScheduleMode] = useState<'manual' | 'cron'>('manual')
 
   // Lens picker state: map of id → title for selected lenses
   const [selectedLenses, setSelectedLenses] = useState<Map<string, string>>(new Map())
@@ -329,6 +345,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     setCreatedWorkflowId(null)
     setSelectedLenses(new Map())
     setDefaultModelId(localStorage.getItem('lf-workflow-global-model') ?? '')
+    setScheduleMode('manual')
   }
 
   // AI generation is delegated to the shared GenerateWithAIButton; the wizard
@@ -533,6 +550,15 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
           {/* Instructions → external AI → paste back, alongside in-app generation. */}
           {user?.id && !editMode && (
             <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowTemplatePicker(true)}
+                className="flex items-center gap-1.5"
+              >
+                <GitFork size={12} /> Browse templates
+              </Button>
               <WorkflowInstructionsButton />
               <Button
                 type="button"
@@ -652,14 +678,56 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
 
       {step === 3 && createdWorkflowId && (
         <div className="space-y-3">
-          <WorkflowCronPanel
-            ref={cronPanelRef}
-            workflowId={createdWorkflowId}
-            isOwner={true}
-            hideSaveButton={true}
-          />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setScheduleMode('manual')}
+              aria-pressed={scheduleMode === 'manual'}
+              className={`rounded-2xl border p-3 text-left transition-colors ${
+                scheduleMode === 'manual'
+                  ? 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
+                  : 'border-surface-border bg-surface-base hover:border-greyscale-300 dark:hover:border-greyscale-600'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 text-sm font-semibold">
+                <Play size={14} /> Manual only
+              </div>
+              <p className={`mt-1 text-xs leading-5 ${scheduleMode === 'manual' ? 'opacity-80' : 'text-greyscale-500 dark:text-greyscale-400'}`}>
+                Run this workflow on demand from the Run panel. No schedule required — this is the default.
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setScheduleMode('cron')}
+              aria-pressed={scheduleMode === 'cron'}
+              className={`rounded-2xl border p-3 text-left transition-colors ${
+                scheduleMode === 'cron'
+                  ? 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
+                  : 'border-surface-border bg-surface-base hover:border-greyscale-300 dark:hover:border-greyscale-600'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 text-sm font-semibold">
+                <CalendarClock size={14} /> Add a CRON schedule
+              </div>
+              <p className={`mt-1 text-xs leading-5 ${scheduleMode === 'cron' ? 'opacity-80' : 'text-greyscale-500 dark:text-greyscale-400'}`}>
+                Automatically run this workflow on a recurring schedule.
+              </p>
+            </button>
+          </div>
+
+          {scheduleMode === 'cron' && (
+            <WorkflowCronPanel
+              ref={cronPanelRef}
+              workflowId={createdWorkflowId}
+              isOwner={true}
+              hideSaveButton={true}
+            />
+          )}
+
           <p className="text-xs leading-5 text-greyscale-400 px-1">
-            Schedules save when you click Done or skip. You can also manage them later from the Run panel.
+            {scheduleMode === 'cron'
+              ? 'Schedules save when you click Done or skip. You can also manage them later from the Run panel.'
+              : 'You can add a CRON schedule anytime later from the Run panel.'}
           </p>
         </div>
       )}
