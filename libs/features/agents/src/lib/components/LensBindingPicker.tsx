@@ -1,10 +1,13 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService } from '@lenserfight/data/repositories'
+import { LocaleLink } from '@lenserfight/shared/i18n-routing'
 import { Button } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
+import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { GitFork, Search, Sparkles } from 'lucide-react'
+import { Copy, ExternalLink, GitFork, Pencil, Search, Sparkles, Trash2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import type { LensVersion } from '@lenserfight/types'
@@ -30,9 +33,11 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
   currentVersionId,
 }) => {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [selectedLensId, setSelectedLensId] = useState(currentLensId ?? '')
   const [selectedVersionId, setSelectedVersionId] = useState(currentVersionId ?? '')
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   // Sync if parent binding changes (e.g. after a successful bind)
   useEffect(() => {
@@ -59,17 +64,37 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
     staleTime: 30_000,
   })
 
-  const forkMutation = useMutation({
+  // Shared by the community "Fork & use" action and "My lenses" row-level
+  // "Copy" action — both clone a lens into the caller's workspace and select
+  // the copy, they only differ in the toast message.
+  const cloneMutation = useMutation({
     mutationFn: (sourceLensId: string) => lensesService.cloneLens(sourceLensId),
-    onSuccess: async (newLensId: string) => {
+    onSuccess: async (newLensId: string, sourceLensId: string) => {
       await queryClient.invalidateQueries({
         queryKey: [...queryKeys.lenses.all, 'agent-picker-own'],
       })
       setSelectedLensId(newLensId)
       setSelectedVersionId('')
-      toast.success('Lens forked into your workspace')
+      const isOwnLens = ownLenses.some((lens) => lens.id === sourceLensId)
+      toast.success(isOwnLens ? 'Lens copied' : 'Lens forked into your workspace')
     },
     onError: (e) => toast.error((e as Error).message ?? 'Fork failed'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => lensesService.deleteLens(id),
+    onSuccess: async (_result, id: string) => {
+      await queryClient.invalidateQueries({
+        queryKey: [...queryKeys.lenses.all, 'agent-picker-own'],
+      })
+      if (selectedLensId === id) {
+        setSelectedLensId('')
+        setSelectedVersionId('')
+      }
+      setDeleteTargetId(null)
+      toast.success('Lens deleted')
+    },
+    onError: (e) => toast.error((e as Error).message ?? 'Delete failed'),
   })
 
   const handleBind = () => {
@@ -92,7 +117,7 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
         <Button
           type="button"
           onClick={handleBind}
-          disabled={!selectedLensId || isSaving || forkMutation.isPending}
+          disabled={!selectedLensId || isSaving || cloneMutation.isPending}
           isLoading={isSaving}
         >
           <Sparkles size={14} />
@@ -139,22 +164,65 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
             </p>
             <div className="space-y-1">
               {ownLenses.map((lens) => (
-                <button
+                <div
                   key={lens.id}
-                  type="button"
-                  onClick={() => selectLens(lens.id)}
-                  className={`w-full rounded-2xl border px-4 py-2.5 text-left text-sm font-medium transition ${selectedLensId === lens.id
-                      ? 'border-primary-yellow-400 bg-primary-yellow-50 text-gray-900 dark:bg-primary-yellow-500/10 dark:text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-primary-yellow-300 hover:text-primary-yellow-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
+                  className={`group flex items-center gap-1 rounded-2xl border pl-4 pr-1.5 py-1.5 transition ${selectedLensId === lens.id
+                      ? 'border-primary-yellow-400 bg-primary-yellow-50 dark:bg-primary-yellow-500/10'
+                      : 'border-gray-200 bg-white hover:border-primary-yellow-300 dark:border-gray-700 dark:bg-gray-900'
                     }`}
                 >
-                  {lens.title}
-                  {lens.description && (
-                    <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">
-                      {lens.description.slice(0, 60)}{lens.description.length > 60 ? '…' : ''}
-                    </span>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => selectLens(lens.id)}
+                    className={`flex-1 min-w-0 py-1 text-left text-sm font-medium transition ${selectedLensId === lens.id
+                        ? 'text-gray-900 dark:text-white'
+                        : 'text-gray-700 hover:text-primary-yellow-700 dark:text-gray-200'
+                      }`}
+                  >
+                    {lens.title}
+                    {lens.description && (
+                      <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">
+                        {lens.description.slice(0, 60)}{lens.description.length > 60 ? '…' : ''}
+                      </span>
+                    )}
+                  </button>
+                  <div className="flex flex-shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                    <LocaleLink
+                      to={`/lenses/${lens.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open lens detail in a new tab"
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                    >
+                      <ExternalLink size={14} />
+                    </LocaleLink>
+                    <button
+                      type="button"
+                      title="Edit lens"
+                      onClick={() => navigate(`/lenses/${lens.id}/main`)}
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-800 dark:hover:text-blue-400"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Copy lens"
+                      disabled={cloneMutation.isPending}
+                      onClick={() => cloneMutation.mutate(lens.id)}
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                    >
+                      <Copy size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Delete lens"
+                      onClick={() => setDeleteTargetId(lens.id)}
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-800 dark:hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
               ))}
               {hasNextOwnPage && (
                 <Button
@@ -192,8 +260,8 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    disabled={forkMutation.isPending}
-                    onClick={() => forkMutation.mutate(lens.id)}
+                    disabled={cloneMutation.isPending}
+                    onClick={() => cloneMutation.mutate(lens.id)}
                   >
                     <GitFork size={12} />
                     Fork &amp; use
@@ -237,6 +305,16 @@ export const LensBindingPicker: React.FC<LensBindingPickerProps> = ({
         )}
 
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={() => deleteTargetId && deleteMutation.mutate(deleteTargetId)}
+        title="Delete lens"
+        message="Are you sure you want to delete this lens? This action cannot be undone."
+        confirmLabel="Delete"
+        isLoading={deleteMutation.isPending}
+      />
     </ProfileCard>
   )
 }
