@@ -1,6 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { seoService } from '@lenserfight/data/repositories'
-import { ArtifactLifecycleMenu } from '@lenserfight/features/artifact-lifecycle'
+import { ArtifactLifecycleMenu, useArtifactLifecycleStatuses } from '@lenserfight/features/artifact-lifecycle'
 import { useLenser } from '@lenserfight/features/profile'
 import { Button, EmptyState, ExperimentalBadge, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { PageMeta } from '@lenserfight/ui/layout'
@@ -78,6 +78,15 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = active
 
   const workflows = useMemo(() => data?.pages.flatMap((p) => p.data ?? []) ?? [], [data])
+
+  // One request for the whole page's lifecycle badges instead of one per card.
+  // Only the 'mine' scope renders the menu, so only that scope pays for it; the
+  // id list grows as pages are appended, which re-keys the query and refetches
+  // the new set. Each menu is handed its status below rather than querying.
+  const workflowIds = useMemo(() => workflows.map((w) => w.id), [workflows])
+  const { data: lifecycleStatuses } = useArtifactLifecycleStatuses('workflow', workflowIds, {
+    enabled: scope === 'mine',
+  })
 
   const commitSearch = (value: string) => setParam('q', value, '')
 
@@ -194,6 +203,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
                     <ArtifactLifecycleMenu
                       type="workflow"
                       id={w.id}
+                      status={lifecycleStatuses?.[w.id]}
                       extraInvalidateKeys={[queryKeys.workflows.all]}
                     />
                   ) : undefined}
