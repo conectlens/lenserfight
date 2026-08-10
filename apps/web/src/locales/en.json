@@ -143,7 +143,8 @@
       "back": "Back",
       "skip": "Skip tour",
       "done": "Done",
-      "stepOf": "Step {{current}} of {{total}}"
+      "stepOf": "Step {{current}} of {{total}}",
+      "dontShowAgain": "Don't show tours again"
     },
     "pages": {
       "dashboard": {
