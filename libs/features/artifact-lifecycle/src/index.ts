@@ -1,5 +1,6 @@
 // Hooks
 export { useArtifactLifecycleStatus } from './lib/hooks/useArtifactLifecycleStatus'
+export { useArtifactLifecycleStatuses } from './lib/hooks/useArtifactLifecycleStatuses'
 export { useArchiveArtifact } from './lib/hooks/useArchiveArtifact'
 export { useRestoreArtifact } from './lib/hooks/useRestoreArtifact'
 export { useDeleteArtifact } from './lib/hooks/useDeleteArtifact'

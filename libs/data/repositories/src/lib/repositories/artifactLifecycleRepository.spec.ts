@@ -116,4 +116,74 @@ describe('SupabaseArtifactLifecycleRepository', () => {
 
     await expect(repo.getStatus('lens', 'lens-1')).rejects.toThrow('blocked')
   })
+
+  describe('getStatusBatch', () => {
+    it('fetches many statuses in a single call, keyed by artifact id', async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: {
+          'workflow-1': { ...lifecyclePayload, artifact_id: 'workflow-1' },
+          'workflow-2': { ...lifecyclePayload, artifact_id: 'workflow-2' },
+        },
+        error: null,
+      })
+
+      const result = await repo.getStatusBatch('workflow', ['workflow-1', 'workflow-2'])
+
+      expect(mockRpc).toHaveBeenCalledTimes(1)
+      expect(mockRpc).toHaveBeenCalledWith('fn_artifact_lifecycle_status_batch', {
+        p_artifact_type: 'workflow',
+        p_artifact_ids: ['workflow-1', 'workflow-2'],
+      })
+      expect(Object.keys(result)).toEqual(['workflow-1', 'workflow-2'])
+      expect(result['workflow-1']?.artifact_id).toBe('workflow-1')
+      // Normalized the same way the single-artifact path is.
+      expect(result['workflow-2']?.dependency_summary.total).toBe(15)
+    })
+
+    it('makes no request for an empty id list', async () => {
+      await expect(repo.getStatusBatch('workflow', [])).resolves.toEqual({})
+
+      expect(mockRpc).not.toHaveBeenCalled()
+    })
+
+    it('omits ids the caller cannot view rather than failing the batch', async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: { 'workflow-1': { ...lifecyclePayload, artifact_id: 'workflow-1' } },
+        error: null,
+      })
+
+      const result = await repo.getStatusBatch('workflow', ['workflow-1', 'workflow-hidden'])
+
+      expect(result['workflow-1']).toBeDefined()
+      expect(result['workflow-hidden']).toBeUndefined()
+    })
+
+    it('splits id lists that exceed the rpc limit and merges the responses', async () => {
+      // 201 ids — one past the 200 the RPC accepts, so this must become 2 calls.
+      const ids = Array.from({ length: 201 }, (_, i) => `workflow-${i}`)
+      mockRpc.mockImplementation((_name: string, args: { p_artifact_ids: string[] }) =>
+        Promise.resolve({
+          data: Object.fromEntries(
+            args.p_artifact_ids.map((id) => [id, { ...lifecyclePayload, artifact_id: id }]),
+          ),
+          error: null,
+        }),
+      )
+
+      const result = await repo.getStatusBatch('workflow', ids)
+
+      expect(mockRpc).toHaveBeenCalledTimes(2)
+      expect(mockRpc.mock.calls[0][1].p_artifact_ids).toHaveLength(200)
+      expect(mockRpc.mock.calls[1][1].p_artifact_ids).toHaveLength(1)
+      // Every id survives the merge.
+      expect(Object.keys(result)).toHaveLength(201)
+      expect(result['workflow-200']?.artifact_id).toBe('workflow-200')
+    })
+
+    it('rethrows when any chunk fails', async () => {
+      mockRpc.mockResolvedValueOnce({ data: null, error: new Error('blocked') })
+
+      await expect(repo.getStatusBatch('workflow', ['workflow-1'])).rejects.toThrow('blocked')
+    })
+  })
 })
