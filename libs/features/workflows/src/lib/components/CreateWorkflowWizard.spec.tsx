@@ -158,8 +158,8 @@ describe('CreateWorkflowWizard', () => {
       </QueryClientProvider>
     )
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Start blank' })[0]!)
-
+    // The wizard opens straight to the Details step by default — no template
+    // picker gate to click through first.
     fireEvent.change(screen.getByLabelText(/Workflow title/), {
       target: { value: 'Research workflow' },
     })
@@ -183,12 +183,82 @@ describe('CreateWorkflowWizard', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Schedule your workflow')).toBeTruthy()
+      expect(screen.getByText('Run your workflow')).toBeTruthy()
     })
+    // Manual is the default — no CRON schedule is required to finish.
+    expect(screen.getByRole('button', { name: /Manual only/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: /Add a CRON schedule/ }).getAttribute('aria-pressed')).toBe('false')
     fireEvent.click(screen.getByRole('button', { name: 'Skip for now' }))
 
     await waitFor(() => {
       expect(onCreated).toHaveBeenCalledWith('workflow-1')
     })
+  })
+
+  it('opens straight to the Details step, with templates reachable via Browse templates', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/workflows/new']}>
+          <Routes>
+            <Route
+              path="/workflows/new"
+              element={
+                <Dialog open onClose={vi.fn()}>
+                  <CreateWorkflowWizard onCreated={vi.fn()} onCancel={vi.fn()} />
+                </Dialog>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    // No template gate up front — the title field is immediately reachable.
+    expect(screen.getByLabelText(/Workflow title/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /Browse templates/ }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/No templates available yet\./)).toBeTruthy()
+    })
+  })
+
+  it('lets the user pick Add a CRON schedule instead of the manual default', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/workflows/new']}>
+          <Routes>
+            <Route
+              path="/workflows/new"
+              element={
+                <Dialog open onClose={vi.fn()}>
+                  <CreateWorkflowWizard onCreated={vi.fn()} onCancel={vi.fn()} />
+                </Dialog>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    fireEvent.change(screen.getByLabelText(/Workflow title/), {
+      target: { value: 'Research workflow' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Next/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Next/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Next/ }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Manual only/ }).getAttribute('aria-pressed')).toBe('true')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Add a CRON schedule/ }))
+
+    expect(screen.getByRole('button', { name: /Add a CRON schedule/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: /Manual only/ }).getAttribute('aria-pressed')).toBe('false')
   })
 })
