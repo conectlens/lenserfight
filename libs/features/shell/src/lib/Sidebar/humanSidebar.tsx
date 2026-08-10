@@ -5,7 +5,6 @@ import {
   ExternalLink,
   GitBranch,
   Home,
-  Hourglass,
   KeyRound,
   Library,
   MessageCircle,
@@ -54,7 +53,6 @@ export function buildHumanSidebarSections(
       items: [
         { id: 'ai-catalog', label: 'AI Catalog', path: '/ai/catalog', icon: <Sparkles size={20} /> },
         { id: 'ai-models', label: 'AI Models', path: '/ai/catalog/models', icon: <Cpu size={20} /> },
-        { id: 'waiting-list', label: 'Waiting list', path: '/waiting-list', icon: <Hourglass size={20} /> },
         { id: 'docs-home', label: 'Docs', externalHref: DOCS_BASE_URL, icon: <Library size={20} /> },
         { id: 'arena-home', label: 'Public Arena Site', externalHref: LANDING_BASE_URL, icon: <ExternalLink size={20} /> },
       ],
