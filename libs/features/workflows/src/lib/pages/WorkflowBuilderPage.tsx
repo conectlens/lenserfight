@@ -1,6 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService, workflowsService, seoService } from '@lenserfight/data/repositories'
-import type { WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
+import type { WorkflowNodeResultRecord, WorkflowRunExecutor } from '@lenserfight/data/repositories'
 import {
   validateBrowserExecutionPlan,
   validateWorkflow,
@@ -79,7 +79,7 @@ interface WorkflowBuilderPageProps {
   onBattleClick?: (workflowId: string) => void
 }
 
-export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
+export function WorkflowBuilderPage({ workflowId, runId: routeRunId }: WorkflowBuilderPageProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -146,6 +146,9 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
     isRunning,
   } = useWorkflowRun(workflowId, {
     skipSse: funding.fundingSource === 'user_byok_local',
+    // Reattach to an in-flight run named by the URL, so reopening
+    // /workflows/:id/run/:runId shows live progress instead of an empty builder.
+    initialRunId: routeRunId ?? null,
   })
   const {
     isSystemLocked,
@@ -521,13 +524,41 @@ export function WorkflowBuilderPage({ workflowId }: WorkflowBuilderPageProps) {
       return
     }
 
-    const run = await startRun({ inputs: rootInputs, globalModelId: selectedModelKey })
-    setSelectedNodeConfig(null)
-    if (!run?.id) return
+    // Who executes this run.
+    //
+    // BYOK runs stay in this tab: a local key is held in the browser, and the
+    // cloud-vault key is resolved browser-side too (run-workflow-graph has no
+    // BYOK resolution, so a worker would silently bill platform credit instead
+    // of the user's own key). Platform-funded runs go to the worker queue, where
+    // closing the tab no longer abandons them.
+    const executor: WorkflowRunExecutor =
+      funding.fundingSource === 'user_byok_local' || funding.fundingSource === 'user_byok_cloud'
+        ? 'client'
+        : 'worker'
 
-    // Fire execution orchestrator in background — status updates flow via Realtime.
-    // Production Cloud BYOK is blocked above (no worker claims manual workflow_runs).
-    executeWorkflow(run.id, selectedModelKey, rootInputs).catch((err) => {
+    const started = await startRun({
+      inputs: rootInputs,
+      globalModelId: selectedModelKey,
+      executor,
+    })
+    setSelectedNodeConfig(null)
+    const startedRunId = started?.run?.id
+    if (!startedRunId) return
+
+    // Put the run in the URL so a refresh or a reopened tab reattaches to it
+    // instead of losing track of a run that is still going.
+    navigate(`/workflows/${workflowId}/run/${startedRunId}`, { replace: true })
+
+    if (executor === 'worker') {
+      // The worker claims and drives it; node results arrive over Realtime just
+      // as they did when this tab executed the graph. Nothing to do here.
+      return
+    }
+
+    // Client-executed: this tab is the only executor. Status updates still flow
+    // via Realtime; useWorkflowRun heartbeats so an abandoned run gets reaped
+    // rather than hanging.
+    executeWorkflow(startedRunId, selectedModelKey, rootInputs).catch((err) => {
       toast.error(`Workflow execution failed: ${err instanceof Error ? err.message : String(err)}`)
     })
   }

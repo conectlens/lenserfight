@@ -130,6 +130,42 @@ Workflow runs are started through `fn_start_workflow_run`.
 
 The client-side `useWorkflowRun` hook derives an idempotency key from `workflowId` and canonicalized root inputs so duplicate submissions reuse the same run where supported.
 
+### Who triggers a run vs. who executes it
+
+These are two independent axes on `lenses.workflow_runs`.
+
+`trigger_mode` records what caused the run:
+
+| Value | Cause |
+|-------|-------|
+| `manual` | a person started it (web builder, CLI) |
+| `schedule` | a cron schedule or an event trigger |
+| `api` | a headless caller: MCP tool or inbound webhook |
+| `subflow` | a parent workflow or agent team run |
+
+`executor` records what runs it, and is the only field any claimer inspects:
+
+| Value | Runs on | Durability |
+|-------|---------|------------|
+| `worker` (default) | the background worker | survives a closed browser tab; recovered by the stale-run loop if a worker dies |
+| `client` | the browser tab that started it | must heartbeat via `fn_heartbeat_client_workflow_run`; retired by the reaper if the tab goes away |
+
+`client` is reserved for runs whose credentials the server cannot reach — BYOK
+funding sources, where the API key is held in the browser. Everything else
+defaults to `worker`, so a run does not depend on a tab staying open.
+
+Pass `p_executor` to choose explicitly. Runs are refused while the system kill
+switch is active.
+
+### Durability guarantees
+
+- A `worker` run left non-terminal with a stale heartbeat is adopted by the
+  recovery loop and resumed, skipping nodes that already completed.
+- A `client` run whose tab stops heartbeating is failed by
+  `fn_reap_abandoned_workflow_runs`, along with its non-terminal node results,
+  with the reason recorded in `metadata.reaped_reason`.
+- Reopening `/workflows/:id/run/:runId` reattaches to an in-flight run.
+
 ## Explicit beta limitations
 
 - Browser execution only supports a limited provider set.
