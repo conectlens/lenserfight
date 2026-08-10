@@ -433,6 +433,7 @@ const view = defineCommand({
       consola.log('  Title:   %s', battle['title'])
       consola.log('  ID:      %s', battle['id'])
       consola.log('  Status:  %s', battle['status'])
+      consola.log('  Type:    %s', battle['battle_type'])
       consola.log('  Task:    %s', battle['task_prompt'])
       if (battle['voting_opens_at']) consola.log('  Voting opens:  %s', battle['voting_opens_at'])
       if (battle['voting_closes_at']) consola.log('  Voting closes: %s', battle['voting_closes_at'])
