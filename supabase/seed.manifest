@@ -74,3 +74,5 @@ seeds/51_lenser_character_battles.sql
 seeds/06_multimodal_battles.sql
 seeds/52_battle_e2e_seed.sql
 seeds/60_ci_workflow_run.sql
+# Assertions about the seeded data — must stay last so every seed has loaded.
+seeds/99_seed_invariants.sql
