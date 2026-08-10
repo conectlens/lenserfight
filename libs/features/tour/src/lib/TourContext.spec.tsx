@@ -7,7 +7,15 @@ import { TourProvider, useTour } from './TourContext'
 import type { TourController } from './TourContext'
 import type { TourDefinition } from './types'
 
-const { mockGetPreferences, mockMarkTourSeen, mockAuthRef, mockPathnameRef, tourX, tourFiltered } =
+const {
+  mockGetPreferences,
+  mockMarkTourSeen,
+  mockSetToursOptedOut,
+  mockAuthRef,
+  mockPathnameRef,
+  tourX,
+  tourFiltered,
+} =
   vi.hoisted(() => {
     const tourX: TourDefinition = {
       id: 't.x',
@@ -39,6 +47,7 @@ const { mockGetPreferences, mockMarkTourSeen, mockAuthRef, mockPathnameRef, tour
     return {
       mockGetPreferences: vi.fn(),
       mockMarkTourSeen: vi.fn(),
+      mockSetToursOptedOut: vi.fn(),
       mockAuthRef: { current: null as { isAuthenticated: boolean } | null },
       mockPathnameRef: { current: '/x' },
       tourX,
@@ -64,6 +73,7 @@ vi.mock('@lenserfight/data/repositories', async (importOriginal) => ({
   preferencesService: {
     getPreferences: mockGetPreferences,
     markTourSeen: mockMarkTourSeen,
+    setToursOptedOut: mockSetToursOptedOut,
   },
 }))
 
@@ -95,6 +105,7 @@ describe('TourProvider', () => {
     mockPathnameRef.current = '/x'
     mockGetPreferences.mockResolvedValue(null)
     mockMarkTourSeen.mockResolvedValue(undefined)
+    mockSetToursOptedOut.mockResolvedValue(undefined)
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: false,
       media: query,
@@ -214,5 +225,81 @@ describe('TourProvider', () => {
 
     expect(controller?.isSeen('t.x')).toBe(true)
     expect(JSON.parse(localStorage.getItem('lf_tours_seen') ?? '[]')).toContain('t.x')
+  })
+
+  it('never auto-runs any tour once opted out, regardless of route', () => {
+    vi.useFakeTimers()
+    try {
+      localStorage.setItem('lf_tours_opted_out', 'true')
+      renderProvider()
+
+      act(() => {
+        vi.advanceTimersByTime(5000)
+      })
+
+      expect(controller?.activeTour).toBeNull()
+      expect(controller?.toursOptedOut).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('optOutOfTours dismisses the active tour and prevents future auto-run', () => {
+    vi.useFakeTimers()
+    try {
+      renderProvider()
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(controller?.activeTour?.definition.id).toBe('t.x')
+
+      act(() => controller?.optOutOfTours())
+
+      expect(controller?.activeTour).toBeNull()
+      expect(controller?.toursOptedOut).toBe(true)
+      expect(localStorage.getItem('lf_tours_opted_out')).toBe('true')
+
+      mockPathnameRef.current = '/y'
+      act(() => {
+        vi.advanceTimersByTime(5000)
+      })
+      expect(controller?.activeTour).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('optOutOfTours does not call the server when unauthenticated', () => {
+    renderProvider()
+    act(() => controller?.optOutOfTours())
+    expect(mockSetToursOptedOut).not.toHaveBeenCalled()
+  })
+
+  it('optInToTours calls the server when authenticated', () => {
+    mockAuthRef.current = { isAuthenticated: true }
+    renderProvider()
+    act(() => controller?.optInToTours())
+    expect(mockSetToursOptedOut).toHaveBeenCalledWith(false)
+  })
+
+  it('optInToTours reverses the opt-out without retroactively re-showing seen tours', () => {
+    localStorage.setItem('lf_tours_opted_out', 'true')
+    renderProvider()
+
+    act(() => controller?.optInToTours())
+
+    expect(controller?.toursOptedOut).toBe(false)
+    expect(localStorage.getItem('lf_tours_opted_out')).toBe('false')
+  })
+
+  it('merges the server-side opt-out flag when authenticated', async () => {
+    mockAuthRef.current = { isAuthenticated: true }
+    mockGetPreferences.mockResolvedValue({ tours_opted_out: true })
+    renderProvider()
+
+    await act(async () => {})
+
+    expect(controller?.toursOptedOut).toBe(true)
+    expect(localStorage.getItem('lf_tours_opted_out')).toBe('true')
   })
 })
