@@ -1,3 +1,4 @@
+import { validateWorkflowNodeConfig } from '@lenserfight/infra/execution/catalog'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SupabaseClient } from '@supabase/supabase-js'
 
@@ -7,6 +8,7 @@ import { fail, ok } from '../../types.js'
 import { registerMcpTool } from '../register-tool.js'
 import { getToolMeta } from '../tool-metadata.js'
 import { p } from '../tool-params.js'
+
 import { TRIGGER_NODE_TYPE_SET as TRIGGER_TYPES } from './workflow-trigger-node-types.js'
 
 const meta = getToolMeta('validate_workflow')
@@ -35,9 +37,13 @@ function asNonEmptyString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null
 }
 
-function getNodeKind(node: Record<string, unknown>): ValidatedNode['kind'] {
+function getConfigNodeType(node: Record<string, unknown>): string | null {
   const config = asRecord(node.config)
-  const nodeType = asNonEmptyString(config.node_type) ?? asNonEmptyString(config.nodeType)
+  return asNonEmptyString(config.node_type) ?? asNonEmptyString(config.nodeType)
+}
+
+function getNodeKind(node: Record<string, unknown>): ValidatedNode['kind'] {
+  const nodeType = getConfigNodeType(node)
   if (nodeType && TRIGGER_TYPES.has(nodeType)) return 'trigger'
   if (node.lens_id) return 'lens'
   if (nodeType) return 'tool'
@@ -86,6 +92,23 @@ export function validateWorkflowGraph(graph: WorkflowGraph) {
         message: `Node ${getNodeName(node, index)} has neither a Lens nor a supported node type.`,
         node_id: id,
       })
+    } else if (kind === 'tool' || kind === 'trigger') {
+      const nodeType = getConfigNodeType(node)
+      const configValidation = validateWorkflowNodeConfig(nodeType, config)
+      if (configValidation.unknownType) {
+        errors.push({
+          code: 'NODE_TYPE_UNKNOWN',
+          message: `Node ${getNodeName(node, index)} uses node type "${nodeType}", which is not in the workflow node catalog.`,
+          node_id: id,
+        })
+      }
+      for (const fieldKey of configValidation.missingRequiredFields) {
+        errors.push({
+          code: 'NODE_CONFIG_FIELD_MISSING',
+          message: `Node ${getNodeName(node, index)} is missing required config field "${fieldKey}".`,
+          node_id: id,
+        })
+      }
     }
 
     nodeById.set(id, {
