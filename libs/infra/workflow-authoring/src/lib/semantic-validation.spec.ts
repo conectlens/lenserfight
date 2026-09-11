@@ -29,6 +29,27 @@ describe('validateWorkflowSemantics', () => {
     expect(result.resolvedSteps).toHaveLength(1)
   })
 
+  it('accepts a custom lens title with a literal parameter value', () => {
+    const result = validateWorkflowSemantics(
+      build({
+        lenses: [{ ref: 'weekly-digest', title: 'Weekly Digest' }],
+        steps: [
+          { step: 1, kind: 'trigger', name: 'Manual Trigger' },
+          {
+            step: 2,
+            kind: 'lens',
+            name: 'Weekly Digest',
+            lensRef: 'weekly-digest',
+            parameters: { Tone: 'concise' },
+          },
+        ],
+      }),
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.resolvedSteps?.[1]?.resolution.entry.type).toBe('lens')
+  })
+
   it('rejects duplicate step numbers', () => {
     const document = build({
       steps: [

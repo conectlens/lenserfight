@@ -11,7 +11,6 @@
  * path and the execution path drift apart, which is exactly how a workflow
  * ends up importable but unrunnable.
  */
-import { validateWorkflow, type ValidationEdgeShape, type ValidationNodeShape } from '@lenserfight/infra/execution'
 import {
   parseConnectionEndpoint,
   protocolIssue,
@@ -19,6 +18,7 @@ import {
   type WorkflowProtocolIssue,
   type WorkflowStep,
 } from '@lenserfight/domain/workflow-protocol'
+import { validateWorkflow, type ValidationEdgeShape, type ValidationNodeShape } from '@lenserfight/infra/execution'
 
 import {
   catalogOutputKeys,
@@ -328,11 +328,14 @@ function runGraphValidation(
   document: WorkflowDocument,
   resolvedSteps: ResolvedStep[],
 ): WorkflowProtocolIssue[] {
-  const nodes: ValidationNodeShape[] = resolvedSteps.map(({ step, resolution, nodeKey }) => ({
+  // Step parameters are concrete values that persistence writes into
+  // param_overrides. They are already bound, so presenting their keys as
+  // unresolved template labels would make every literal parameter fail the
+  // execution validator's binding-completeness check.
+  const nodes: ValidationNodeShape[] = resolvedSteps.map(({ resolution, nodeKey }) => ({
     id: nodeKey,
     kind: resolution.entry.type,
     ...(isLensCatalogEntry(resolution.entry) ? { lensId: nodeKey } : {}),
-    paramLabels: Object.keys(step.parameters ?? {}),
   }))
 
   const edges: ValidationEdgeShape[] = []
