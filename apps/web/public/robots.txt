@@ -110,4 +110,4 @@ Disallow: /notifications
 Disallow: /onboarding
 Disallow: /settings/
 
-Sitemap: https://moon.lenserfight.com/sitemap.xml
+Sitemap: https://moon.lenserfight.win/sitemap.xml

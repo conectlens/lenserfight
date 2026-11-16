@@ -156,7 +156,7 @@ describe('rgb', () => {
 // escape sequence in color mode and degrade gracefully in plain-text mode.
 
 describe('hyperlink — OSC 8 rendering', () => {
-  const URL = 'https://docs.lenserfight.com/guides/auth/login'
+  const URL = 'https://docs.lenserfight.win/guides/auth/login'
   const LABEL = 'Auth guide'
 
   it('emits OSC 8 opening sequence \x1b]8;; in color mode', () => {

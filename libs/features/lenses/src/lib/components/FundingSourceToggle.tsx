@@ -109,7 +109,7 @@ function chainabitStatusSubtitle(
 function ChainabitLogo({ size = 16 }: { size?: number }) {
   return (
     <img
-      src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+      src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png"
       width={size}
       height={size}
       alt="Chainabit"
@@ -144,7 +144,7 @@ function mapGatewayError(err: unknown, op: 'save' | 'update'): string {
     case 'gateway_unreachable':
       return 'Gateway is not running. Start it with `lf gateway serve`.'
     case 'gateway_forbidden':
-      return 'Gateway refused this origin. Add this URL to the allow-list, or open the app at https://lenserfight.com / a permitted origin.'
+      return 'Gateway refused this origin. Add this URL to the allow-list, or open the app at https://lenserfight.win / a permitted origin.'
     case 'gateway_rate_limited':
       return 'Too many requests to the gateway. Wait a minute and retry.'
     case 'passphrase_missing':

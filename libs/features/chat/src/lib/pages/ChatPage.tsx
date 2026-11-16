@@ -28,7 +28,7 @@ function ChainabitIcon({ size = 18, className = '' }: { size?: number; className
       style={{ width: size, height: size }}
     >
       <img
-        src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+        src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png"
         width={size}
         height={size}
         alt=""

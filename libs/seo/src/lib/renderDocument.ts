@@ -8,7 +8,7 @@ import type { SEOMetadata } from './meta/seoService'
 
 const SITE_NAME = 'LenserFight'
 const TWITTER_HANDLE = '@lenserfight'
-const OG_IMAGE_DEFAULT = 'https://moon.lenserfight.com/og-banner.png'
+const OG_IMAGE_DEFAULT = 'https://moon.lenserfight.win/og-banner.png'
 
 export interface SeoDocument {
   meta: SEOMetadata

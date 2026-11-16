@@ -24,7 +24,7 @@ export const BEARER_KEYCHAIN_ACCOUNT = 'web-pair'
  * other gateway endpoints (a 403 is returned otherwise). The list covers
  * three deployment realities:
  *
- *  - Production: `lenserfight.com` and any first-party subdomain.
+ *  - Production: `lenserfight.win` and any first-party subdomain.
  *  - Local dev:  `localhost` and `127.0.0.1` on any port.
  *  - Self-host / Tailscale / LAN: Tailscale CGNAT (100.64.0.0/10), RFC 1918
  *    private network ranges (10/8, 172.16/12, 192.168/16), and `.local`

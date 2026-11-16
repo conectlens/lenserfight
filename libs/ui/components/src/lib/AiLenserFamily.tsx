@@ -2,7 +2,7 @@ import React from 'react'
 import { Badge } from './Badge'
 import { useTranslation } from 'react-i18next'
 
-const CDN_AI = 'https://cdn.lenserfight.com/brand/lensers/AI'
+const CDN_AI = 'https://cdn.lenserfight.win/brand/lensers/AI'
 
 const MASCOTS = [
   { src: `${CDN_AI}/CHAO.png`, name: 'CHAO', role: 'Builder & Architect AI Lenser' },

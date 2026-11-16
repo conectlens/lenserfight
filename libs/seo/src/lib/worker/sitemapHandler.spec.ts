@@ -7,8 +7,8 @@ import {
 import type { SupabaseAnonConfig } from '../fetchers'
 
 const config: SitemapConfig = {
-  canonicalBase: 'https://moon.lenserfight.com',
-  staticRoutes: [{ loc: 'https://moon.lenserfight.com/', changefreq: 'daily', priority: '1.0' }],
+  canonicalBase: 'https://moon.lenserfight.win',
+  staticRoutes: [{ loc: 'https://moon.lenserfight.win/', changefreq: 'daily', priority: '1.0' }],
   recentWindowHours: 48,
 }
 
@@ -81,7 +81,7 @@ describe('handleSitemap entity shard', () => {
     // createSeoWorker), not by the content-type itself.
     expect(res.contentType).toBe('application/xml; charset=utf-8')
     const text = await gunzip(res.body as Uint8Array)
-    expect(text).toContain('<loc>https://moon.lenserfight.com/lenses/abc</loc>')
+    expect(text).toContain('<loc>https://moon.lenserfight.win/lenses/abc</loc>')
     expect(text).toContain('<lastmod>2026-07-15</lastmod>')
   })
 

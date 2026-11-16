@@ -18,7 +18,7 @@ import type { CliErrorKind } from './error-taxonomy'
 
 // ─── Base URL ────────────────────────────────────────────────────────────────
 
-const BASE = 'https://docs.lenserfight.com'
+const BASE = 'https://docs.lenserfight.win'
 
 // ─── Docs registry ────────────────────────────────────────────────────────────
 
@@ -113,7 +113,7 @@ export function docsKeyForKind(kind: CliErrorKind): string {
  *
  * Examples:
  *   formatDocLink('auth-login')
- *   → "\x1b]8;;https://docs.lenserfight.com/guides/auth/login\x1b\\docs → auth/login\x1b]8;;\x1b\\"
+ *   → "\x1b]8;;https://docs.lenserfight.win/guides/auth/login\x1b\\docs → auth/login\x1b]8;;\x1b\\"
  *
  *   formatDocLink('auth-login', 'Sign in guide')
  *   → "\x1b]8;;https://...\x1b\\Sign in guide\x1b]8;;\x1b\\"

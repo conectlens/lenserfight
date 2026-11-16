@@ -1,6 +1,6 @@
 # Chainabit Connector Example
 
-**Chainabit** is the private commercial API platform that powers [lenserfight.com](https://lenserfight.com). It is closed-source and not part of this repository. This example shows how an external service integrates with LenserFight's public connector SDK — Chainabit is used here as the reference implementor because it is the canonical consumer of the connector interface.
+**Chainabit** is the private commercial API platform that powers [lenserfight.win](https://lenserfight.win). It is closed-source and not part of this repository. This example shows how an external service integrates with LenserFight's public connector SDK — Chainabit is used here as the reference implementor because it is the canonical consumer of the connector interface.
 
 Reference integration for LenserFight connectors. Demonstrates the full lifecycle:
 

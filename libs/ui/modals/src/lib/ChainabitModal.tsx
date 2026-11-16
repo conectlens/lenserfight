@@ -30,7 +30,7 @@ function classifyConnectError(err: unknown): ConnectErrorKind {
 function ChainabitLogo() {
   return (
     <img
-      src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+      src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png"
       width={28}
       height={28}
       alt="Chainabit"

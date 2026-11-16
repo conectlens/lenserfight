@@ -110,7 +110,7 @@ describe('auth login', () => {
 
   it('falls back to browser login when no credentials provided', async () => {
     mockRequestDeviceLogin.mockResolvedValue({ verificationUri: '/auth/device/verify?code=ABC', deviceCode: 'dev123', interval: 5, expiresIn: 300 } as never)
-    mockBuildAuthAppUrl.mockReturnValue('https://app.lenserfight.com/auth/device/verify?code=ABC')
+    mockBuildAuthAppUrl.mockReturnValue('https://app.lenserfight.win/auth/device/verify?code=ABC')
     mockWaitForSessionLogin.mockResolvedValue({ expiresAt: '2026-12-01T00:00:00Z' } as never)
 
     await loginCmd.run?.({ args: {}, cmd: {}, rawArgs: [] })

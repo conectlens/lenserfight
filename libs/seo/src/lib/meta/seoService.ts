@@ -19,11 +19,11 @@ export interface SEOMetadata {
 
 const SITE_NAME = 'LenserFight'
 /** Host that actually serves community + battle entities (apps/web). */
-const FORUM_HOST = 'https://moon.lenserfight.com'
+const FORUM_HOST = 'https://moon.lenserfight.win'
 /** Apex marketing site (different app) — reserved for genuine cross-links only, not entity canonicals. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ARENA_HOST = 'https://lenserfight.com'
-const DOCS_HOST = 'https://docs.lenserfight.com'
+const ARENA_HOST = 'https://lenserfight.win'
+const DOCS_HOST = 'https://docs.lenserfight.win'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
 const ARENA_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
 const DEFAULT_TITLE = 'LenserFight Community | AI Lenses, Workflows, Battles, and Lensers'

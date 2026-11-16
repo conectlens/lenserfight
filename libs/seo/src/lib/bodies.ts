@@ -7,7 +7,7 @@
 import { escapeAttr, escapeHtml } from './html'
 import { entityPath } from './routes'
 
-const BASE = 'https://moon.lenserfight.com'
+const BASE = 'https://moon.lenserfight.win'
 
 export interface Fact {
   label: string

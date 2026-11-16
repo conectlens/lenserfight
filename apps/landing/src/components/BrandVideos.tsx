@@ -2,9 +2,9 @@ import React from 'react'
 
 import { MediaShowcaseTour, type MediaShowcaseTourSlide } from './MediaShowcase'
 
-const CDN_L = 'https://cdn.lenserfight.com/product/lenses'
-const CDN_B = 'https://cdn.lenserfight.com/product/battles'
-const CDN_P = 'https://cdn.lenserfight.com/product/pages'
+const CDN_L = 'https://cdn.lenserfight.win/product/lenses'
+const CDN_B = 'https://cdn.lenserfight.win/product/battles'
+const CDN_P = 'https://cdn.lenserfight.win/product/pages'
 
 const SLIDES: ReadonlyArray<MediaShowcaseTourSlide> = [
   {
@@ -68,7 +68,7 @@ const SLIDES: ReadonlyArray<MediaShowcaseTourSlide> = [
 export const BrandVideos: React.FC = () => (
   <div className="flex flex-col items-center justify-center space-y-16">
     <div className="px-4 flex w-full justify-center">
-      <video src="https://cdn.lenserfight.com/product/videos/introduction.mp4" width="720" aria-label="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents " autoPlay muted loop playsInline className="rounded-3xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 max-w-full" />
+      <video src="https://cdn.lenserfight.win/product/videos/introduction.mp4" width="720" aria-label="LenserFight — AI Prompt Framework & Workflow Engine & AI Benchmarking & AI Forum & Agent Lab & Agent Playground & Community-Driven Evaluations & AI Agents " autoPlay muted loop playsInline className="rounded-3xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 max-w-full" />
     </div>
     <MediaShowcaseTour slides={SLIDES} i18nNamespace="demo" i18nPrefix="brandTour" />
   </div>

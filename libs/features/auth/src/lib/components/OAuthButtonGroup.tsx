@@ -62,7 +62,7 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
             title={isLocal ? "OAuth is disabled in localhost development" : "Continue with Chainabit"}
           >
             <img
-              src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+              src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png"
               width={20}
               height={20}
               alt="Chainabit"

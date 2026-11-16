@@ -20,7 +20,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
 }))
 
 vi.mock('@lenserfight/utils/env', () => ({
-  AUTH_BASE_URL: 'https://auth.lenserfight.com',
+  AUTH_BASE_URL: 'https://auth.lenserfight.win',
 }))
 
 vi.mock('@lenserfight/data/repositories', () => ({
@@ -114,13 +114,13 @@ describe('connectorApiClient.connect', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(window.location as any).href = ''
 
-    await connectorApiClient.connect('https://lenserfight.com/settings')
+    await connectorApiClient.connect('https://lenserfight.win/settings')
 
     expect(mockAuth.linkIdentity).toHaveBeenCalledWith({
       provider: 'custom:chainabit',
       options: {
         redirectTo:
-          'https://auth.lenserfight.com/callback?return_url=https%3A%2F%2Flenserfight.com%2Fsettings',
+          'https://auth.lenserfight.win/callback?return_url=https%3A%2F%2Flenserfight.win%2Fsettings',
       },
     })
     expect(window.location.href).toBe('https://auth.chainabit.com/oauth')

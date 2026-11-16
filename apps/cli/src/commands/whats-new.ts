@@ -5,7 +5,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { currentScriptUrl } from '../lib/current-script-url';
 
-const CHANGELOG_LINK = 'https://docs.lenserfight.com/en/changelog';
+const CHANGELOG_LINK = 'https://docs.lenserfight.win/en/changelog';
 
 // Same '## [version] - date' heading format as CHANGELOG.md used to have —
 // see tools/changelog/src/build-product-changelog.mjs `cutRelease`.

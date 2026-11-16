@@ -93,7 +93,7 @@ const LOCAL_SERVICE_KEY =
 
 /** PostgREST + Edge Functions path on any Supabase project URL. */
 export const SUPABASE_EDGE_FUNCTIONS_SUFFIX = '/functions/v1';
-export const PRODUCTION_AUTH_BASE_URL = 'https://auth.lenserfight.com';
+export const PRODUCTION_AUTH_BASE_URL = 'https://auth.lenserfight.win';
 
 /** Official LenserFight Cloud Supabase project (public client credentials). */
 export const PRODUCTION_SUPABASE_URL = 'https://jrjlbycxihqqbwmsmpjn.supabase.co';

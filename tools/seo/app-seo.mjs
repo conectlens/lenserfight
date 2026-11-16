@@ -94,17 +94,17 @@ function buildFaqMainEntity(locale) {
 const ORGANIZATION = {
   '@type': 'Organization',
   name: 'LenserFight',
-  url: 'https://lenserfight.com',
+  url: 'https://lenserfight.win',
   logo: {
     '@type': 'ImageObject',
-    url: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
+    url: 'https://cdn.lenserfight.win/brand/lenserfight-logo.png',
     width: 512,
     height: 512,
   },
   sameAs: [
     'https://github.com/conectlens/lenserfight',
-    'https://docs.lenserfight.com',
-    'https://lenserfight.com',
+    'https://docs.lenserfight.win',
+    'https://lenserfight.win',
   ],
 }
 
@@ -207,7 +207,7 @@ const webStaticRoutes = [
       { name: 'Browse AI lenses', path: '/lenses' },
       { name: 'Explore Lensers', path: '/lensers' },
       { name: 'Watch AI battles', path: '/battles' },
-      { name: 'Open docs', url: 'https://docs.lenserfight.com/en/' },
+      { name: 'Open docs', url: 'https://docs.lenserfight.win/en/' },
     ],
   },
   {
@@ -227,7 +227,7 @@ const webStaticRoutes = [
     links: [
       { name: 'Workflow templates', path: '/workflows/templates' },
       { name: 'Ray cloud', path: '/ray' },
-      { name: 'Template authoring guide', url: 'https://docs.lenserfight.com/en/how-to/contributors/template-authoring' },
+      { name: 'Template authoring guide', url: 'https://docs.lenserfight.win/en/how-to/contributors/template-authoring' },
     ],
   },
   {
@@ -265,7 +265,7 @@ const webStaticRoutes = [
     links: [
       { name: 'Lenserboard', path: '/lenserboard' },
       { name: 'AI agents', path: '/agents' },
-      { name: 'Creator profiles docs', url: 'https://docs.lenserfight.com/en/explanation/community/creator-profiles' },
+      { name: 'Creator profiles docs', url: 'https://docs.lenserfight.win/en/explanation/community/creator-profiles' },
     ],
   },
   {
@@ -284,7 +284,7 @@ const webStaticRoutes = [
     links: [
       { name: 'Public Lensers', path: '/lensers' },
       { name: 'Battles', path: '/battles' },
-      { name: 'Leaderboard docs', url: 'https://docs.lenserfight.com/en/reference/cli/leaderboard' },
+      { name: 'Leaderboard docs', url: 'https://docs.lenserfight.win/en/reference/cli/leaderboard' },
     ],
   },
   {
@@ -303,7 +303,7 @@ const webStaticRoutes = [
     links: [
       { name: 'AI lenses', path: '/lenses' },
       { name: 'Public threads', path: '/threads' },
-      { name: 'Ray cloud docs', url: 'https://docs.lenserfight.com/en/explanation/community/ray-cloud' },
+      { name: 'Ray cloud docs', url: 'https://docs.lenserfight.win/en/explanation/community/ray-cloud' },
     ],
   },
   {
@@ -322,7 +322,7 @@ const webStaticRoutes = [
     links: [
       { name: 'Battle discovery', path: '/battles/browse' },
       { name: 'Battle templates', path: '/battles/templates' },
-      { name: 'Battle docs', url: 'https://docs.lenserfight.com/en/how-to/battles/create-a-battle' },
+      { name: 'Battle docs', url: 'https://docs.lenserfight.win/en/how-to/battles/create-a-battle' },
     ],
   },
   {
@@ -341,7 +341,7 @@ const webStaticRoutes = [
     links: [
       { name: 'Live battle feed', path: '/battles' },
       { name: 'Arena view', path: '/battles/arena' },
-      { name: 'Battle integrity checklist', url: 'https://docs.lenserfight.com/en/how-to/battles/battle-integrity-checklist' },
+      { name: 'Battle integrity checklist', url: 'https://docs.lenserfight.win/en/how-to/battles/battle-integrity-checklist' },
     ],
   },
   {
@@ -360,7 +360,7 @@ const webStaticRoutes = [
     links: [
       { name: 'Browse battles', path: '/battles/browse' },
       { name: 'Battle templates', path: '/battles/templates' },
-      { name: 'Vote and judge docs', url: 'https://docs.lenserfight.com/en/how-to/battles/vote-and-judge' },
+      { name: 'Vote and judge docs', url: 'https://docs.lenserfight.win/en/how-to/battles/vote-and-judge' },
     ],
   },
   {
@@ -378,8 +378,8 @@ const webStaticRoutes = [
     ],
     links: [
       { name: 'Create battle', path: '/battles/create' },
-      { name: 'Battle schema reference', url: 'https://docs.lenserfight.com/en/reference/battles/schema' },
-      { name: 'Template guide', url: 'https://docs.lenserfight.com/en/how-to/contributors/workflow-template-guide' },
+      { name: 'Battle schema reference', url: 'https://docs.lenserfight.win/en/reference/battles/schema' },
+      { name: 'Template guide', url: 'https://docs.lenserfight.win/en/how-to/contributors/workflow-template-guide' },
     ],
   },
   {
@@ -397,7 +397,7 @@ const webStaticRoutes = [
     ],
     links: [
       { name: 'Workflow templates', path: '/workflows/templates' },
-      { name: 'Build a lens chain', url: 'https://docs.lenserfight.com/en/how-to/workflows/build-a-lens-chain' },
+      { name: 'Build a lens chain', url: 'https://docs.lenserfight.win/en/how-to/workflows/build-a-lens-chain' },
     ],
   },
   {
@@ -415,7 +415,7 @@ const webStaticRoutes = [
     ],
     links: [
       { name: 'AI workflows', path: '/workflows' },
-      { name: 'Workflow template getting started', url: 'https://docs.lenserfight.com/en/how-to/contributors/workflow-template-getting-started' },
+      { name: 'Workflow template getting started', url: 'https://docs.lenserfight.win/en/how-to/contributors/workflow-template-getting-started' },
     ],
   },
   {
@@ -433,7 +433,7 @@ const webStaticRoutes = [
     ],
     links: [
       { name: 'Model list', path: '/ai/catalog/models' },
-      { name: 'AI providers reference', url: 'https://docs.lenserfight.com/en/reference/ai-providers' },
+      { name: 'AI providers reference', url: 'https://docs.lenserfight.win/en/reference/ai-providers' },
     ],
   },
   {
@@ -451,7 +451,7 @@ const webStaticRoutes = [
     ],
     links: [
       { name: 'Provider catalog', path: '/ai/catalog' },
-      { name: 'AI models reference', url: 'https://docs.lenserfight.com/en/reference/ai-models' },
+      { name: 'AI models reference', url: 'https://docs.lenserfight.win/en/reference/ai-models' },
     ],
   },
 ]
@@ -475,7 +475,7 @@ const landingStaticRoutes = [
       { name: 'Product overview', path: '/product' },
       { name: 'Battle showcase', path: '/battle-showcase' },
       { name: 'Get started', path: '/get-started' },
-      { name: 'Docs', url: 'https://docs.lenserfight.com/en/' },
+      { name: 'Docs', url: 'https://docs.lenserfight.win/en/' },
     ],
   },
   {
@@ -494,7 +494,7 @@ const landingStaticRoutes = [
     links: [
       { name: 'CLI product', path: '/product/cli' },
       { name: 'Mobile app', path: '/product/mobile' },
-      { name: 'Battle docs', url: 'https://docs.lenserfight.com/en/reference/battles/index' },
+      { name: 'Battle docs', url: 'https://docs.lenserfight.win/en/reference/battles/index' },
     ],
   },
   {
@@ -511,8 +511,8 @@ const landingStaticRoutes = [
       'Built for reproducible AI experiments and open-source contribution workflows',
     ],
     links: [
-      { name: 'CLI reference', url: 'https://docs.lenserfight.com/en/reference/cli/index' },
-      { name: 'CLI getting started', url: 'https://docs.lenserfight.com/en/tutorials/getting-started/cli-getting-started' },
+      { name: 'CLI reference', url: 'https://docs.lenserfight.win/en/reference/cli/index' },
+      { name: 'CLI getting started', url: 'https://docs.lenserfight.win/en/tutorials/getting-started/cli-getting-started' },
     ],
   },
   {
@@ -529,7 +529,7 @@ const landingStaticRoutes = [
       'Designed to keep public battle results and AI creator activity easy to follow',
     ],
     links: [
-      { name: 'Community hub', url: 'https://docs.lenserfight.com/en/explanation/community/community-hub' },
+      { name: 'Community hub', url: 'https://docs.lenserfight.win/en/explanation/community/community-hub' },
       { name: 'Get started', path: '/get-started' },
     ],
   },
@@ -547,8 +547,8 @@ const landingStaticRoutes = [
       'A public entry point for AI comparison, battle results, and evaluation template discovery',
     ],
     links: [
-      { name: 'Create a battle', url: 'https://docs.lenserfight.com/en/how-to/battles/create-a-battle' },
-      { name: 'Battle schema', url: 'https://docs.lenserfight.com/en/reference/battles/schema' },
+      { name: 'Create a battle', url: 'https://docs.lenserfight.win/en/how-to/battles/create-a-battle' },
+      { name: 'Battle schema', url: 'https://docs.lenserfight.win/en/reference/battles/schema' },
     ],
   },
   {
@@ -565,8 +565,8 @@ const landingStaticRoutes = [
       'Designed for both no-code community builders and developer-first local workflows',
     ],
     links: [
-      { name: 'Getting started docs', url: 'https://docs.lenserfight.com/en/getting-started' },
-      { name: 'Developer setup', url: 'https://docs.lenserfight.com/en/how-to/contributors/development-setup' },
+      { name: 'Getting started docs', url: 'https://docs.lenserfight.win/en/getting-started' },
+      { name: 'Developer setup', url: 'https://docs.lenserfight.win/en/how-to/contributors/development-setup' },
     ],
   },
   {
@@ -601,7 +601,7 @@ const landingStaticRoutes = [
       'Built for public discovery, GitHub contribution, AI experimentation, and transparent evaluation',
     ],
     links: [
-      { name: 'Community model', url: 'https://docs.lenserfight.com/en/explanation/community/open-core-model' },
+      { name: 'Community model', url: 'https://docs.lenserfight.win/en/explanation/community/open-core-model' },
       { name: 'GitHub', url: 'https://github.com/conectlens/lenserfight' },
     ],
   },
@@ -637,8 +637,8 @@ const landingStaticRoutes = [
       'Connects product concepts to docs, GitHub contribution, local development, and public discovery',
     ],
     links: [
-      { name: 'Docs', url: 'https://docs.lenserfight.com/en/' },
-      { name: 'Support docs', url: 'https://docs.lenserfight.com/en/how-to/contributors/support' },
+      { name: 'Docs', url: 'https://docs.lenserfight.win/en/' },
+      { name: 'Support docs', url: 'https://docs.lenserfight.win/en/how-to/contributors/support' },
       { name: 'Roadmap', path: '/roadmap' },
     ],
   },
@@ -719,7 +719,7 @@ const landingStaticRoutes = [
     sections: ['Safety rules for public AI battles, agents, workflow automation, generated content, and community participation.'],
     links: [
       { name: 'Terms', path: '/policies/terms' },
-      { name: 'Security docs', url: 'https://docs.lenserfight.com/en/how-to/contributors/security' },
+      { name: 'Security docs', url: 'https://docs.lenserfight.win/en/how-to/contributors/security' },
     ],
   },
 ]
@@ -790,8 +790,8 @@ const dynamicRoutePatterns = {
 const apps = {
   web: {
     name: 'LenserFight Community',
-    baseUrl: 'https://moon.lenserfight.com',
-    ogImage: 'https://moon.lenserfight.com/og-banner.png',
+    baseUrl: 'https://moon.lenserfight.win',
+    ogImage: 'https://moon.lenserfight.win/og-banner.png',
     routes: webStaticRoutes,
     disallow: [
       '/admin/',
@@ -814,8 +814,8 @@ const apps = {
   },
   landing: {
     name: 'LenserFight Arena',
-    baseUrl: 'https://lenserfight.com',
-    ogImage: 'https://lenserfight.com/og-banner.png',
+    baseUrl: 'https://lenserfight.win',
+    ogImage: 'https://lenserfight.win/og-banner.png',
     routes: landingStaticRoutes,
     disallow: ['/auth/', '/contact'],
     locales: LANDING_ENABLED_LOCALES,

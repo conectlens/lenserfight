@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
-const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.win'
 
 const STEPS = [
   { icon: BookOpen, step: '01', href: `${AUTH_APP_URL}/register`, external: true },

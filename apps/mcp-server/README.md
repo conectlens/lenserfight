@@ -30,7 +30,7 @@ MCP separates **servers** (tools that expose capabilities) from **clients** (the
 
 | Mode | Use Case | Entry point | URL |
 |---|---|---|---|
-| **Cloudflare Worker** | Claude.ai web — production | `src/worker.ts` | `https://mcp.lenserfight.com/mcp` |
+| **Cloudflare Worker** | Claude.ai web — production | `src/worker.ts` | `https://mcp.lenserfight.win/mcp` |
 | **stdio** | Claude Code CLI, Cursor desktop | `src/main.ts` | No URL (process pipes) |
 | **HTTP local** | Claude.ai web connector via ngrok | `src/main.ts` | `http://localhost:3001/mcp` |
 
@@ -45,10 +45,10 @@ Claude.ai
     │  1. GET /.well-known/oauth-protected-resource
     │  2. GET /.well-known/oauth-authorization-server
     ▼
-mcp.lenserfight.com  (Cloudflare Worker)
-    │  3. GET /oauth/authorize  →  redirect to auth.lenserfight.com/mcp/auth
+mcp.lenserfight.win  (Cloudflare Worker)
+    │  3. GET /oauth/authorize  →  redirect to auth.lenserfight.win/mcp/auth
     ▼
-auth.lenserfight.com  (consent page)
+auth.lenserfight.win  (consent page)
     │  4. User signs in, clicks Allow
     │  5. POST /oauth/complete  →  server issues lf_mcp_* token
     │  6. POST /oauth/token     →  Claude exchanges code for access token
@@ -71,8 +71,8 @@ Worker validates token via fn_mcp_resolve_token RPC
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key — bypasses RLS for OAuth operations |
 | `SUPABASE_ANON_KEY` | Yes | Anon key — used to create user-scoped clients from refresh tokens |
 | `SUPABASE_JWT_SECRET` | Yes | Validates Supabase JWTs in HTTP transport |
-| `MCP_OAUTH_BASE_URL` | Worker/HTTP | Public base URL (`https://mcp.lenserfight.com` in prod) |
-| `AUTH_APP_BASE_URL` | Worker/HTTP | Consent page URL (`https://auth.lenserfight.com` in prod) |
+| `MCP_OAUTH_BASE_URL` | Worker/HTTP | Public base URL (`https://mcp.lenserfight.win` in prod) |
+| `AUTH_APP_BASE_URL` | Worker/HTTP | Consent page URL (`https://auth.lenserfight.win` in prod) |
 | `LENSERFIGHT_LENSER_ID` | No | Scope stdio tool calls to a specific lenser UUID |
 | `MCP_TRANSPORT` | No | `stdio` (default) or `http` |
 | `MCP_HTTP_PORT` | No | HTTP port for local mode (default: `3001`) |
@@ -81,7 +81,7 @@ Worker validates token via fn_mcp_resolve_token RPC
 
 ## Setup — Cloudflare Worker (Production)
 
-The worker entry point (`src/worker.ts`) uses the Fetch API and shares all tool/service/OAuth logic with the Node server. It is the **source of truth for the production MCP endpoint** at `https://mcp.lenserfight.com`.
+The worker entry point (`src/worker.ts`) uses the Fetch API and shares all tool/service/OAuth logic with the Node server. It is the **source of truth for the production MCP endpoint** at `https://mcp.lenserfight.win`.
 
 ### Step 1 — Fill in `.env.local`
 
@@ -119,7 +119,7 @@ This runs `worker-build` (esbuild → `dist/apps/mcp-server/worker.js`) then `wr
 ### Step 4 — Verify
 
 ```bash
-curl https://mcp.lenserfight.com/health
+curl https://mcp.lenserfight.win/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 

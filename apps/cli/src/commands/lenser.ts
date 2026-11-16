@@ -306,7 +306,7 @@ const suggested = defineCommand({
   async run({ args }) {
     try {
       const selfId = await resolveSelfProfileId();
-      if (!selfId) { consola.warn('No lenser profile found. Create one at lenserfight.com first.'); return; }
+      if (!selfId) { consola.warn('No lenser profile found. Create one at lenserfight.win first.'); return; }
       const results = await callRpc<Array<Record<string, unknown>>>(
         'fn_lensers_get_suggested',
         { p_lenser_id: selfId, p_limit: parseInt(args.limit, 10) },

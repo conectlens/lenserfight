@@ -17,15 +17,15 @@ async function gunzip(bytes: Uint8Array): Promise<string> {
 describe('renderUrlset', () => {
   it('emits <loc> and honest <lastmod> per entry', () => {
     const xml = renderUrlset([
-      { loc: 'https://moon.lenserfight.com/lenses/a', lastmod: '2026-07-15' },
+      { loc: 'https://moon.lenserfight.win/lenses/a', lastmod: '2026-07-15' },
     ])
-    expect(xml).toContain('<loc>https://moon.lenserfight.com/lenses/a</loc>')
+    expect(xml).toContain('<loc>https://moon.lenserfight.win/lenses/a</loc>')
     expect(xml).toContain('<lastmod>2026-07-15</lastmod>')
     expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true)
   })
 
   it('escapes & in a loc to &amp;', () => {
-    const xml = renderUrlset([{ loc: 'https://moon.lenserfight.com/ray/a&b' }])
+    const xml = renderUrlset([{ loc: 'https://moon.lenserfight.win/ray/a&b' }])
     expect(xml).toContain('/ray/a&amp;b')
     expect(xml).not.toMatch(/a&b/)
   })
@@ -59,8 +59,8 @@ describe('renderUrlset', () => {
 describe('renderSitemapIndex', () => {
   it('references each child with its lastmod', () => {
     const xml = renderSitemapIndex([
-      { loc: 'https://moon.lenserfight.com/sitemaps/lenses-1.xml.gz', lastmod: '2026-07-15' },
-      { loc: 'https://moon.lenserfight.com/sitemaps/recent.xml' },
+      { loc: 'https://moon.lenserfight.win/sitemaps/lenses-1.xml.gz', lastmod: '2026-07-15' },
+      { loc: 'https://moon.lenserfight.win/sitemaps/recent.xml' },
     ])
     expect(xml).toContain('<sitemapindex')
     expect(xml).toContain('/sitemaps/lenses-1.xml.gz</loc>')
@@ -72,7 +72,7 @@ describe('renderSitemapIndex', () => {
 describe('gzipXml', () => {
   it('round-trips back to the input XML through DecompressionStream', async () => {
     const xml = renderUrlset([
-      { loc: 'https://moon.lenserfight.com/lenses/a', lastmod: '2026-07-15' },
+      { loc: 'https://moon.lenserfight.win/lenses/a', lastmod: '2026-07-15' },
     ])
     const gz = await gzipXml(xml)
     expect(gz).toBeInstanceOf(Uint8Array)

@@ -12,7 +12,7 @@ export interface DesktopFrameProps {
 
 export const DesktopFrame: React.FC<DesktopFrameProps> = ({
   title,
-  url = 'lenserfight.com',
+  url = 'lenserfight.win',
   label = 'Desktop preview',
   children,
   className = '',

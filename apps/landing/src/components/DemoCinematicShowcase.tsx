@@ -7,7 +7,7 @@ import { MediaShowcaseTour, type MediaShowcaseTourSlide } from './MediaShowcase'
 // Workspaces, CLI & Local Lab) don't have a real capture yet, so they stay
 // on the CDN placeholder rather than being mislabeled.
 const SHOTS = '/screenshots'
-const CDN = 'https://cdn.lenserfight.com/product'
+const CDN = 'https://cdn.lenserfight.win/product'
 
 const SLIDES: ReadonlyArray<MediaShowcaseTourSlide> = [
   {

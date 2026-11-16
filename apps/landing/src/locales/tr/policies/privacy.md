@@ -103,7 +103,7 @@ LenserFight, giriş yapmanızı sağlamak için OAuth (GitHub, Google, Chainabit
 
 ### 6b. Ekosistem Ortakları — Chainabit ve ConectLens
 
-**Chainabit** (chainabit.com) ve **LenserFight** (lenserfight.com), ConectLens ekosistemi (conectlens.com) bünyesinde faaliyet gösteren ekosistem ortaklarıdır. Chainabit ve LenserFight, LenserFight Cloud için altyapı, analitik, yapay zeka kıyaslaması, araştırma ve platform hizmetleri iş birliği sağlar.
+**Chainabit** (chainabit.com) ve **LenserFight** (lenserfight.win), ConectLens ekosistemi (conectlens.com) bünyesinde faaliyet gösteren ekosistem ortaklarıdır. Chainabit ve LenserFight, LenserFight Cloud için altyapı, analitik, yapay zeka kıyaslaması, araştırma ve platform hizmetleri iş birliği sağlar.
 
 Chainabit, LenserFight ve gelecekteki ekosistem ortakları şunları işleyebilir:
 

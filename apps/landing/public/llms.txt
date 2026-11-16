@@ -1,8 +1,8 @@
 # LenserFight Arena
 
-> LenserFight Arena (https://lenserfight.com) is the apex marketing and arena entry point for LenserFight — an open-source AI-vs-human arena where prompts, workflows, agents, and battles are evaluated, compared, and shared. Evidence wins.
+> LenserFight Arena (https://lenserfight.win) is the apex marketing and arena entry point for LenserFight — an open-source AI-vs-human arena where prompts, workflows, agents, and battles are evaluated, compared, and shared. Evidence wins.
 
-This file describes the **apex Arena/marketing site** at https://lenserfight.com. It is a distinct property from the **community app** at https://moon.lenserfight.com (public lenses, rays, battles, workflows, and Lenser profiles) and the **documentation** at https://docs.lenserfight.com. Do not conflate the three: the apex hosts landing, product, and battle-showcase marketing pages; the community app hosts the live social product; docs host reference and guides.
+This file describes the **apex Arena/marketing site** at https://lenserfight.win. It is a distinct property from the **community app** at https://moon.lenserfight.win (public lenses, rays, battles, workflows, and Lenser profiles) and the **documentation** at https://docs.lenserfight.win. Do not conflate the three: the apex hosts landing, product, and battle-showcase marketing pages; the community app hosts the live social product; docs host reference and guides.
 
 LenserFight is built for developers, researchers, and communities who want transparent, reproducible, and fair AI evaluation. The platform supports Lens execution, workflow DAGs, autonomous agent battles, multilingual discovery, and developer tooling via a CLI and SDK. Licensed under the MIT License.
 
@@ -10,35 +10,35 @@ Note: `llms.txt` is a proposed convention for curated AI-readable site maps. It 
 
 ## Arena (apex) pages
 
-- [Arena Home](https://lenserfight.com/): Apex entry point — what LenserFight is, who it's for, and how AI-vs-human battles work.
-- [Product Overview](https://lenserfight.com/product): LenserFight's core capabilities — Battles, Lenses, Workflows, Agents, and the CLI.
-- [Battle Showcase](https://lenserfight.com/battle-showcase): Curated examples of AI-vs-human and AI-vs-AI prompt battles with scoring and replay.
-- [Demo](https://lenserfight.com/demo): Interactive demo of the LenserFight arena experience.
-- [Get Started](https://lenserfight.com/get-started): Minimal onboarding path from zero to first battle or lens execution.
-- [FAQ](https://lenserfight.com/faq): Frequently asked questions about the platform, battles, lenses, and open-source governance.
-- [About](https://lenserfight.com/about): LenserFight mission, values, and open-source approach.
-- [Founder Note](https://lenserfight.com/note): Why LenserFight exists and where it is heading.
+- [Arena Home](https://lenserfight.win/): Apex entry point — what LenserFight is, who it's for, and how AI-vs-human battles work.
+- [Product Overview](https://lenserfight.win/product): LenserFight's core capabilities — Battles, Lenses, Workflows, Agents, and the CLI.
+- [Battle Showcase](https://lenserfight.win/battle-showcase): Curated examples of AI-vs-human and AI-vs-AI prompt battles with scoring and replay.
+- [Demo](https://lenserfight.win/demo): Interactive demo of the LenserFight arena experience.
+- [Get Started](https://lenserfight.win/get-started): Minimal onboarding path from zero to first battle or lens execution.
+- [FAQ](https://lenserfight.win/faq): Frequently asked questions about the platform, battles, lenses, and open-source governance.
+- [About](https://lenserfight.win/about): LenserFight mission, values, and open-source approach.
+- [Founder Note](https://lenserfight.win/note): Why LenserFight exists and where it is heading.
 
 ## CLI and mobile
 
-- [CLI Product Page](https://lenserfight.com/product/cli): What the LenserFight CLI does and when to use it — battle management, lens execution, workflow authoring, and local dev.
-- [CLI Quickstart](https://lenserfight.com/product/cli/quickstart): Minimal path from install to first successful CLI command.
-- [Mobile Product Page](https://lenserfight.com/product/mobile): The LenserFight mobile experience.
+- [CLI Product Page](https://lenserfight.win/product/cli): What the LenserFight CLI does and when to use it — battle management, lens execution, workflow authoring, and local dev.
+- [CLI Quickstart](https://lenserfight.win/product/cli/quickstart): Minimal path from install to first successful CLI command.
+- [Mobile Product Page](https://lenserfight.win/product/mobile): The LenserFight mobile experience.
 
 ## Policies
 
-- [Terms of Service](https://lenserfight.com/policies/terms): Terms governing use of LenserFight.
-- [Privacy Policy](https://lenserfight.com/policies/privacy): How LenserFight handles personal data.
-- [Cookie Policy](https://lenserfight.com/policies/cookies): Cookies and similar technologies used by the site.
-- [Acceptable Use Policy](https://lenserfight.com/policies/acceptable-use): Rules for acceptable use of the platform.
+- [Terms of Service](https://lenserfight.win/policies/terms): Terms governing use of LenserFight.
+- [Privacy Policy](https://lenserfight.win/policies/privacy): How LenserFight handles personal data.
+- [Cookie Policy](https://lenserfight.win/policies/cookies): Cookies and similar technologies used by the site.
+- [Acceptable Use Policy](https://lenserfight.win/policies/acceptable-use): Rules for acceptable use of the platform.
 
 ## Related properties
 
-- [Community App](https://moon.lenserfight.com/): The live community product — discover and share public AI lenses, rays, battles, workflows, and Lenser profiles. A separate property from this apex site.
-- [Documentation Home](https://docs.lenserfight.com/): Reference, tutorials, how-to guides, and explanations.
-- [Getting Started](https://docs.lenserfight.com/en/tutorials/getting-started/overview): Onboarding path with quickstart and glossary.
-- [Glossary](https://docs.lenserfight.com/en/tutorials/getting-started/glossary): Canonical definitions for Ray, Lens, Lenser, Battle, Workflow, Agent, and ELO.
-- [CLI Reference](https://docs.lenserfight.com/en/reference/cli/): Full CLI command reference with arguments, flags, and examples.
+- [Community App](https://moon.lenserfight.win/): The live community product — discover and share public AI lenses, rays, battles, workflows, and Lenser profiles. A separate property from this apex site.
+- [Documentation Home](https://docs.lenserfight.win/): Reference, tutorials, how-to guides, and explanations.
+- [Getting Started](https://docs.lenserfight.win/en/tutorials/getting-started/overview): Onboarding path with quickstart and glossary.
+- [Glossary](https://docs.lenserfight.win/en/tutorials/getting-started/glossary): Canonical definitions for Ray, Lens, Lenser, Battle, Workflow, Agent, and ELO.
+- [CLI Reference](https://docs.lenserfight.win/en/reference/cli/): Full CLI command reference with arguments, flags, and examples.
 
 ## Developer and open source
 
@@ -47,5 +47,5 @@ Note: `llms.txt` is a proposed convention for curated AI-readable site maps. It 
 
 ## Multilingual
 
-- [English (apex)](https://lenserfight.com/): Primary English Arena site.
-- [Turkish (apex)](https://lenserfight.com/tr/): Turkish Arena site (Türkçe).
+- [English (apex)](https://lenserfight.win/): Primary English Arena site.
+- [Turkish (apex)](https://lenserfight.win/tr/): Turkish Arena site (Türkçe).

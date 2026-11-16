@@ -726,7 +726,7 @@ export const LensDetailPage: React.FC = () => {
 
             <DesktopFrame
               title="Lens reader preview"
-              url={`lenserfight.com/lenses/${lens.id}`}
+              url={`lenserfight.win/lenses/${lens.id}`}
               label={
                 activeVersionLabel != null
                   ? typeof activeVersionLabel === 'number'

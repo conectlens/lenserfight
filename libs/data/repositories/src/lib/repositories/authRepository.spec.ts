@@ -24,7 +24,7 @@ vi.mock('@lenserfight/data/supabase', () => ({
 }))
 
 vi.mock('@lenserfight/utils/env', () => ({
-  AUTH_BASE_URL: 'https://auth.lenserfight.com',
+  AUTH_BASE_URL: 'https://auth.lenserfight.win',
 }))
 
 vi.mock('@lenserfight/utils/dom', () => ({
@@ -47,7 +47,7 @@ describe('SupabaseAuthRepository password reset flow', () => {
     await repo.requestPasswordReset('user@example.com')
 
     expect(resetPasswordForEmailMock).toHaveBeenCalledWith('user@example.com', {
-      redirectTo: 'https://auth.lenserfight.com/reset-password',
+      redirectTo: 'https://auth.lenserfight.win/reset-password',
       captchaToken: undefined,
     })
   })
@@ -58,7 +58,7 @@ describe('SupabaseAuthRepository password reset flow', () => {
     await repo.requestPasswordReset('user@example.com', 'captcha-token-123')
 
     expect(resetPasswordForEmailMock).toHaveBeenCalledWith('user@example.com', {
-      redirectTo: 'https://auth.lenserfight.com/reset-password',
+      redirectTo: 'https://auth.lenserfight.win/reset-password',
       captchaToken: 'captcha-token-123',
     })
   })

@@ -11,7 +11,7 @@ const {
   mockUseAuth: vi.fn(),
   mockUseAuthProfileGate: vi.fn(),
   mockReplaceLocationSafely: vi.fn(),
-  mockSanitizeReturnUrl: vi.fn(() => 'https://forum.lenserfight.com/from-test'),
+  mockSanitizeReturnUrl: vi.fn(() => 'https://forum.lenserfight.win/from-test'),
 }))
 
 vi.mock('@lenserfight/features/auth', () => ({
@@ -68,7 +68,7 @@ describe('GatewayGuard', () => {
     )
 
     await waitFor(() => {
-      expect(mockReplaceLocationSafely).toHaveBeenCalledWith('https://forum.lenserfight.com/from-test')
+      expect(mockReplaceLocationSafely).toHaveBeenCalledWith('https://forum.lenserfight.win/from-test')
     })
 
     expect(screen.getByRole('status', { name: 'Redirecting...' })).not.toBeNull()

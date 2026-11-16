@@ -29,7 +29,7 @@ export const Logo: React.FC<LogoProps> = ({
       <span className="relative inline-flex shrink-0">
         {/* Light theme icon */}
         <img
-          src="https://cdn.lenserfight.com/brand/favicons/original/ms-icon-150x150.png"
+          src="https://cdn.lenserfight.win/brand/favicons/original/ms-icon-150x150.png"
           alt="LenserFight"
           width={size}
           height={size}
@@ -38,7 +38,7 @@ export const Logo: React.FC<LogoProps> = ({
         />
         {/* Dark theme icon (white variant) */}
         <img
-          src="https://cdn.lenserfight.com/brand/favicons/white/ms-icon-150x150.png"
+          src="https://cdn.lenserfight.win/brand/favicons/white/ms-icon-150x150.png"
           alt="LenserFight"
           width={size}
           height={size}
