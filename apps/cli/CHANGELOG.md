@@ -1,3 +1,16 @@
+## 1.6.1 (2026-11-16)
+
+### 🩹 Fixes
+
+- **keychain:** fall back to 0600 files with a warning; add strict keychain mode ([efae60bd2](https://github.com/conectlens/lenserfight/commit/efae60bd2))
+- **keychain:** fail closed instead of writing secrets to plaintext files implicitly ([e1d2b94be](https://github.com/conectlens/lenserfight/commit/e1d2b94be))
+- **supabase:** expose battle_type in fn_battles_get_public ([#3](https://github.com/conectlens/lenserfight/issues/3), [#495](https://github.com/conectlens/lenserfight/issues/495))
+
+### ❤️ Thank You
+
+- Lenser
+- ÖMER FARUK COŞKUN
+
 ## 1.6.0 (2026-08-07)
 
 ### 🚀 Features
