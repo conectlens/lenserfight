@@ -1,6 +1,7 @@
 import { FileKeychainBackend } from './file-backend'
 import { isKeytarAvailable, KeytarKeychainBackend } from './keytar-backend'
 import { MemoryKeychainBackend } from './memory-backend'
+import { UnavailableKeychainBackend } from './unavailable-backend'
 import type { KeychainBackend } from './types'
 
 export interface CreateKeychainOptions {
@@ -19,10 +20,12 @@ export interface CreateKeychainOptions {
  *   1. `forceBackend` if provided.
  *   2. `LF_GATEWAY_KEY_FILE_FALLBACK=1` → file backend (with a warning).
  *   3. `keytar` if its native binding loaded successfully.
- *   4. file backend (with a warning).
+ *   4. otherwise an unavailable backend whose operations fail with an
+ *      actionable error. Secrets are never written to plaintext files unless
+ *      the file fallback is requested explicitly (step 2).
  *
- * The factory NEVER throws. If even the file backend fails to construct,
- * a memory backend is returned and a warning is logged.
+ * The factory itself never throws; failures surface when a secret is read or
+ * written.
  */
 export async function createKeychain(
   options: CreateKeychainOptions = {}
@@ -47,11 +50,10 @@ export async function createKeychain(
   }
 
   warn(
-    'OS keychain (keytar) is unavailable. Falling back to file storage. ' +
-      'Install libsecret-tools (Linux) / configure Keychain Access (macOS) ' +
-      'to remove this warning.'
+    'OS keychain (keytar) is unavailable and LF_GATEWAY_KEY_FILE_FALLBACK=1 is not set; ' +
+      'secret storage is disabled.'
   )
-  return new FileKeychainBackend(options.fileRoot)
+  return new UnavailableKeychainBackend()
 }
 
 function warn(msg: string): void {
