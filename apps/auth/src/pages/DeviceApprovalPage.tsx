@@ -29,8 +29,11 @@ async function storeDeviceLoginSession(userCode: string): Promise<void> {
 export const DeviceApprovalPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth()
   const [searchParams] = useSearchParams()
-  const initialCode = searchParams.get('code') ?? ''
   const isLoginMode = searchParams.get('mode') === 'login'
+  // In login mode approving hands this browser's session to whoever created the
+  // request, so the code is never taken from the link: the user must type the
+  // code shown on the device they are signing in.
+  const initialCode = isLoginMode ? '' : (searchParams.get('code') ?? '')
   const [userCode, setUserCode] = useState(initialCode)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -140,7 +143,7 @@ export const DeviceApprovalPage: React.FC = () => {
             </h1>
             <p className="mt-3 text-sm leading-6 text-gray-600">
               {isLoginMode
-                ? 'A sign-in request was made from the CLI. Confirm below to complete the login.'
+                ? 'Enter the approval code shown in your terminal. Approving signs that device in as you and shares this browser session with it, so continue only if you started this login yourself.'
                 : 'Enter the approval code shown in the CLI. Once you confirm, the CLI can mint a short-lived developer token for automation.'}
             </p>
           </div>
@@ -175,8 +178,9 @@ export const DeviceApprovalPage: React.FC = () => {
           </Button>
 
           <p className="mt-4 text-xs leading-5 text-gray-500">
-            This page only approves the request. It never reveals your existing Supabase session or
-            password.
+            {isLoginMode
+              ? 'Approving a login shares your current session with the requesting device. Never approve a code you did not request yourself.'
+              : 'This page only approves the request. It never reveals your existing Supabase session or password.'}
           </p>
         </form>
       </div>

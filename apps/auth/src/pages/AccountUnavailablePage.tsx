@@ -1,34 +1,56 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@lenserfight/features/auth'
 import { LoadingOverlay } from '@lenserfight/ui/components'
-import { sanitizeReturnUrl } from '../utils/validateReturnUrl'
+import { useAuthProfileGate } from '../hooks/useAuthProfileGate'
+import { DEFAULT_RETURN_URL, replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
 
+type Phase = 'checking' | 'signing-out' | 'done'
+
+/**
+ * Terminal page for permanently deleted accounts. The session is cleared only
+ * after the profile gate confirms the signed-in account really is deleted, so
+ * following a link to this route can never sign anyone out.
+ */
 export const AccountUnavailablePage: React.FC = () => {
-  const { logout } = useAuth()
-  const [isSigningOut, setIsSigningOut] = useState(true)
+  const { logout, isAuthenticated, isLoading } = useAuth()
+  const { data: gate, isLoading: gateLoading, error: gateError } = useAuthProfileGate()
+  const [phase, setPhase] = useState<Phase>('checking')
 
   const params = new URLSearchParams(window.location.search)
   const returnUrl = sanitizeReturnUrl(params.get('return_url'))
   const registerUrl = `/register?return_url=${encodeURIComponent(returnUrl)}`
 
   useEffect(() => {
-    let active = true
+    if (phase !== 'checking' || isLoading || gateLoading) return
 
-    logout()
-      .catch((error) => {
-        console.error('Failed to clear auth session for unavailable account', error)
-      })
-      .finally(() => {
-        if (active) setIsSigningOut(false)
-      })
-
-    return () => {
-      active = false
+    if (isAuthenticated && gate?.kind === 'deleted') {
+      setPhase('signing-out')
+      logout()
+        .catch((error) => {
+          console.error('Failed to clear auth session for unavailable account', error)
+        })
+        .finally(() => setPhase('done'))
+      return
     }
-  }, [logout])
 
-  if (isSigningOut) {
-    return <LoadingOverlay message="Securing your account..." />
+    // Active accounts have nothing to see here. Everyone else (anonymous,
+    // recoverable, onboarding, or a failed gate) stays on this page without any
+    // sign-out, so a failed recovery can never bounce back into a redirect loop.
+    if (isAuthenticated && gate?.kind === 'active') {
+      replaceLocationSafely(returnUrl.startsWith('/account-') ? DEFAULT_RETURN_URL : returnUrl)
+      return
+    }
+    setPhase('done')
+    // returnUrl is derived from the URL once per mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isLoading, gateLoading, isAuthenticated, gate, gateError, logout])
+
+  if (phase !== 'done') {
+    return (
+      <LoadingOverlay
+        message={phase === 'signing-out' ? 'Securing your account...' : 'Checking your account...'}
+      />
+    )
   }
 
   return (

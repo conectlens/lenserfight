@@ -10,7 +10,7 @@
  * unexpected access patterns.
  */
 
-import { constants as fsConstants, openSync, closeSync, writeSync } from 'node:fs'
+import { constants as fsConstants, openSync, closeSync, renameSync, statSync, writeSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
 
@@ -38,7 +38,18 @@ export interface AuditEvent {
   context?: Record<string, string | number | boolean>
 }
 
+/** Size at which the active log is rotated to `audit.log.1` (one generation kept). */
+export const MAX_AUDIT_LOG_BYTES = 5 * 1024 * 1024
+
 let lastInit = ''
+
+function rotateIfLarge(target: string): void {
+  try {
+    if (statSync(target).size >= MAX_AUDIT_LOG_BYTES) renameSync(target, `${target}.1`)
+  } catch {
+    // missing file or rotation failure — never block the primary operation
+  }
+}
 
 async function ensureDir(path: string): Promise<void> {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 })
@@ -55,6 +66,7 @@ export async function appendAuditEvent(
   }
   const line = JSON.stringify({ ts: new Date().toISOString(), ...event }) + '\n'
   let fd: number | null = null
+  rotateIfLarge(target)
   try {
     fd = openSync(
       target,

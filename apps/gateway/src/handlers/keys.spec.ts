@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -8,6 +8,7 @@ import { LocalKeyStore, PassphraseProvider } from '@lenserfight/data/local-keys'
 import { BearerAuthGuard } from '../auth/bearer'
 import type { GatewayConfig } from '../config'
 import { startServer } from '../server'
+import { __resetAuthFailureAuditThrottle } from './keys'
 
 const baseConfig: GatewayConfig = {
   bind: '127.0.0.1',
@@ -211,5 +212,35 @@ describe('gateway /keys handlers', () => {
       body: JSON.stringify({ provider: 'openai', label: 'L', rawKey: big }),
     })
     expect(r.status).toBe(413)
+  })
+})
+
+describe('gateway /keys pre-authentication audit volume', () => {
+  let bag: Awaited<ReturnType<typeof bootstrap>>
+  let auditDir: string
+  let previousKeysDir: string | undefined
+
+  beforeEach(async () => {
+    previousKeysDir = process.env['LENSERFIGHT_KEYS_DIR']
+    auditDir = mkdtempSync(join(tmpdir(), 'lf-gateway-audit-'))
+    process.env['LENSERFIGHT_KEYS_DIR'] = auditDir
+    __resetAuthFailureAuditThrottle()
+    bag = await bootstrap()
+  })
+
+  afterEach(async () => {
+    await bag.server.close()
+    if (previousKeysDir === undefined) delete process.env['LENSERFIGHT_KEYS_DIR']
+    else process.env['LENSERFIGHT_KEYS_DIR'] = previousKeysDir
+  })
+
+  it('caps audit lines written for token-less requests from one source', async () => {
+    for (let i = 0; i < 100; i++) {
+      const r = await fetch(`${bag.server.url}/keys`)
+      expect(r.status).toBe(401)
+    }
+    const lines = readFileSync(join(auditDir, 'audit.log'), 'utf-8').trim().split('\n')
+    expect(lines.length).toBeGreaterThan(0)
+    expect(lines.length).toBeLessThanOrEqual(20)
   })
 })

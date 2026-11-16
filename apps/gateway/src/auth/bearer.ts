@@ -28,12 +28,16 @@ export const BEARER_KEYCHAIN_ACCOUNT = 'web-pair'
  *  - Local dev:  `localhost` and `127.0.0.1` on any port.
  *  - Self-host / Tailscale / LAN: Tailscale CGNAT (100.64.0.0/10), RFC 1918
  *    private network ranges (10/8, 172.16/12, 192.168/16), and `.local`
- *    mDNS hostnames. Origins reach the gateway over an internal interface
- *    by definition; there is no scenario where these resolve over the
- *    public internet without an attacker controlling the user's network.
+ *    mDNS hostnames, over https only. A plaintext http origin on a shared
+ *    network has no server authentication, so whoever answers for that
+ *    address would own the origin; http on these ranges is not trusted by
+ *    default.
  *
- * Self-hosters with a non-standard domain can extend this via
- * `LF_GATEWAY_EXTRA_ORIGINS` (comma-separated regex strings) — see
+ * Loopback origins (`localhost`, `127.0.0.1`, `[::1]`) may use http.
+ *
+ * Self-hosters with a non-standard domain, or who deliberately serve the web
+ * app over plain http on a private network, can opt in via
+ * `LF_GATEWAY_EXTRA_ORIGINS` (comma-separated, anchored regex strings) — see
  * `loadAllowedOriginPatterns()` below.
  */
 export const DEFAULT_ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
@@ -43,16 +47,19 @@ export const DEFAULT_ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
   /^https?:\/\/127\.0\.0\.1(?::\d{1,5})?$/,
   /^https?:\/\/\[::1\](?::\d{1,5})?$/,
   // Tailscale CGNAT: 100.64.0.0 – 100.127.255.255 (RFC 6598).
-  /^https?:\/\/100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
+  /^https:\/\/100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
   // RFC 1918 — 10.0.0.0/8.
-  /^https?:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
+  /^https:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
   // RFC 1918 — 172.16.0.0/12 (i.e. 172.16 – 172.31).
-  /^https?:\/\/172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
+  /^https:\/\/172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
   // RFC 1918 — 192.168.0.0/16.
-  /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
+  /^https:\/\/192\.168\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
   // mDNS hostnames (e.g. `my-laptop.local`).
-  /^https?:\/\/[a-z0-9-]+\.local(?::\d{1,5})?$/,
+  /^https:\/\/[a-z0-9-]+\.local(?::\d{1,5})?$/,
 ]
+
+const PRIVATE_HTTP_ORIGIN =
+  /^http:\/\/(?:100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|[a-z0-9-]+\.local)(?::\d{1,5})?$/
 
 /** Parse `LF_GATEWAY_EXTRA_ORIGINS` (comma-separated regex bodies). */
 export function loadAllowedOriginPatterns(env: NodeJS.ProcessEnv = process.env): RegExp[] {
@@ -78,6 +85,12 @@ export interface BearerAuthOptions {
   }
   /** Rate-limit budget per token (default 60/min). */
   rateLimitPerMinute?: number
+  /**
+   * How long a token read from the keychain is reused before the keychain is
+   * consulted again (default 1000ms). Bounds how long a token rotated by
+   * another process (`lf gateway pair --rotate`) keeps authorizing.
+   */
+  tokenCacheTtlMs?: number
 }
 
 export interface AuthorizeResult {
@@ -98,6 +111,8 @@ export function generateBearerToken(): string {
 
 export class BearerAuthGuard {
   private cachedToken: string | null = null
+  private cachedAt = 0
+  private readonly tokenCacheTtlMs: number
   private readonly origins: RegExp[]
   private readonly keychainAdapter: NonNullable<BearerAuthOptions['keychainAdapter']>
   private readonly rateLimitPerMinute: number
@@ -111,27 +126,44 @@ export class BearerAuthGuard {
       deleteSecret: (ref) => keychain.deleteSecret(ref),
     }
     this.rateLimitPerMinute = opts.rateLimitPerMinute ?? 60
+    this.tokenCacheTtlMs = Math.max(0, opts.tokenCacheTtlMs ?? 1000)
   }
 
   /** Returns the active bearer token, generating one if none exists. */
   async ensureToken(): Promise<string> {
-    if (this.cachedToken) return this.cachedToken
-    const existing = await this.keychainAdapter.getSecret({
-      service: BEARER_KEYCHAIN_SERVICE,
-      account: BEARER_KEYCHAIN_ACCOUNT,
-    })
-    if (existing) {
-      this.cachedToken = existing
-      return existing
-    }
+    const existing = await this.readToken()
+    if (existing) return existing
     const fresh = generateBearerToken()
     await this.keychainAdapter.setSecret({
       service: BEARER_KEYCHAIN_SERVICE,
       account: BEARER_KEYCHAIN_ACCOUNT,
       secret: fresh,
     })
-    this.cachedToken = fresh
+    this.remember(fresh)
     return fresh
+  }
+
+  /**
+   * Reads the stored token, reusing it for at most `tokenCacheTtlMs`. The CLI
+   * rotates the token from a separate process by writing the keychain, so the
+   * daemon must re-read it rather than trust a copy cached for its lifetime.
+   * Never writes.
+   */
+  private async readToken(): Promise<string | null> {
+    if (this.cachedToken && Date.now() - this.cachedAt < this.tokenCacheTtlMs) {
+      return this.cachedToken
+    }
+    const stored = await this.keychainAdapter.getSecret({
+      service: BEARER_KEYCHAIN_SERVICE,
+      account: BEARER_KEYCHAIN_ACCOUNT,
+    })
+    this.remember(stored || null)
+    return this.cachedToken
+  }
+
+  private remember(token: string | null): void {
+    this.cachedToken = token
+    this.cachedAt = Date.now()
   }
 
   /** Rotate the bearer token; old token immediately stops authorizing. */
@@ -142,7 +174,7 @@ export class BearerAuthGuard {
       account: BEARER_KEYCHAIN_ACCOUNT,
       secret: fresh,
     })
-    this.cachedToken = fresh
+    this.remember(fresh)
     this.hits.clear()
     return fresh
   }
@@ -150,7 +182,21 @@ export class BearerAuthGuard {
   isOriginAllowed(origin: string | null): OriginCheckResult {
     if (origin == null || origin === '') return { ok: true, origin: null } // same-origin or non-browser caller
     if (this.origins.some((re) => re.test(origin))) return { ok: true, origin }
+    this.hintRejectedPrivateHttpOrigin(origin)
     return { ok: false, origin }
+  }
+
+  private readonly hintedOrigins = new Set<string>()
+
+  /** Logs once per origin when a plaintext-http private-network origin is refused. */
+  private hintRejectedPrivateHttpOrigin(origin: string): void {
+    if (this.hintedOrigins.size >= 64 || this.hintedOrigins.has(origin)) return
+    if (!PRIVATE_HTTP_ORIGIN.test(origin)) return
+    this.hintedOrigins.add(origin)
+    process.stderr.write(
+      `[bearer] rejected plaintext-http origin ${origin}; serve the web app over https, or opt in with ` +
+        `LF_GATEWAY_EXTRA_ORIGINS='^${origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$'\n`
+    )
   }
 
   async authorize(req: {
@@ -167,8 +213,15 @@ export class BearerAuthGuard {
       return { ok: false, status: 401, reason: 'missing_token' }
     }
     const presented = req.authorization.replace(/^Bearer\s+/i, '').trim()
-    const stored = await this.ensureToken()
-    if (!safeEqual(presented, stored)) {
+    let stored: string | null
+    try {
+      stored = await this.readToken()
+    } catch (err) {
+      // Fail closed: if the credential store cannot be read, nothing authorizes.
+      process.stderr.write(`[bearer] token read failed: ${(err as Error).message}\n`)
+      return { ok: false, status: 401, reason: 'bad_token' }
+    }
+    if (!stored || !safeEqual(presented, stored)) {
       return { ok: false, status: 401, reason: 'bad_token' }
     }
     if (req.rateLimited && !this.checkRate(presented)) {
@@ -191,6 +244,7 @@ export class BearerAuthGuard {
   /** Test-only seam. */
   __reset(): void {
     this.cachedToken = null
+    this.cachedAt = 0
     this.hits.clear()
   }
 }

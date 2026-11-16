@@ -93,12 +93,15 @@ Key design choices:
 
 By default the gateway binds to `127.0.0.1:38080` (loopback only) and the
 allow-list permits browser origins on `lenserfight.com`, `localhost`,
-`127.0.0.1`, **Tailscale CGNAT** (`100.64.0.0/10`), **RFC 1918** private
-ranges (`10/8`, `172.16/12`, `192.168/16`), and `.local` mDNS hostnames.
+`127.0.0.1` (http or https), and, over **https only**, **Tailscale CGNAT**
+(`100.64.0.0/10`), **RFC 1918** private ranges (`10/8`, `172.16/12`,
+`192.168/16`), and `.local` mDNS hostnames. Plain-`http` origins on those
+ranges have no server authentication and are not trusted by default; opt in
+explicitly with `LF_GATEWAY_EXTRA_ORIGINS` (below) if you accept that risk.
 The web app's gateway client derives its target URL from
 `window.location.hostname` — so a page served at
-`http://100.88.58.68:3000` automatically reaches the gateway at
-`http://100.88.58.68:38080`.
+`http://100.88.58.68:3000` (once allowed via `LF_GATEWAY_EXTRA_ORIGINS`)
+reaches the gateway at `http://100.88.58.68:38080`.
 
 For the gateway to answer on a non-loopback address, run it in
 **keys-only mode** with an explicit bind. Keys-only mode is the right
@@ -127,6 +130,9 @@ Self-hosters with a custom domain can extend the origin allow-list via
 ```bash
 LF_GATEWAY_EXTRA_ORIGINS='^https://app\.mycompany\.local$' lf gateway serve
 ```
+
+Patterns should be anchored (`^...$`); an unanchored pattern matches any
+origin that merely contains the text.
 
 Browsers running on Chrome's Private Network Access path also need the
 gateway to answer the PNA preflight — the daemon emits

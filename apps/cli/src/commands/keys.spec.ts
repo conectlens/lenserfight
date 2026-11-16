@@ -30,6 +30,9 @@ const mockPassphraseProvider = {
 const mockEnsureKeysDir = jest.fn()
 const mockGetKeysDir = jest.fn(() => '/tmp/.lenserfight/keys')
 
+jest.mock('@lenserfight/utils/keychain', () => ({
+  keychain: { getBackend: jest.fn(async () => ({ id: 'keytar' })) },
+}))
 jest.mock('@lenserfight/data/local-keys', () => ({
   LocalKeyStore: jest.fn(() => mockStoreInstance),
   LocalKeyStoreError: class LocalKeyStoreError extends Error {

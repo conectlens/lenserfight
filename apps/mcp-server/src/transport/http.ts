@@ -5,6 +5,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { SupabaseClient } from '@supabase/supabase-js';
 import { McpServerConfig } from '../config.js';
 import { buildDiscoveryDocument, buildProtectedResourceDocument } from '../oauth/discovery.js';
+import { isAllowedRedirectUri } from '../oauth/redirectUri.js';
 import { resolveAuth } from '../middleware/auth.js';
 import { getServiceClient, createUserScopedClient } from '../client.js';
 
@@ -42,6 +43,11 @@ export function generateToken(): string {
   return `lf_mcp_${crypto.randomBytes(32).toString('hex')}`;
 }
 
+/** Single-use authorization code; distinct from, and never usable as, a bearer token. */
+export function generateAuthCode(): string {
+  return `lf_code_${crypto.randomBytes(32).toString('hex')}`;
+}
+
 export function verifyPkce(codeVerifier: string, codeChallenge: string): boolean {
   const digest = crypto.createHash('sha256').update(codeVerifier).digest();
   return digest.toString('base64url') === codeChallenge;
@@ -72,9 +78,15 @@ async function handleRegister(
     return;
   }
 
-  const redirectUris = Array.isArray(body['redirect_uris'])
-    ? (body['redirect_uris'] as string[]).filter((u) => typeof u === 'string')
-    : [];
+  const requestedUris = Array.isArray(body['redirect_uris']) ? (body['redirect_uris'] as unknown[]) : [];
+  const redirectUris = requestedUris.filter(isAllowedRedirectUri);
+  if (redirectUris.length !== requestedUris.length) {
+    jsonResponse(res, 400, {
+      error: 'invalid_redirect_uri',
+      error_description: 'redirect_uris must be https, loopback http, or an app-specific scheme',
+    });
+    return;
+  }
   const clientName =
     typeof body['client_name'] === 'string' ? body['client_name'].slice(0, 120) : 'Dynamic MCP Client';
 
@@ -138,7 +150,7 @@ async function handleAuthorize(
     return;
   }
 
-  if (!row.redirect_uris.includes(redirectUri)) {
+  if (!isAllowedRedirectUri(redirectUri) || !row.redirect_uris.includes(redirectUri)) {
     jsonResponse(res, 400, { error: 'invalid_request', error_description: 'redirect_uri not registered' });
     return;
   }
@@ -180,7 +192,7 @@ async function handleClientInfo(
 
   const { data: codeRows } = (await svc.rpc('fn_mcp_oauth_lookup_auth_code' as never, {
     p_id: id,
-  } as never)) as RpcResult<{ client_id: string }[]>;
+  } as never)) as RpcResult<{ client_id: string; redirect_uri: string }[]>;
 
   const codeRow = codeRows?.[0] ?? null;
   if (!codeRow) {
@@ -192,7 +204,7 @@ async function handleClientInfo(
     p_client_id: codeRow.client_id,
   } as never)) as RpcResult<{ id: string; name: string; redirect_uris: string[]; requires_secret: boolean }[]>;
 
-  jsonResponse(res, 200, { client_name: clientRows?.[0]?.name ?? 'Unknown' });
+  jsonResponse(res, 200, { client_name: clientRows?.[0]?.name ?? 'Unknown', redirect_uri: codeRow.redirect_uri });
 }
 
 async function handleComplete(
@@ -251,26 +263,25 @@ async function handleComplete(
     return;
   }
 
-  const token = generateToken();
+  // The redirect carries only a single-use authorization code. The bearer token
+  // is minted in /oauth/token after the client and PKCE checks pass.
+  const authCode = generateAuthCode();
 
-  await svc.rpc('fn_mcp_oauth_issue_token' as never, {
-    p_client_id:              pending.client_id,
-    p_lenser_id:              lenserId,
-    p_token:                  token,
-    p_supabase_refresh_token: refresh_token,
-  } as never);
-
-  await svc.rpc('fn_mcp_oauth_complete_auth_code' as never, {
+  const { error: completeErr } = (await svc.rpc('fn_mcp_oauth_complete_auth_code' as never, {
     p_id:                     pending.id,
-    p_code:                   token,
+    p_code:                   authCode,
     p_lenser_id:              lenserId,
     p_supabase_refresh_token: refresh_token,
-  } as never);
+  } as never)) as RpcResult<void>;
+  if (completeErr) {
+    jsonResponse(res, 500, { error: 'server_error', error_description: 'Failed to complete authorization' });
+    return;
+  }
 
-  process.stderr.write(`[lenserfight-mcp] complete: issued ${token.slice(0, 16)}... for lenser ${lenserId}\n`);
+  process.stderr.write(`[lenserfight-mcp] complete: authorization code issued for lenser ${lenserId}\n`);
 
   jsonResponse(res, 200, {
-    code:         token,
+    code:         authCode,
     redirect_uri: pending.redirect_uri,
     state:        pending.original_state,
   });
@@ -359,17 +370,19 @@ async function handleToken(
     }
   }
 
-  // If the code is already a valid bearer token (dual-mode), return it as-is.
-  // Otherwise mint a new one and store it.
-  const accessToken = code.startsWith('lf_mcp_') ? code : generateToken();
+  // The authorization code is single-use and never a bearer token; mint the
+  // access token here, after the client and PKCE checks.
+  const accessToken = generateToken();
 
-  if (accessToken !== code) {
-    await svc.rpc('fn_mcp_oauth_issue_token' as never, {
-      p_client_id:              client_id,
-      p_lenser_id:              authCode.lenser_id,
-      p_token:                  accessToken,
-      p_supabase_refresh_token: authCode.supabase_refresh_token,
-    } as never);
+  const { error: issueErr } = (await svc.rpc('fn_mcp_oauth_issue_token' as never, {
+    p_client_id:              client_id,
+    p_lenser_id:              authCode.lenser_id,
+    p_token:                  accessToken,
+    p_supabase_refresh_token: authCode.supabase_refresh_token,
+  } as never)) as RpcResult<void>;
+  if (issueErr) {
+    jsonResponse(res, 500, { error: 'server_error', error_description: 'Failed to issue token' });
+    return;
   }
 
   jsonResponse(res, 200, {

@@ -27,6 +27,37 @@ import type { BearerAuthGuard } from '../auth/bearer'
 
 const MAX_BODY_BYTES = 64 * 1024 // 64 KiB — keys are small; reject obvious abuse.
 
+// Pre-authentication failures can be produced by any caller that can reach the
+// listener, so they are audited at a bounded rate per (reason, source address).
+// Authenticated activity is never throttled here.
+const AUTH_FAILURE_AUDIT_PER_MINUTE = 20
+const AUTH_FAILURE_AUDIT_WINDOW_MS = 60_000
+const AUTH_FAILURE_AUDIT_MAX_SOURCES = 1024
+const authFailureAudit = new Map<string, { windowStart: number; count: number }>()
+
+function shouldAuditAuthFailure(reason: string, remoteAddress: string | undefined): boolean {
+  const now = Date.now()
+  const key = `${reason}|${remoteAddress ?? 'unknown'}`
+  const bucket = authFailureAudit.get(key)
+  if (bucket && now - bucket.windowStart <= AUTH_FAILURE_AUDIT_WINDOW_MS) {
+    bucket.count += 1
+    return bucket.count <= AUTH_FAILURE_AUDIT_PER_MINUTE
+  }
+  if (!bucket && authFailureAudit.size >= AUTH_FAILURE_AUDIT_MAX_SOURCES) {
+    for (const [k, v] of authFailureAudit) {
+      if (now - v.windowStart > AUTH_FAILURE_AUDIT_WINDOW_MS) authFailureAudit.delete(k)
+    }
+    if (authFailureAudit.size >= AUTH_FAILURE_AUDIT_MAX_SOURCES) return false
+  }
+  authFailureAudit.set(key, { windowStart: now, count: 1 })
+  return true
+}
+
+/** Test-only seam. */
+export function __resetAuthFailureAuditThrottle(): void {
+  authFailureAudit.clear()
+}
+
 export interface KeysHandlerDeps {
   store: LocalKeyStorePort
   auth: BearerAuthGuard
@@ -195,13 +226,15 @@ export async function handleKeysRequest(
     rateLimited: route.op === 'resolve',
   })
   if (!auth.ok) {
-    await appendAuditEvent({
-      kind: auth.reason === 'rate_limited' ? 'rate_limited' : 'auth_failure',
-      ok: false,
-      reason: auth.reason,
-      keyId: route.id,
-      context: { route: `${req.method} ${url}` },
-    })
+    if (auth.reason === 'rate_limited' || shouldAuditAuthFailure(auth.reason, req.socket?.remoteAddress)) {
+      await appendAuditEvent({
+        kind: auth.reason === 'rate_limited' ? 'rate_limited' : 'auth_failure',
+        ok: false,
+        reason: auth.reason,
+        keyId: route.id,
+        context: { route: `${req.method} ${url}` },
+      })
+    }
     send(res, auth.status, { error: auth.reason })
     return true
   }

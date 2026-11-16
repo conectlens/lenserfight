@@ -84,13 +84,33 @@ function rewriteHostIfCrossLocalHost(parsed: URL): URL {
   return parsed
 }
 
+const RELATIVE_PROBE_ORIGIN = 'http://relative.invalid'
+
+/**
+ * A relative return path must stay on the current origin once parsed. The URL
+ * parser treats `\\` like `/` and drops tab/newline characters, so values such
+ * as `/\\evil.example` or `/<TAB>/evil.example` would otherwise resolve to
+ * another host; reject those characters and re-check the parsed origin.
+ */
+function isSameOriginPath(url: string): boolean {
+  if (!url.startsWith('/') || url.startsWith('//')) return false
+  // eslint-disable-next-line no-control-regex
+  if (/[\\\u0000-\u001f\u007f]/.test(url)) return false
+  try {
+    return new URL(url, RELATIVE_PROBE_ORIGIN).origin === RELATIVE_PROBE_ORIGIN
+  } catch {
+    return false
+  }
+}
+
 export function sanitizeReturnUrl(url: string | null | undefined): string {
   if (!url) return DEFAULT_RETURN_URL
 
   // Allow relative paths — they stay within the current origin (same-app navigation).
   // A path like /device-approval?code=X&mode=login must survive the login redirect so
   // GatewayGuard can send the user back to DeviceApprovalPage after sign-in.
-  if (url.startsWith('/') && !url.startsWith('//')) {
+  if (url.startsWith('/')) {
+    if (!isSameOriginPath(url)) return DEFAULT_RETURN_URL
     // Block /auth/* to prevent open-redirect loops back to the auth entry routes.
     if (url === '/auth' || url.startsWith('/auth/')) {
       return DEFAULT_RETURN_URL
@@ -142,7 +162,18 @@ export function buildAuthReturnUrl(currentUrl: string, fallback = DEFAULT_RETURN
 }
 
 export function replaceLocationSafely(url: string): void {
-  const target = new URL(url, window.location.origin).toString()
+  let resolved: URL
+  try {
+    resolved = new URL(url, window.location.origin)
+  } catch {
+    resolved = new URL(DEFAULT_RETURN_URL)
+  }
+  const sameOrigin = resolved.origin === window.location.origin
+  const trusted = sameOrigin || isAllowedOrigin(resolved.origin)
+  if (!trusted || (resolved.protocol !== 'https:' && resolved.protocol !== 'http:')) {
+    resolved = new URL(DEFAULT_RETURN_URL)
+  }
+  const target = resolved.toString()
   if (target === window.location.href) return
   window.location.replace(target)
 }
