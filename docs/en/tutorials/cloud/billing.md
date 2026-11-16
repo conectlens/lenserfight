@@ -155,7 +155,7 @@ API calls via developer tokens consume credits at the same rates as web app usag
 
 ```bash
 # Check your balance via API
-curl "https://api.lenserfight.com/v1/billing/balance" \
+curl "https://api.lenserfight.win/v1/billing/balance" \
   -H "Authorization: Bearer $API_KEY"
 ```
 

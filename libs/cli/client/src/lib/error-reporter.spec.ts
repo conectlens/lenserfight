@@ -137,7 +137,7 @@ describe('reportCliError — NO_COLOR mode', () => {
 
   it('renders docs URL inline instead of OSC 8 hyperlink', () => {
     const output = captureStderr(() => reportCliError(new Error('gateway error')))
-    expect(output).toContain('docs.lenserfight.com')
+    expect(output).toContain('docs.lenserfight.win')
     // No OSC 8 sequences
     expect(output).not.toContain('\x1b]8;;')
   })

@@ -6,7 +6,7 @@ import { resolveDocsUrl, docsKeyForKind, formatDocLink, renderDocsLine } from '.
 describe('resolveDocsUrl', () => {
   it('resolves registered keys to absolute URLs', () => {
     const url = resolveDocsUrl('auth-login')
-    expect(url).toMatch(/^https:\/\/docs\.lenserfight\.com/)
+    expect(url).toMatch(/^https:\/\/docs\.lenserfight\.win/)
   })
 
   it('returns undefined for unknown keys', () => {
@@ -75,7 +75,7 @@ describe('formatDocLink', () => {
   it('includes the URL in plain-text mode', () => {
     process.env['NO_COLOR'] = '1'
     const result = formatDocLink('auth-login')!
-    expect(result).toContain('docs.lenserfight.com')
+    expect(result).toContain('docs.lenserfight.win')
   })
 
   it('uses the custom label when provided', () => {
@@ -113,7 +113,7 @@ describe('renderDocsLine', () => {
     process.env['NO_COLOR'] = '1'
     const line = renderDocsLine('auth-login')!
     expect(line).toContain('docs:')
-    expect(line).toContain('docs.lenserfight.com')
+    expect(line).toContain('docs.lenserfight.win')
   })
 
   it('uses the custom label when provided', () => {
@@ -121,6 +121,6 @@ describe('renderDocsLine', () => {
     const line = renderDocsLine('auth-login', 'Auth guide')!
     // In plain-text mode, the label does not appear (we render the URL directly)
     // but the URL is always present.
-    expect(line).toContain('docs.lenserfight.com')
+    expect(line).toContain('docs.lenserfight.win')
   })
 })

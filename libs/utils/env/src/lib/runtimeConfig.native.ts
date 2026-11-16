@@ -20,13 +20,13 @@ function stripSupabaseRestPath(url: string): string {
   return url.replace(/\/rest\/v\d+\/?$/, '')
 }
 
-export const AUTH_BASE_URL = readPublicBaseUrl('AUTH_BASE_URL', 'https://auth.lenserfight.com')
-export const LANDING_BASE_URL = readPublicBaseUrl('LANDING_URL', 'https://lenserfight.com')
-export const WEB_BASE_URL = readPublicBaseUrl('WEB_BASE_URL', 'https://lenserfight.com')
-export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.lenserfight.com')
+export const AUTH_BASE_URL = readPublicBaseUrl('AUTH_BASE_URL', 'https://auth.lenserfight.win')
+export const LANDING_BASE_URL = readPublicBaseUrl('LANDING_URL', 'https://lenserfight.win')
+export const WEB_BASE_URL = readPublicBaseUrl('WEB_BASE_URL', 'https://lenserfight.win')
+export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.lenserfight.win')
 export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https://app.chainabit.com')
 export const API_BASE_URL = stripSupabaseRestPath(
-  readPublicBaseUrl('API_URL', 'https://api.lenserfight.com')
+  readPublicBaseUrl('API_URL', 'https://api.lenserfight.win')
 )
 
 const chainabitApiBase = readPublicBaseUrl('CHAINABIT_API_URL', 'https://api.chainabit.com')

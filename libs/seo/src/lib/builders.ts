@@ -21,7 +21,7 @@ import {
   type WorkflowSeoInput,
 } from './bodies'
 
-const BASE = 'https://moon.lenserfight.com'
+const BASE = 'https://moon.lenserfight.win'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyArg = any

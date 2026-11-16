@@ -9,7 +9,7 @@ const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow'
 const INDEXNOW_MAX_URLS = 10000
 
 export interface IndexNowSubmission {
-  /** Host without scheme, e.g. moon.lenserfight.com */
+  /** Host without scheme, e.g. moon.lenserfight.win */
   host: string
   /** The host key (also served at https://<host>/<key>.txt). */
   key: string

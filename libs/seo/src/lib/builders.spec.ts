@@ -18,7 +18,7 @@ describe('buildLensDocument', () => {
   it('uses seoService for meta and sets an absolute canonical', () => {
     const doc = buildLensDocument(lens)
     expect(doc.meta.title).toBe(seoService.getPromptMeta(lens as never).title)
-    expect(doc.canonical).toBe('https://moon.lenserfight.com/lenses/lens-1')
+    expect(doc.canonical).toBe('https://moon.lenserfight.win/lenses/lens-1')
     expect(doc.ogType).toBe('article')
     expect(doc.hreflang.map((h) => h.lang)).toEqual(['en', 'tr', 'x-default'])
   })
@@ -26,8 +26,8 @@ describe('buildLensDocument', () => {
   it('renders a crawlable body with H1, author link and tag link', () => {
     const html = renderBotHtml(buildLensDocument(lens))
     expect(html).toContain('<h1>AI Agent Planner</h1>')
-    expect(html).toContain('href="https://moon.lenserfight.com/lenser/ada"')
-    expect(html).toContain('href="https://moon.lenserfight.com/ray/agents"')
+    expect(html).toContain('href="https://moon.lenserfight.win/lenser/ada"')
+    expect(html).toContain('href="https://moon.lenserfight.win/ray/agents"')
   })
 })
 
@@ -35,7 +35,7 @@ describe('renderBotHtml', () => {
   it('emits title, canonical, robots, OG, Twitter and JSON-LD', () => {
     const html = renderBotHtml(buildRayDocument({ name: 'Agents', slug: 'agents', count: 5 }))
     expect(html).toContain('<title>')
-    expect(html).toContain('<link rel="canonical" href="https://moon.lenserfight.com/ray/agents" />')
+    expect(html).toContain('<link rel="canonical" href="https://moon.lenserfight.win/ray/agents" />')
     expect(html).toContain('content="index,follow,max-image-preview:large"')
     expect(html).toContain('property="og:type"')
     expect(html).toContain('name="twitter:card" content="summary_large_image"')

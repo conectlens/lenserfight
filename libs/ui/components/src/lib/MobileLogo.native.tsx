@@ -3,8 +3,8 @@ import { Image, StyleSheet, View } from 'react-native'
 import { Text } from '@lenserfight/ui/primitives/native'
 import { useNativeTheme } from '@lenserfight/ui/providers/native'
 
-const LOGO_URI_LIGHT = 'https://cdn.lenserfight.com/brand/favicons/original/ms-icon-150x150.png'
-const LOGO_URI_DARK = 'https://cdn.lenserfight.com/brand/favicons/white/ms-icon-150x150.png'
+const LOGO_URI_LIGHT = 'https://cdn.lenserfight.win/brand/favicons/original/ms-icon-150x150.png'
+const LOGO_URI_DARK = 'https://cdn.lenserfight.win/brand/favicons/white/ms-icon-150x150.png'
 
 export interface MobileLogoProps {
   size?: number

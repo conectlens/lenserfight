@@ -20,7 +20,7 @@ LenserFight Status
 ──────────────────────────────────────
 Auth          ✓ authenticated (@your_handle)
 Environment   ✓  Node 22.x · Supabase CLI 1.x · Docker running
-API           https://api.lenserfight.com
+API           https://api.lenserfight.win
 
 Journey
   ✓  lens created
@@ -70,7 +70,7 @@ Journey
   "projectConfigPresent": true,
   "mode": "cloud",
   "supabaseUrl": "https://xxx.supabase.co",
-  "cloudApiUrl": "https://api.lenserfight.com",
+  "cloudApiUrl": "https://api.lenserfight.win",
   "supabaseAnonKeyPresent": true,
   "serviceRoleKeyPresent": false,
   "authStatus": "authenticated",

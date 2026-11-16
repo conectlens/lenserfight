@@ -24,7 +24,7 @@ LenserFight MCP sunucusu Cloudflare üzerinden proxy'lenen kararlı bir genel ad
 ### Uç nokta (Endpoint)
 
 ```
-https://mcp.lenserfight.com/mcp
+https://mcp.lenserfight.win/mcp
 ```
 
 ### OAuth keşfi (Uyumlu istemciler için otomatik)
@@ -32,15 +32,15 @@ https://mcp.lenserfight.com/mcp
 MCP standartlarına tam uyumlu bir istemci keşif belgesini okur ve OAuth işlemlerini otomatik olarak gerçekleştirir:
 
 ```bash
-curl https://mcp.lenserfight.com/.well-known/oauth-authorization-server
+curl https://mcp.lenserfight.win/.well-known/oauth-authorization-server
 ```
 
 ```json
 {
-  "issuer": "https://mcp.lenserfight.com",
-  "authorization_endpoint": "https://mcp.lenserfight.com/oauth/authorize",
-  "token_endpoint": "https://mcp.lenserfight.com/oauth/token",
-  "registration_endpoint": "https://mcp.lenserfight.com/oauth/register",
+  "issuer": "https://mcp.lenserfight.win",
+  "authorization_endpoint": "https://mcp.lenserfight.win/oauth/authorize",
+  "token_endpoint": "https://mcp.lenserfight.win/oauth/token",
+  "registration_endpoint": "https://mcp.lenserfight.win/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code"],
   "code_challenge_methods_supported": ["S256"],
@@ -53,7 +53,7 @@ curl https://mcp.lenserfight.com/.well-known/oauth-authorization-server
 1. **claude.ai → Ayarlar → Bağlayıcılar → Özel bağlayıcı ekle** yolunu izleyin.
 2. Bilgileri doldurun:
    - **Adı (Name):** `LenserFight`
-   - **Uzak MCP sunucu URL'si (Remote MCP server URL):** `https://mcp.lenserfight.com/mcp`
+   - **Uzak MCP sunucu URL'si (Remote MCP server URL):** `https://mcp.lenserfight.win/mcp`
    - **OAuth İstemci Kimliği (OAuth Client ID):** boş bırakın (dinamik kayıt)
    - **OAuth İstemci Parolası (OAuth Client Secret):** boş bırakın (yalnızca PKCE — parola yok)
 3. **Ekle (Add)** seçeneğine tıklayın.
@@ -67,7 +67,7 @@ curl https://mcp.lenserfight.com/.well-known/oauth-authorization-server
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://mcp.lenserfight.com/mcp"
+      "url": "https://mcp.lenserfight.win/mcp"
     }
   }
 }
@@ -91,7 +91,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 
 const transport = new StreamableHTTPClientTransport(
-  new URL('https://mcp.lenserfight.com/mcp'),
+  new URL('https://mcp.lenserfight.win/mcp'),
   {
     // OAuth akışını tamamladıktan sonra lf_mcp_* erişim jetonunu buraya girin
     requestInit: {
@@ -236,12 +236,12 @@ Keşif belgesi, uzak istemcinin erişemeyeceği bir yerel ana bilgisayar (localh
 ### `Sign-in failed`
 
 - OAuth giriş formunda yanlış e-posta veya şifre girildi.
-- [lenserfight.com](https://lenserfight.com) adresinden kimlik bilgilerinizi doğrulayın.
+- [lenserfight.win](https://lenserfight.win) adresinden kimlik bilgilerinizi doğrulayın.
 
 ### `No Lenser profile found`
 
 - Kullanıcı hesap oluşturma işlemini tamamladı ancak katılım adımlarını (kullanıcı adı seçimi) bitirmedi.
-- Kullanıcı adı seçim adımını tamamlaması için kullanıcıyı [lenserfight.com](https://lenserfight.com) adresine yönlendirin ve ardından yeniden deneyin.
+- Kullanıcı adı seçim adımını tamamlaması için kullanıcıyı [lenserfight.win](https://lenserfight.win) adresine yönlendirin ve ardından yeniden deneyin.
 
 ### Başlangıçta `PUBLIC URL REQUIRED` uyarısı (tünel modu)
 

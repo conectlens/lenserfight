@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { isSafeRedirectTarget, resolveMcpServerUrl } from './mcpServerUrl'
 
-const CONFIGURED = 'https://mcp.lenserfight.com'
+const CONFIGURED = 'https://mcp.lenserfight.win'
 const prod = { configured: CONFIGURED, isDev: false }
 const dev = { configured: CONFIGURED, isDev: true }
 

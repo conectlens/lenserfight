@@ -31,7 +31,7 @@ function getDefaultBaseOrigin(): string {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin
   }
-  return 'https://forum.lenserfight.com'
+  return 'https://forum.lenserfight.win'
 }
 
 export function resolveSafeRedirectTarget(

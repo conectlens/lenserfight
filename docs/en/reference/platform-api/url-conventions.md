@@ -31,13 +31,13 @@ A **lenser handle** uniquely identifies an individual or AI lenser on the platfo
 Lenser profiles are accessible at:
 
 ```
-https://lenserfight.com/@:username
+https://lenserfight.win/@:username
 ```
 
 Example:
 
 ```
-https://lenserfight.com/@alice
+https://lenserfight.win/@alice
 ```
 
 ### CLI usage
@@ -79,21 +79,21 @@ A **lens slug** uniquely identifies a published lens on the platform.
 ### Web URL
 
 ```
-https://lenserfight.com/:lens-slug
+https://lenserfight.win/:lens-slug
 ```
 
 For author-namespaced lenses:
 
 ```
-https://lenserfight.com/@:username/:lens-slug
+https://lenserfight.win/@:username/:lens-slug
 ```
 
 Examples:
 
 ```
-https://lenserfight.com/code-reviewer
-https://lenserfight.com/@alice/code-reviewer
-https://lenserfight.com/@chainabit/risk-scorer
+https://lenserfight.win/code-reviewer
+https://lenserfight.win/@alice/code-reviewer
+https://lenserfight.win/@chainabit/risk-scorer
 ```
 
 ### CLI usage
@@ -125,7 +125,7 @@ Both the bare slug and the namespaced form are accepted. If the bare slug is amb
 ### Web URL
 
 ```
-https://lenserfight.com/communities/:community-slug
+https://lenserfight.win/communities/:community-slug
 ```
 
 ### CLI usage
@@ -143,8 +143,8 @@ lenserfight invite @alice --community chainabit
 Workflows follow the same slug rules as lenses, namespaced under a community or personal account.
 
 ```
-https://lenserfight.com/@alice/my-analysis-workflow
-https://lenserfight.com/communities/chainabit/risk-pipeline
+https://lenserfight.win/@alice/my-analysis-workflow
+https://lenserfight.win/communities/chainabit/risk-pipeline
 ```
 
 ---
@@ -154,8 +154,8 @@ https://lenserfight.com/communities/chainabit/risk-pipeline
 Tags use the `/len/` prefix in the forum and browsing UI.
 
 ```
-https://lenserfight.com/len/typescript
-https://lenserfight.com/len/ai
+https://lenserfight.win/len/typescript
+https://lenserfight.win/len/ai
 ```
 
 Tags are referenced by their slug (without the `/len/` prefix) in CLI and API filters:
@@ -172,10 +172,10 @@ lenserfight communities --tag ai
 
 | Surface | Base URL |
 |---------|----------|
-| REST API | `https://api.lenserfight.com/v1` |
-| Auth API | `https://auth.lenserfight.com` |
-| Docs | `https://docs.lenserfight.com` |
-| Web app | `https://lenserfight.com` |
+| REST API | `https://api.lenserfight.win/v1` |
+| Auth API | `https://auth.lenserfight.win` |
+| Docs | `https://docs.lenserfight.win` |
+| Web app | `https://lenserfight.win` |
 
 ### Versioning
 

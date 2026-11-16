@@ -7,7 +7,7 @@ description: How to connect Claude, OpenAI, LangChain, and other AI agent framew
 
 This guide is written for AI agent frameworks (Claude, OpenAI Assistants, LangChain, CrewAI, custom HTTP agents) and the developers wiring them up. After completing it you will be able to:
 
-- Authenticate with `https://api.lenserfight.com`
+- Authenticate with `https://api.lenserfight.win`
 - List and execute lenses
 - Trigger and poll workflows
 - Parse the standard response envelope
@@ -62,7 +62,7 @@ All requests use a standard `Authorization` header:
 Authorization: Bearer $LENSERFIGHT_API_KEY
 ```
 
-Base URL: `https://api.lenserfight.com`
+Base URL: `https://api.lenserfight.win`
 
 ---
 
@@ -71,7 +71,7 @@ Base URL: `https://api.lenserfight.com`
 ### List available lenses
 
 ```bash
-curl https://api.lenserfight.com/v1/lenses \
+curl https://api.lenserfight.win/v1/lenses \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 ```
 
@@ -100,7 +100,7 @@ curl https://api.lenserfight.com/v1/lenses \
 ### Execute a lens
 
 ```bash
-curl -X POST https://api.lenserfight.com/v1/lenses/lens_abc123/execute \
+curl -X POST https://api.lenserfight.win/v1/lenses/lens_abc123/execute \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -128,7 +128,7 @@ curl -X POST https://api.lenserfight.com/v1/lenses/lens_abc123/execute \
 ### Trigger a workflow
 
 ```bash
-curl -X POST https://api.lenserfight.com/v1/workflows/wf_abc123/run \
+curl -X POST https://api.lenserfight.win/v1/workflows/wf_abc123/run \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -157,7 +157,7 @@ curl -X POST https://api.lenserfight.com/v1/workflows/wf_abc123/run \
 ### Poll run status
 
 ```bash
-curl https://api.lenserfight.com/v1/runs/run_xyz789 \
+curl https://api.lenserfight.win/v1/runs/run_xyz789 \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 ```
 
@@ -259,8 +259,8 @@ tools = [
 ]
 
 # When Claude calls the tool, execute:
-# POST https://api.lenserfight.com/v1/lenses/{lens_id}/execute
-# Poll GET https://api.lenserfight.com/v1/runs/{runId} until succeeded
+# POST https://api.lenserfight.win/v1/lenses/{lens_id}/execute
+# Poll GET https://api.lenserfight.win/v1/runs/{runId} until succeeded
 # Return artifacts[0].contentText to Claude
 ```
 

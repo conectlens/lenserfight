@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               title="Sign in with Chainabit"
             >
               <img
-                src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+                src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png"
                 width={16}
                 height={16}
                 alt=""
@@ -135,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               aria-label="Chainabit connection"
             >
               <img
-                src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+                src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png"
                 width={20}
                 height={20}
                 alt=""

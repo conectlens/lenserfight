@@ -169,7 +169,7 @@ Automate workflow execution with triggers:
 4. Send a POST request with root inputs in the body:
 
 ```bash
-curl -X POST "https://api.lenserfight.com/v1/workflows/<id>/trigger" \
+curl -X POST "https://api.lenserfight.win/v1/workflows/<id>/trigger" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"params": {"document": "Your input text"}}'

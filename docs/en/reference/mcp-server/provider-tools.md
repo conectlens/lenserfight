@@ -89,7 +89,7 @@ Distribution: **27 Read · 13 Write · 6 Execute · 5 Destructive** = 51.
 All tools use the MCP `tools/call` method:
 
 ```http
-POST https://mcp.lenserfight.com/mcp
+POST https://mcp.lenserfight.win/mcp
 Authorization: Bearer lf_mcp_<token>
 Content-Type: application/json
 

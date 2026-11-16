@@ -75,7 +75,7 @@ describe('docs open', () => {
     await openCmd?.run?.({ args: { topic: 'doctor' }, cmd: {}, rawArgs: [] })
 
     // Should still log the "Open manually" fallback info
-    expect(consolaInfo).toHaveBeenCalledWith('Open manually: %s', expect.stringContaining('docs.lenserfight.com'))
+    expect(consolaInfo).toHaveBeenCalledWith('Open manually: %s', expect.stringContaining('docs.lenserfight.win'))
   })
 
   it('resolves all known topic shortcuts to valid doc URLs', async () => {
@@ -115,7 +115,7 @@ describe('docs list', () => {
     expect(output).toContain('workflow')
     expect(output).toContain('getting-started')
     expect(output).toContain('troubleshoot')
-    expect(output).toContain('docs.lenserfight.com')
+    expect(output).toContain('docs.lenserfight.win')
   })
 
   it('includes usage hint in output', async () => {

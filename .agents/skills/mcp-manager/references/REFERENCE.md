@@ -75,7 +75,7 @@ zUuid  // z.string().uuid() — always use this for UUID params
 | Symptom | Where to look | Fix |
 |---------|--------------|-----|
 | `401 Unauthorized` | `middleware/auth.ts → resolveAuth()` | Token missing, expired, or wrong prefix |
-| `fn_mcp_resolve_lenser_id` returns null | User has no profile | Direct user to complete onboarding at lenserfight.com |
+| `fn_mcp_resolve_lenser_id` returns null | User has no profile | Direct user to complete onboarding at lenserfight.win |
 | Startup shows wrong URL | `MCP_OAUTH_BASE_URL` is set | Unset to re-enable ngrok auto-detect on `127.0.0.1:4040` |
 | Tool not found after adding | `tools/<domain>/index.ts` | Check import + call; rebuild with `pnpm nx build mcp-server` |
 | `mcp_token_exchange_failed` in Claude.ai | ngrok URL changed | Delete and re-add the connector with the new URL |

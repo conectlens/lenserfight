@@ -68,7 +68,7 @@ Key design choices:
 
 | Check | What happens | Why |
 | --- | --- | --- |
-| **Origin allow-list** | `Origin` must match `lenserfight.com`, a subdomain, `localhost`, or `127.0.0.1` on any port. Anything else → 403. | A malicious open tab on any other origin can `fetch('http://127.0.0.1:38080/...')`. The allow-list blocks that. |
+| **Origin allow-list** | `Origin` must match `lenserfight.win`, a subdomain, `localhost`, or `127.0.0.1` on any port. Anything else → 403. | A malicious open tab on any other origin can `fetch('http://127.0.0.1:38080/...')`. The allow-list blocks that. |
 | **Bearer token** | 32 random bytes minted by `lf gateway pair`, stored in OS keychain (server side) and `sessionStorage` (browser). Constant-time compare. | Without a token, no other process on the machine can call `/keys/*`. |
 | **Token storage in the browser** | `sessionStorage` only — **not** cookie, **not** localStorage, **not** IndexedDB. | `sessionStorage` dies with the tab, the user re-pairs anytime. No cross-tab leakage, no automatic refresh from disk. |
 | **Rate limit** | `/keys/:id/resolve` is capped at 60/min per token, burst 5. Excess → 429 + audit log. | A compromised origin that *can* reach the gateway shouldn't be able to exfiltrate every key in a few seconds. |
@@ -81,7 +81,7 @@ Key design choices:
 | --- | --- | --- |
 | Disk theft (laptop lost) | AES-256-GCM at rest under a passphrase held in the OS keychain. | If your OS login + keychain unlock are weak, an attacker with physical access can decrypt. Same risk as any password manager — pick a strong login and require auth-after-sleep. |
 | Same-user malware reading `~/.lenserfight/keys/` | Mode 0600 only blocks unprivileged peers; same-UID processes can read **ciphertext** but need OS-keychain access to decrypt. | Defense-in-depth is OS sandboxing (macOS TCC, Linux AppArmor / cgroups). |
-| Cross-origin browser JS calling the gateway | Origin allow-list + bearer token in `sessionStorage` (not cookie, not localStorage). CSRF impossible without Origin spoof, which `fetch` blocks. | A compromised lenserfight.com origin can pull keys via XSS — mitigations are strict CSP and SRI on the LenserFight web app. |
+| Cross-origin browser JS calling the gateway | Origin allow-list + bearer token in `sessionStorage` (not cookie, not localStorage). CSRF impossible without Origin spoof, which `fetch` blocks. | A compromised lenserfight.win origin can pull keys via XSS — mitigations are strict CSP and SRI on the LenserFight web app. |
 | Loopback eavesdropping | Loopback traffic never leaves the kernel. No on-the-wire risk. | None. |
 | Path traversal / symlink swap | Strict id regex; `O_NOFOLLOW`; refuse symlinks on read, write, and unlink. | None. |
 | Envelope tampering | AES-GCM auth tag — any modification fails decryption with `decryption_failed`. | None. |
@@ -92,7 +92,7 @@ Key design choices:
 ## Accessing the gateway over Tailscale or a LAN
 
 By default the gateway binds to `127.0.0.1:38080` (loopback only) and the
-allow-list permits browser origins on `lenserfight.com`, `localhost`,
+allow-list permits browser origins on `lenserfight.win`, `localhost`,
 `127.0.0.1` (http or https), and, over **https only**, **Tailscale CGNAT**
 (`100.64.0.0/10`), **RFC 1918** private ranges (`10/8`, `172.16/12`,
 `192.168/16`), and `.local` mDNS hostnames. Plain-`http` origins on those

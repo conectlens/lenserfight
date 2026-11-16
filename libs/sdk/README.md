@@ -56,6 +56,6 @@ This release is `0.1.0-alpha.1`. Surface changes are documented in the
 The `1.0.0` line will follow once early-adopter feedback settles the public
 surface.
 
-For the deeper walkthrough see the [SDK quickstart](https://docs.lenserfight.com/how-to/integrations/sdk-quickstart) and the [reference docs](https://docs.lenserfight.com/reference/sdk).
+For the deeper walkthrough see the [SDK quickstart](https://docs.lenserfight.win/how-to/integrations/sdk-quickstart) and the [reference docs](https://docs.lenserfight.win/reference/sdk).
 
 MIT.

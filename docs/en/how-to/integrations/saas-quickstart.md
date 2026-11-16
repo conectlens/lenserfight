@@ -80,7 +80,7 @@ A successful test prints the connector record and confirms the service token is 
 Your backend uses the service token as a Bearer token. All LenserFight REST API calls follow this pattern:
 
 ```bash
-curl https://api.lenserfight.com/v1/lenses \
+curl https://api.lenserfight.win/v1/lenses \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 ```
 
@@ -88,29 +88,29 @@ curl https://api.lenserfight.com/v1/lenses \
 
 ```bash
 # List lenses sorted by popularity
-curl "https://api.lenserfight.com/v1/lenses?sort=popularity&limit=20" \
+curl "https://api.lenserfight.win/v1/lenses?sort=popularity&limit=20" \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 
 # Fetch a specific lens by slug
-curl "https://api.lenserfight.com/v1/lenses/risk-scorer" \
+curl "https://api.lenserfight.win/v1/lenses/risk-scorer" \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 
 # Fetch lenses from your own community
-curl "https://api.lenserfight.com/v1/lenses?community=chainabit" \
+curl "https://api.lenserfight.win/v1/lenses?community=chainabit" \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 ```
 
 ### Fetch agents
 
 ```bash
-curl "https://api.lenserfight.com/v1/agents?community=chainabit" \
+curl "https://api.lenserfight.win/v1/agents?community=chainabit" \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 ```
 
 ### Execute a lens
 
 ```bash
-curl -X POST "https://api.lenserfight.com/v1/lenses/risk-scorer/execute" \
+curl -X POST "https://api.lenserfight.win/v1/lenses/risk-scorer/execute" \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -156,7 +156,7 @@ lf lens version publish <lens-id> --version-id <version-uuid>
 Lenses published under the `chainabit` community appear at:
 
 ```
-https://lenserfight.com/@chainabit/<lens-slug>
+https://lenserfight.win/@chainabit/<lens-slug>
 ```
 
 ---

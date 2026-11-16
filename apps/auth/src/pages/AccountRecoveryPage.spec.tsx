@@ -13,7 +13,7 @@ const {
   mockUseAuthProfileGate: vi.fn(),
   mockReplaceLocationSafely: vi.fn(),
   mockSanitizeReturnUrl: vi.fn((url: string | null | undefined) =>
-    url ?? 'https://forum.lenserfight.com/'
+    url ?? 'https://forum.lenserfight.win/'
   ),
 }))
 
@@ -59,7 +59,7 @@ describe('AccountRecoveryPage', () => {
     })
     mockReplaceLocationSafely.mockReset()
     mockSanitizeReturnUrl.mockClear()
-    window.history.pushState({}, '', '/account-recovery?return_url=https%3A%2F%2Fforum.lenserfight.com%2Fwelcome')
+    window.history.pushState({}, '', '/account-recovery?return_url=https%3A%2F%2Fforum.lenserfight.win%2Fwelcome')
   })
 
   it('redirects anonymous users back to login instead of leaving the loader visible', async () => {
@@ -67,7 +67,7 @@ describe('AccountRecoveryPage', () => {
 
     await waitFor(() => {
       expect(mockReplaceLocationSafely).toHaveBeenCalledWith(
-        '/login?return_url=https%3A%2F%2Fforum.lenserfight.com%2Fwelcome'
+        '/login?return_url=https%3A%2F%2Fforum.lenserfight.win%2Fwelcome'
       )
     })
 

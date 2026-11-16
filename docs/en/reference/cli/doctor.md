@@ -56,7 +56,7 @@ lf doctor --json               # structured JSON output
     { "id": "node",          "status": "pass", "detail": "v24.14.0" },
     { "id": "project_config","status": "pass", "detail": ".lenserfight.json present (mode=cloud)" },
     { "id": "auth",          "status": "pass", "detail": "Token valid — you@example.com" },
-    { "id": "cloud_api",     "status": "pass", "detail": "https://api.lenserfight.com healthy" }
+    { "id": "cloud_api",     "status": "pass", "detail": "https://api.lenserfight.win healthy" }
   ]
 }
 ```

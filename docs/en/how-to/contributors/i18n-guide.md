@@ -39,7 +39,7 @@ If you want to **add a brand-new language**, jump to [Adding a Language](./addin
 - `apps/landing` keeps its `/en/`, `/tr/` URL prefixes for SEO/hreflang. It writes the cookie when the user switches.
 - `apps/docs` (VitePress) keeps `/en/`, `/tr/` prefixes but redirects bare paths using the cookie value, and writes the cookie on every locale-prefixed page load.
 
-The cookie name is `lf-locale`, scoped to the parent domain (`.lenserfight.com` in prod, `localhost` locally). Attributes: `Path=/`, `SameSite=Lax`, `Secure` on HTTPS, `Max-Age=1y`.
+The cookie name is `lf-locale`, scoped to the parent domain (`.lenserfight.win` in prod, `localhost` locally). Attributes: `Path=/`, `SameSite=Lax`, `Secure` on HTTPS, `Max-Age=1y`.
 
 ---
 

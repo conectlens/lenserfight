@@ -95,7 +95,7 @@ const GUIDANCE: Record<CliErrorKind, RecoveryGuidance> = {
       'lf doctor   # run connectivity checks',
       'lf --local <command>   # bypass cloud for local execution',
       'check VPN / firewall settings',
-      'ping api.lenserfight.com',
+      'ping api.lenserfight.win',
     ],
     inspectArea: 'lf doctor',
     docsKey: 'connectivity',

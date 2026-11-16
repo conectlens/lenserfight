@@ -14,7 +14,7 @@ const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
 const DemoCinematicShowcase = React.lazy(() => import('../components/DemoCinematicShowcase'))
 const ProductShowcase = React.lazy(() => import('../components/ProductShowcase'))
 
-const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
+const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.win'
 
 const SOUNDTRACKS = [
   { videoId: 's-NegE5sK9o', href: 'https://youtu.be/s-NegE5sK9o' },

@@ -4,7 +4,7 @@ import { chainabitUrl } from '@lenserfight/utils/env'
 import { Trans, useTranslation } from 'react-i18next'
 import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
-const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.win'
 
 interface WaitlistFormProps {
   className?: string

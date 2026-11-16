@@ -46,7 +46,7 @@ The server supports two transports:
 The hosted endpoint at LF Cloud is the standard path for third-party products. Your MCP client sends HTTP POST requests to the endpoint URL; authentication is handled by the OAuth 2.1 PKCE flow.
 
 ```
-https://mcp.lenserfight.com/mcp
+https://mcp.lenserfight.win/mcp
 ```
 
 This endpoint is proxied through Cloudflare and is stateless, globally deployed, and rate-limited per token.
@@ -87,10 +87,10 @@ See [OAuth & Authentication](./provider-oauth.md) for the full flow diagram and 
 
 Before a user can authorize your integration, they must have:
 
-1. A LenserFight account (email + password at [lenserfight.com](https://lenserfight.com))
+1. A LenserFight account (email + password at [lenserfight.win](https://lenserfight.win))
 2. A completed Lenser profile (a handle chosen during onboarding)
 
-Users who registered but never chose a handle will see a `No Lenser profile found` error during authorization. They must complete onboarding at [lenserfight.com](https://lenserfight.com) first.
+Users who registered but never chose a handle will see a `No Lenser profile found` error during authorization. They must complete onboarding at [lenserfight.win](https://lenserfight.win) first.
 
 ---
 
@@ -130,7 +130,7 @@ The server publishes three standard discovery documents. Any fully compliant OAu
 ## Health check
 
 ```bash
-curl https://mcp.lenserfight.com/health
+curl https://mcp.lenserfight.win/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 

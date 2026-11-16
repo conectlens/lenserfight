@@ -20,7 +20,7 @@
   "replacementPatterns": [
     {
       "pattern": "^/",
-      "replacement": "https://docs.lenserfight.com/"
+      "replacement": "https://docs.lenserfight.win/"
     },
     {
       "pattern": "^(?:\\.\\./)+(?:lenserfight-platform/)?((?:libs|supabase|apps|tools|docs|examples|templates)/.*|\\.github/.*|eslint\\.config\\.js|LICENSE|CODEOWNERS|MAINTAINERS\\.md)$",

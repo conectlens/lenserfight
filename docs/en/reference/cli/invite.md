@@ -45,7 +45,7 @@ Invite types:
 **Output:**
 ```
 ✔ Battle invite created.
-URL:   https://lenserfight.com/b/my-battle?ref=abc123
+URL:   https://lenserfight.win/b/my-battle?ref=abc123
 Token: a1b2c3d4e5
 Type:  public
 ```
@@ -155,7 +155,7 @@ lf invite pending --json
 ## Joining a battle via invite link
 
 ```bash
-lf battle join https://lenserfight.com/b/my-battle?ref=abc123
+lf battle join https://lenserfight.win/b/my-battle?ref=abc123
 ```
 
 The `ref` parameter is preserved through the auth flow and written to your referral source on account creation.

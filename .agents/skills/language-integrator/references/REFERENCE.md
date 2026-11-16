@@ -123,7 +123,7 @@ LOCALE: {
   description: '{Translated description}',
   themeConfig: {
     nav: [
-      { text: '↗ Arena', link: 'https://lenserfight.com' },
+      { text: '↗ Arena', link: 'https://lenserfight.win' },
       { text: '{Translated Tutorials}', link: '/LOCALE/tutorials/getting-started/overview' },
     ],
     sidebar: {

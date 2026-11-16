@@ -16,7 +16,7 @@ jest.mock('@lenserfight/cli-client', () => ({
   resolveConfig: jest.fn().mockReturnValue({
     mode: 'cloud',
     supabaseUrl: 'https://cloud-project.supabase.co',
-    cloudApiUrl: 'https://api.lenserfight.com',
+    cloudApiUrl: 'https://api.lenserfight.win',
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.sig',
     supabaseServiceRoleKey: undefined,
     ollamaBaseUrl: undefined,

@@ -120,9 +120,9 @@ const CATEGORY_DEFAULTS: Record<AssetCategory, CategoryConfig> = {
 }
 
 export const PRODUCTION_DEFAULTS: AssetCacheConfig = {
-  cdnBaseUrl: 'https://cdn.lenserfight.com',
+  cdnBaseUrl: 'https://cdn.lenserfight.win',
   environment: 'production',
-  manifestUrl: 'https://cdn.lenserfight.com/manifest/v1/asset-manifest.json',
+  manifestUrl: 'https://cdn.lenserfight.win/manifest/v1/asset-manifest.json',
   categories: CATEGORY_DEFAULTS,
   memoryCache: {
     maxSizeBytes: 50 * MB,
@@ -149,7 +149,7 @@ export const PRODUCTION_DEFAULTS: AssetCacheConfig = {
   },
   offline: {
     enabled: true,
-    probeUrl: 'https://cdn.lenserfight.com/public-static/health.json',
+    probeUrl: 'https://cdn.lenserfight.win/public-static/health.json',
     onlineProbeIntervalMs: 300_000,
     offlineProbeIntervalMs: 30_000,
     probeTimeoutMs: 3_000,

@@ -28,7 +28,7 @@ import { WaitlistForm } from '../components/WaitlistForm'
 const HomeTour = React.lazy(() => import('../components/HomeTour'))
 const ProductShowcase = React.lazy(() => import('../components/ProductShowcase'))
 
-const WEB_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
+const WEB_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.win'
 const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/conectlens'
 const GITHUB_URL = 'https://github.com/conectlens/lenserfight'
 

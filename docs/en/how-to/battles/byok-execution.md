@@ -95,7 +95,7 @@ Add `--stream-to-web` to broadcast every token to the LenserFight arena as the C
 lf battle exec <id> --byok --stream-to-web
 ```
 
-- Open `https://lenserfight.com/battles/<slug>` in a browser tab before running
+- Open `https://lenserfight.win/battles/<slug>` in a browser tab before running
 - The **"Streaming from CLI"** badge appears on each active contender column
 - Tokens arrive with sub-100ms latency via Supabase Realtime Broadcast
 - The arena falls back to DB-based updates if the broadcast channel disconnects

@@ -28,8 +28,8 @@ import { MobileComingSoonPage } from './pages/MobileComingSoonPage'
 import { BattleShowcasePage } from './pages/BattleShowcasePage'
 import { RouteSEO } from './seo/RouteSEO'
 
-const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
-const WEB_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
+const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.win'
+const WEB_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.win'
 
 const App: React.FC = () => {
   return (

@@ -6,19 +6,19 @@ describe('submitToIndexNow', () => {
     const fetchImpl = vi.fn(async () => new Response(null, { status: 200 })) as unknown as typeof fetch
     const res = await submitToIndexNow(
       {
-        host: 'moon.lenserfight.com',
+        host: 'moon.lenserfight.win',
         key: 'abc123',
-        urls: ['https://moon.lenserfight.com/lenses/a', 'https://moon.lenserfight.com/lenses/a', 'https://moon.lenserfight.com/lenses/b'],
+        urls: ['https://moon.lenserfight.win/lenses/a', 'https://moon.lenserfight.win/lenses/a', 'https://moon.lenserfight.win/lenses/b'],
       },
       fetchImpl,
     )
     expect(res).toEqual({ ok: true, status: 200, submitted: 2 })
     const [, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0]
     const body = JSON.parse((init as RequestInit).body as string)
-    expect(body.keyLocation).toBe('https://moon.lenserfight.com/abc123.txt')
+    expect(body.keyLocation).toBe('https://moon.lenserfight.win/abc123.txt')
     expect(body.urlList).toEqual([
-      'https://moon.lenserfight.com/lenses/a',
-      'https://moon.lenserfight.com/lenses/b',
+      'https://moon.lenserfight.win/lenses/a',
+      'https://moon.lenserfight.win/lenses/b',
     ])
   })
 

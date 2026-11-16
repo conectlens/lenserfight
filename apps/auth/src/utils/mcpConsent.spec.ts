@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { consumeConsent, rememberConsent } from './mcpConsent'
 
-const SERVER = 'https://mcp.lenserfight.com'
+const SERVER = 'https://mcp.lenserfight.win'
 
 describe('MCP consent record', () => {
   beforeEach(() => sessionStorage.clear())

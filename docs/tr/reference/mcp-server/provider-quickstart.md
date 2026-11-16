@@ -9,7 +9,7 @@ description: Yapay zeka ürününüzü LenserFight MCP sunucusuna 5 dakikadan k�
 
 **İhtiyacınız olanlar:**
 - MCP uyumlu bir istemci (Claude.ai, Cursor veya OAuth 2.1 PKCE + RFC 7591 standartlarını uygulayan herhangi bir istemci)
-- [lenserfight.com](https://lenserfight.com) adresinde oluşturulmuş ve Lenser kullanıcı adı (handle) seçilmiş bir LenserFight hesabı
+- [lenserfight.win](https://lenserfight.win) adresinde oluşturulmuş ve Lenser kullanıcı adı (handle) seçilmiş bir LenserFight hesabı
 
 ---
 
@@ -18,7 +18,7 @@ description: Yapay zeka ürününüzü LenserFight MCP sunucusuna 5 dakikadan k�
 LenserFight MCP sunucu, LF Cloud üzerinde barındırılmaktadır. Tek kararlı uç nokta:
 
 ```
-https://mcp.lenserfight.com/mcp
+https://mcp.lenserfight.win/mcp
 ```
 
 Bu URL tüm MCP JSON-RPC isteklerini, OAuth keşif (discovery) işlemlerini, jeton değişimlerini ve sağlık kontrollerini yönetir. Ayrı bir temel URL'ye gerek yoktur.
@@ -30,7 +30,7 @@ Bu URL tüm MCP JSON-RPC isteklerini, OAuth keşif (discovery) işlemlerini, jet
 LenserFight'a önceden kayıt olmanız gerekmez. İlk bağlantıda istemciniz şu isteği gönderir:
 
 ```http
-POST https://mcp.lenserfight.com/oauth/register
+POST https://mcp.lenserfight.win/oauth/register
 Content-Type: application/json
 
 {
@@ -57,7 +57,7 @@ Yanıt:
 Bir PKCE kod doğrulayıcısı (code verifier) ve sınaması (challenge) oluşturun, ardından kullanıcıyı şuraya yönlendirin:
 
 ```
-https://mcp.lenserfight.com/oauth/authorize
+https://mcp.lenserfight.win/oauth/authorize
   ?response_type=code
   &client_id=lf_mcp_client_abc123...
   &redirect_uri=https://myproduct.com/api/mcp/auth_callback
@@ -75,7 +75,7 @@ Başarılı olunduğunda sunucu, `?code=lf_mcp_<hex>&state=<your_state>` paramet
 ## Adım 4 — Kodu bir jetonla değiştirin
 
 ```http
-POST https://mcp.lenserfight.com/oauth/token
+POST https://mcp.lenserfight.win/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
@@ -100,7 +100,7 @@ Yanıt:
 ## Adım 5 — İlk araç çağrınızı yapın
 
 ```http
-POST https://mcp.lenserfight.com/mcp
+POST https://mcp.lenserfight.win/mcp
 Authorization: Bearer lf_mcp_abc123...
 Content-Type: application/json
 
@@ -142,7 +142,7 @@ Eğer ürününüz Claude.ai **ise**:
 1. **claude.ai → Ayarlar (Settings) → Bağlayıcılar (Connectors) → Özel bağlayıcı ekle (Add custom connector)** yolunu izleyin.
 2. **Remote MCP server URL** alanını şu şekilde ayarlayın:
    ```
-   https://mcp.lenserfight.com/mcp
+   https://mcp.lenserfight.win/mcp
    ```
 3. OAuth Client ID ve Secret alanlarını boş bırakın (dinamik kayıt bu işlemi yönetir).
 4. **Ekle (Add)** seçeneğine tıklayın. Açılan pencere belirdiğinde LenserFight kimlik bilgilerinizle giriş yapın.
@@ -158,7 +158,7 @@ MCP yapılandırma dosyanıza ekleyin (örneğin, çalışma alanınızdaki `~/.
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://mcp.lenserfight.com/mcp"
+      "url": "https://mcp.lenserfight.win/mcp"
     }
   }
 }
@@ -173,7 +173,7 @@ Cursor, keşif belgesinden OAuth gereksinimini algılayacak ve bir LenserFight a
 İstediğiniz zaman:
 
 ```bash
-curl https://mcp.lenserfight.com/health
+curl https://mcp.lenserfight.win/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 
@@ -197,7 +197,7 @@ Veya AI asistanınızın içinden:
 
 | Hata | Nedeni | Çözümü |
 |---|---|---|
-| `Sign-in failed` | Yanlış e-posta veya şifre | [lenserfight.com](https://lenserfight.com) adresinden kimlik bilgilerinizi doğrulayın |
-| `No Lenser profile found` | Hesap var ancak katılım adımları tamamlanmamış | [lenserfight.com](https://lenserfight.com) adresine giriş yapın ve bir kullanıcı adı seçin |
+| `Sign-in failed` | Yanlış e-posta veya şifre | [lenserfight.win](https://lenserfight.win) adresinden kimlik bilgilerinizi doğrulayın |
+| `No Lenser profile found` | Hesap var ancak katılım adımları tamamlanmamış | [lenserfight.win](https://lenserfight.win) adresine giriş yapın ve bir kullanıcı adı seçin |
 | `401 Unauthorized` | Jeton eksik veya hatalı biçimlendirilmiş | `Authorization: Bearer lf_mcp_...` üst bilgisinin mevcut olduğundan emin olun |
 | `mcp_token_exchange_failed` | Keşif belgesi yerel ana bilgisayar (localhost) URL'si sundu | Yalnızca yerel geliştirmede olur; üretim için bulut uç noktasını kullanın |

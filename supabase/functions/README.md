@@ -274,7 +274,7 @@ psql postgresql://postgres:postgres@127.0.0.1:54322/postgres \
 pnpm supabase db push
 
 # 3. Set any new secrets
-pnpm supabase secrets set ALLOWED_ORIGINS=https://lenserfight.com,https://app.lenserfight.com
+pnpm supabase secrets set ALLOWED_ORIGINS=https://lenserfight.win,https://app.lenserfight.win
 
 # 4. Deploy
 pnpm supabase functions deploy
@@ -343,15 +343,15 @@ http://localhost:3000
 http://localhost:4200
 http://localhost:5173
 http://127.0.0.1:5173
-https://lenserfight.com
-https://www.lenserfight.com
-https://app.lenserfight.com
+https://lenserfight.win
+https://www.lenserfight.win
+https://app.lenserfight.win
 ```
 
 To extend it for a preview deployment or staging domain, set the `ALLOWED_ORIGINS` secret:
 
 ```sh
-pnpm supabase secrets set ALLOWED_ORIGINS=https://preview.lenserfight.com,https://staging.lenserfight.com
+pnpm supabase secrets set ALLOWED_ORIGINS=https://preview.lenserfight.win,https://staging.lenserfight.win
 ```
 
 Non-browser callers (CLI, server-to-server) do not send an `Origin` header and are unaffected by this list.

@@ -26,7 +26,7 @@ For virtually all provider integrations, you will use **MCP tokens** exclusively
 All endpoints are served from the same base URL as the MCP server:
 
 ```
-https://mcp.lenserfight.com
+https://mcp.lenserfight.win
 ```
 
 | Endpoint | Method | Purpose |
@@ -81,15 +81,15 @@ sequenceDiagram
 ### Step 1 — Discover the server (optional but recommended)
 
 ```bash
-curl https://mcp.lenserfight.com/.well-known/oauth-authorization-server
+curl https://mcp.lenserfight.win/.well-known/oauth-authorization-server
 ```
 
 ```json
 {
-  "issuer": "https://mcp.lenserfight.com",
-  "authorization_endpoint": "https://mcp.lenserfight.com/oauth/authorize",
-  "token_endpoint": "https://mcp.lenserfight.com/oauth/token",
-  "registration_endpoint": "https://mcp.lenserfight.com/oauth/register",
+  "issuer": "https://mcp.lenserfight.win",
+  "authorization_endpoint": "https://mcp.lenserfight.win/oauth/authorize",
+  "token_endpoint": "https://mcp.lenserfight.win/oauth/token",
+  "registration_endpoint": "https://mcp.lenserfight.win/oauth/register",
   "response_types_supported": ["code"],
   "grant_types_supported": ["authorization_code"],
   "code_challenge_methods_supported": ["S256"],
@@ -106,7 +106,7 @@ Parse and cache this. Use the endpoint values instead of hard-coding paths — t
 Call this once per product (or once per deployment). Save the `client_id` permanently.
 
 ```http
-POST https://mcp.lenserfight.com/oauth/register
+POST https://mcp.lenserfight.win/oauth/register
 Content-Type: application/json
 
 {
@@ -157,7 +157,7 @@ Store `codeVerifier` in your server-side session. You will need it in Step 5.
 Construct the URL:
 
 ```
-https://mcp.lenserfight.com/oauth/authorize
+https://mcp.lenserfight.win/oauth/authorize
   ?response_type=code
   &client_id=lf_mcp_client_a1b2c3d4...
   &redirect_uri=https://acme.example.com/api/mcp/callback
@@ -168,7 +168,7 @@ https://mcp.lenserfight.com/oauth/authorize
 
 The server renders a login form. The user enters their LenserFight credentials.
 
-> **Important:** Users must have a Lenser profile (a handle chosen at [lenserfight.com](https://lenserfight.com)) before they can authorize. If they have not completed onboarding, the login form will return an error.
+> **Important:** Users must have a Lenser profile (a handle chosen at [lenserfight.win](https://lenserfight.win)) before they can authorize. If they have not completed onboarding, the login form will return an error.
 
 ---
 
@@ -187,7 +187,7 @@ https://acme.example.com/api/mcp/callback?code=lf_mcp_abc123...&state=<your_stat
 ### Step 6 — Exchange the code for an access token
 
 ```http
-POST https://mcp.lenserfight.com/oauth/token
+POST https://mcp.lenserfight.win/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
@@ -214,7 +214,7 @@ Response:
 Include the token on every request:
 
 ```http
-POST https://mcp.lenserfight.com/mcp
+POST https://mcp.lenserfight.win/mcp
 Authorization: Bearer lf_mcp_abc123...
 Content-Type: application/json
 mcp-session-id: <your_session_id>

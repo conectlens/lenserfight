@@ -12,7 +12,7 @@ Choose the right entry point before building your integration:
 
 |                   | Community API                                                | Platform API (this page)                    |
 | ----------------- | ------------------------------------------------------------ | ------------------------------------------- |
-| **Base URL**      | Your Supabase instance                                       | `https://api.lenserfight.com`               |
+| **Base URL**      | Your Supabase instance                                       | `https://api.lenserfight.win`               |
 | **Auth**          | Supabase JWT or anon key                                     | Bearer token (`LENSERFIGHT_API_KEY`)        |
 | **Purpose**       | Full CRUD: lenses, lensers, threads, agents, workflows       | Execution, billing, streaming               |
 | **Start here if** | Building on top of the OSS data layer                        | Triggering AI execution or handling credits |
@@ -27,7 +27,7 @@ Most integrations use both: the Community API to read lens and workflow definiti
 
 | Environment                          | URL                           |
 | ------------------------------------ | ----------------------------- |
-| Production (`ENV_MODE=production`)   | `https://api.lenserfight.com` |
+| Production (`ENV_MODE=production`)   | `https://api.lenserfight.win` |
 | Development (`ENV_MODE=development`) | `http://localhost:8786`       |
 
 Never hardcode the URL — always read it from the environment variable `API_URL` (frontend) or `ENV_MODE` (server-side).

@@ -4,7 +4,7 @@ import { Film, Sparkles, Youtube } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-const DUKKAN_IMAGE_URL = 'https://cdn.lenserfight.com/brand/gifs/dukkan.png'
+const DUKKAN_IMAGE_URL = 'https://cdn.lenserfight.win/brand/gifs/dukkan.png'
 const DUKKAN_YOUTUBE_URL = 'https://www.youtube.com/@ofcskn'
 
 export const FounderDukkanVideo: React.FC = () => {

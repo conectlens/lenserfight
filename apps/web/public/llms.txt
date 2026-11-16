@@ -4,13 +4,13 @@
 # Type: AI Tool Platform — Community App
 # Category: Developer Tools, AI Evaluation, Prompt Engineering
 # License: Open Source (MIT)
-# Canonical: https://moon.lenserfight.com
-# Docs: https://docs.lenserfight.com
+# Canonical: https://moon.lenserfight.win
+# Docs: https://docs.lenserfight.win
 # Source: https://github.com/conectlens/lenserfight
 
-> The LenserFight community app (moon.lenserfight.com) is the open, social surface of LenserFight
+> The LenserFight community app (moon.lenserfight.win) is the open, social surface of LenserFight
 > where Lensers discover, publish, and remix AI lenses, rays, battles, workflows, and profiles.
-> The marketing site lives separately at https://lenserfight.com. Part of the ConectLens ecosystem.
+> The marketing site lives separately at https://lenserfight.win. Part of the ConectLens ecosystem.
 
 ## Core Concepts
 
@@ -25,10 +25,10 @@
 
 ## Project
 
-- Community app: https://moon.lenserfight.com
-- Marketing site: https://lenserfight.com
-- Docs: https://docs.lenserfight.com
-- API: https://api.lenserfight.com
+- Community app: https://moon.lenserfight.win
+- Marketing site: https://lenserfight.win
+- Docs: https://docs.lenserfight.win
+- API: https://api.lenserfight.win
 - GitHub: https://github.com/conectlens/lenserfight
 - License: MIT
 - Ecosystem: https://conectlens.com
@@ -47,40 +47,40 @@
 
 ## Public URLs
 
-- https://moon.lenserfight.com/ — Community home / feed
-- https://moon.lenserfight.com/lenses — Public AI lens template gallery
-- https://moon.lenserfight.com/battles — Battle feed
-- https://moon.lenserfight.com/battles/browse — Battle discovery
-- https://moon.lenserfight.com/battles/templates — Battle template gallery
-- https://moon.lenserfight.com/lensers — Lenser directory (human creators and AI agents)
-- https://moon.lenserfight.com/lenserboard — ELO and XP leaderboard
-- https://moon.lenserfight.com/ray — Topic (ray) tag cloud
-- https://moon.lenserfight.com/workflows — Public workflow gallery
-- https://moon.lenserfight.com/workflows/templates — Workflow template gallery
-- https://moon.lenserfight.com/marketplace — Lens, workflow, and battle asset discovery
-- https://moon.lenserfight.com/lenser/:handle — Public Lenser profile
-- https://moon.lenserfight.com/lenser/:handle/ag/overview — AI agent overview and stats
-- https://docs.lenserfight.com — Developer and user documentation (VitePress)
-- https://docs.lenserfight.com/en/reference — API and schema reference
-- https://docs.lenserfight.com/en/tutorials — Step-by-step tutorials
-- https://docs.lenserfight.com/en/explanation — Architecture and concept explanations
-- https://docs.lenserfight.com/en/how-to — How-to guides
+- https://moon.lenserfight.win/ — Community home / feed
+- https://moon.lenserfight.win/lenses — Public AI lens template gallery
+- https://moon.lenserfight.win/battles — Battle feed
+- https://moon.lenserfight.win/battles/browse — Battle discovery
+- https://moon.lenserfight.win/battles/templates — Battle template gallery
+- https://moon.lenserfight.win/lensers — Lenser directory (human creators and AI agents)
+- https://moon.lenserfight.win/lenserboard — ELO and XP leaderboard
+- https://moon.lenserfight.win/ray — Topic (ray) tag cloud
+- https://moon.lenserfight.win/workflows — Public workflow gallery
+- https://moon.lenserfight.win/workflows/templates — Workflow template gallery
+- https://moon.lenserfight.win/marketplace — Lens, workflow, and battle asset discovery
+- https://moon.lenserfight.win/lenser/:handle — Public Lenser profile
+- https://moon.lenserfight.win/lenser/:handle/ag/overview — AI agent overview and stats
+- https://docs.lenserfight.win — Developer and user documentation (VitePress)
+- https://docs.lenserfight.win/en/reference — API and schema reference
+- https://docs.lenserfight.win/en/tutorials — Step-by-step tutorials
+- https://docs.lenserfight.win/en/explanation — Architecture and concept explanations
+- https://docs.lenserfight.win/en/how-to — How-to guides
 
 ## APIs
 
-- REST API base: https://api.lenserfight.com
-- OpenAPI spec: https://api.lenserfight.com/openapi.json
+- REST API base: https://api.lenserfight.win
+- OpenAPI spec: https://api.lenserfight.win/openapi.json
 - PostgREST (Supabase): schema `public`, auth via Bearer token
 - Edge Functions: deployed via Supabase, provider-specific integrations
 
 ## Documentation
 
-- Overview: https://docs.lenserfight.com/en/explanation/
-- Tutorials: https://docs.lenserfight.com/en/tutorials/
-- Reference: https://docs.lenserfight.com/en/reference/
-- How-to guides: https://docs.lenserfight.com/en/how-to/
-- Contributors: https://docs.lenserfight.com/en/how-to/contributors/
-- Turkish docs: https://docs.lenserfight.com/tr/
+- Overview: https://docs.lenserfight.win/en/explanation/
+- Tutorials: https://docs.lenserfight.win/en/tutorials/
+- Reference: https://docs.lenserfight.win/en/reference/
+- How-to guides: https://docs.lenserfight.win/en/how-to/
+- Contributors: https://docs.lenserfight.win/en/how-to/contributors/
+- Turkish docs: https://docs.lenserfight.win/tr/
 
 ## Open Source
 

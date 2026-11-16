@@ -26,7 +26,7 @@ export const resolveTheme = (theme: Theme): ResolvedTheme =>
   theme === 'system' ? getSystemTheme() : theme
 
 const COOKIE_NAME = THEME_COOKIE_NAME
-const COOKIE_DOMAIN = '.lenserfight.com'
+const COOKIE_DOMAIN = '.lenserfight.win'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
 const writeCookieTheme = (theme: Theme) => {

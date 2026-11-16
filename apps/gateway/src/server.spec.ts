@@ -118,10 +118,10 @@ describe('startServer', () => {
     })
     try {
       const res = await fetch(`${server.url}/healthz`, {
-        headers: { origin: 'https://lenserfight.com' },
+        headers: { origin: 'https://lenserfight.win' },
       })
       expect(res.status).toBe(200)
-      expect(res.headers.get('access-control-allow-origin')).toBe('https://lenserfight.com')
+      expect(res.headers.get('access-control-allow-origin')).toBe('https://lenserfight.win')
       expect(res.headers.get('vary')).toBe('origin')
     } finally {
       await server.close()

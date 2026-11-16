@@ -218,7 +218,7 @@ Every battle generates a shareable invite. This is the viral loop.
 **Web:** Battle detail → "Invite" tab
 
 ```
-Public link   https://lenserfight.com/b/my-battle?ref=abc123
+Public link   https://lenserfight.win/b/my-battle?ref=abc123
               [Copy link]  [Open QR]
 
 QR code       (renders in-page, download PNG or SVG)
@@ -246,7 +246,7 @@ lf invite stats --battle <id>
 lf invite list --battle <id>
 
 # Join via an invite link
-lf battle join https://lenserfight.com/b/my-battle?ref=abc123
+lf battle join https://lenserfight.win/b/my-battle?ref=abc123
 ```
 
 Sharing the QR at a meetup, in a Discord, or in a GitHub README drives new signups directly into your battle.

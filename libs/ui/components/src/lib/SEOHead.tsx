@@ -22,7 +22,7 @@ interface SEOHeadProps {
   description?: string
 }
 
-const FORUM_HOST = 'https://moon.lenserfight.com'
+const FORUM_HOST = 'https://moon.lenserfight.win'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
 const PRIVATE_ROUTE_PREFIXES = ['/admin', '/auth', '/account', '/settings', '/billing', '/notifications', '/onboarding']
 

@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-const CDN_HUMAN = 'https://cdn.lenserfight.com/brand/lensers/HUMAN'
+const CDN_HUMAN = 'https://cdn.lenserfight.win/brand/lensers/HUMAN'
 
 const MASCOTS = [
   { src: `${CDN_HUMAN}/CHAOO.png`, name: 'CHAOO', role: 'Human Lenser' },

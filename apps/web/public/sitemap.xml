@@ -5,132 +5,132 @@
 >
   <!-- Home -->
   <url>
-    <loc>https://moon.lenserfight.com/</loc>
+    <loc>https://moon.lenserfight.win/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/" />
   </url>
 
   <!-- Lenses list -->
   <url>
-    <loc>https://moon.lenserfight.com/lenses</loc>
+    <loc>https://moon.lenserfight.win/lenses</loc>
     <changefreq>hourly</changefreq>
     <priority>0.95</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/lenses" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/lenses?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/lenses" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/lenses" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/lenses?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/lenses" />
   </url>
 
   <!-- Tags / Topics cloud -->
   <url>
-    <loc>https://moon.lenserfight.com/ray</loc>
+    <loc>https://moon.lenserfight.win/ray</loc>
     <changefreq>daily</changefreq>
     <priority>0.86</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/ray" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/ray?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/ray" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/ray" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/ray?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/ray" />
   </url>
 
   <!-- Battles browse -->
   <url>
-    <loc>https://moon.lenserfight.com/battles/browse</loc>
+    <loc>https://moon.lenserfight.win/battles/browse</loc>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/battles/browse" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/battles/browse?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/battles/browse" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/battles/browse" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/battles/browse?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/battles/browse" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/battles</loc>
+    <loc>https://moon.lenserfight.win/battles</loc>
     <changefreq>hourly</changefreq>
     <priority>0.94</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/battles" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/battles?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/battles" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/battles" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/battles?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/battles" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/battles/arena</loc>
+    <loc>https://moon.lenserfight.win/battles/arena</loc>
     <changefreq>hourly</changefreq>
     <priority>0.88</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/battles/arena" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/battles/arena?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/battles/arena" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/battles/arena" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/battles/arena?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/battles/arena" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/battles/templates</loc>
+    <loc>https://moon.lenserfight.win/battles/templates</loc>
     <changefreq>daily</changefreq>
     <priority>0.88</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/battles/templates" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/battles/templates?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/battles/templates" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/battles/templates" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/battles/templates?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/battles/templates" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/lensers</loc>
+    <loc>https://moon.lenserfight.win/lensers</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/lensers" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/lensers?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/lensers" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/lensers" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/lensers?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/lensers" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/marketplace</loc>
+    <loc>https://moon.lenserfight.win/marketplace</loc>
     <changefreq>daily</changefreq>
     <priority>0.82</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/marketplace" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/marketplace?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/marketplace" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/marketplace" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/marketplace?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/marketplace" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/workflows</loc>
+    <loc>https://moon.lenserfight.win/workflows</loc>
     <changefreq>daily</changefreq>
     <priority>0.82</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/workflows" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/workflows?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/workflows" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/workflows" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/workflows?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/workflows" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/workflows/templates</loc>
+    <loc>https://moon.lenserfight.win/workflows/templates</loc>
     <changefreq>daily</changefreq>
     <priority>0.84</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/workflows/templates" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/workflows/templates?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/workflows/templates" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/workflows/templates" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/workflows/templates?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/workflows/templates" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/ai/catalog</loc>
+    <loc>https://moon.lenserfight.win/ai/catalog</loc>
     <changefreq>daily</changefreq>
     <priority>0.78</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/ai/catalog" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/ai/catalog?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/ai/catalog" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/ai/catalog" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/ai/catalog?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/ai/catalog" />
   </url>
 
   <url>
-    <loc>https://moon.lenserfight.com/ai/catalog/models</loc>
+    <loc>https://moon.lenserfight.win/ai/catalog/models</loc>
     <changefreq>daily</changefreq>
     <priority>0.76</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/ai/catalog/models" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/ai/catalog/models?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/ai/catalog/models" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/ai/catalog/models" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/ai/catalog/models?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/ai/catalog/models" />
   </url>
 
   <!-- Leaderboard -->
   <url>
-    <loc>https://moon.lenserfight.com/lenserboard</loc>
+    <loc>https://moon.lenserfight.win/lenserboard</loc>
     <changefreq>hourly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.com/lenserboard" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.com/lenserboard?lang=tr" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.com/lenserboard" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://moon.lenserfight.win/lenserboard" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://moon.lenserfight.win/lenserboard?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://moon.lenserfight.win/lenserboard" />
   </url>
 </urlset>
