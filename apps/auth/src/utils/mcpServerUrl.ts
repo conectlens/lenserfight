@@ -78,8 +78,21 @@ export function isSafeRedirectTarget(url: URL): boolean {
     case 'ws:':
     case 'wss:':
     case 'ftp:':
+    case 'ms-msdt:':
+    case 'search-ms:':
+    case 'search:':
+    case 'intent:':
+    case 'chrome:':
+    case 'shell:':
+    case 'view-source:':
       return false
+    case 'cursor:':
+    case 'vscode:':
+    case 'vscode-insiders:':
+    case 'windsurf:':
+      return true
     default:
-      return /^[a-z][a-z0-9+.-]*:$/.test(url.protocol)
+      // Other app schemes must be reverse-DNS style (contain a dot).
+      return /^[a-z][a-z0-9+-]*(\.[a-z0-9+-]+)+:$/.test(url.protocol)
   }
 }

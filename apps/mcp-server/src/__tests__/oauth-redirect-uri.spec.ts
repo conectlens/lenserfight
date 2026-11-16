@@ -7,6 +7,8 @@ describe('isAllowedRedirectUri', () => {
     'http://127.0.0.1:33418/callback',
     'http://localhost:6274/oauth/callback',
     'cursor://anysphere.cursor-mcp/oauth/callback',
+    'vscode://publisher.ext/callback',
+    'com.example.app://callback',
   ])('accepts %s', (uri) => {
     expect(isAllowedRedirectUri(uri)).toBe(true);
   });
@@ -18,6 +20,10 @@ describe('isAllowedRedirectUri', () => {
     'data:text/html,<script>alert(1)</script>',
     'vbscript:msgbox(1)',
     'file:///etc/passwd',
+    'ms-msdt:/id PCWDiagnostic',
+    'search-ms:query=x',
+    'intent://x#Intent;end',
+    'myapp://callback',
     'http://attacker.example/cb',
     'https://client.example/cb#frag',
     'not a url',

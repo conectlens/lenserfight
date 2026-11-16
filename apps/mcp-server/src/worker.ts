@@ -230,7 +230,7 @@ async function handleClientInfo(req: Request, env: Env): Promise<Response> {
 
   const { data: codeRows } = (await svc.rpc('fn_mcp_oauth_lookup_auth_code' as never, {
     p_id: id,
-  } as never)) as RpcResult<{ client_id: string }[]>;
+  } as never)) as RpcResult<{ client_id: string; redirect_uri: string }[]>;
 
   const codeRow = codeRows?.[0] ?? null;
   if (!codeRow) {
@@ -241,7 +241,7 @@ async function handleClientInfo(req: Request, env: Env): Promise<Response> {
     p_client_id: codeRow.client_id,
   } as never)) as RpcResult<{ id: string; name: string }[]>;
 
-  return json({ client_name: clientRows?.[0]?.name ?? 'Unknown' });
+  return json({ client_name: clientRows?.[0]?.name ?? 'Unknown', redirect_uri: codeRow.redirect_uri });
 }
 
 async function handleComplete(req: Request, env: Env): Promise<Response> {

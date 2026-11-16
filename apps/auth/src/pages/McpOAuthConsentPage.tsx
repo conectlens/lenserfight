@@ -31,10 +31,18 @@ function getWebBaseUrl(): string {
   return WEB_BASE_URL
 }
 
+function redirectHostOf(value: unknown): string | undefined {
+  try {
+    return typeof value === 'string' ? new URL(value).host || new URL(value).protocol : undefined
+  } catch {
+    return undefined
+  }
+}
+
 type Phase =
   | { name: 'loading' }
   | { name: 'fetching' }
-  | { name: 'consent'; clientName: string }
+  | { name: 'consent'; clientName: string; redirectHost?: string }
   | { name: 'authorizing'; clientName: string }
   | { name: 'denied' }
   | { name: 'error'; message: string }
@@ -72,7 +80,7 @@ export const McpOAuthConsentPage: React.FC = () => {
       .then((r) => r.json())
       .then((data) => {
         if (data.error) setPhase({ name: 'error', message: data.error_description ?? data.error })
-        else setPhase({ name: 'consent', clientName: data.client_name ?? 'Unknown' })
+        else setPhase({ name: 'consent', clientName: data.client_name ?? 'Unknown', redirectHost: redirectHostOf(data.redirect_uri) })
       })
       .catch((e: Error) => setPhase({ name: 'error', message: e.message }))
   }, [id, isAuthenticated, isLoading, mcpServerUrl, searchParams])
@@ -198,6 +206,11 @@ export const McpOAuthConsentPage: React.FC = () => {
             <p className="mt-3 text-sm leading-6 text-gray-600">
               This will grant <strong>{clientName}</strong> access to read and manage your lenses, battles, and workflows on your behalf.
             </p>
+            {phase.name === 'consent' && phase.redirectHost ? (
+              <p className="mt-2 text-xs text-gray-500">
+                After you allow, you will be sent to <strong>{phase.redirectHost}</strong>.
+              </p>
+            ) : null}
             <p className="mt-2 text-xs text-gray-500">
               Your session will be shared with <strong>{new URL(mcpServerUrl).host}</strong>.
             </p>

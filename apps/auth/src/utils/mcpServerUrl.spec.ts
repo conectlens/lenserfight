@@ -50,6 +50,7 @@ describe('isSafeRedirectTarget', () => {
     'http://localhost:6274/oauth/callback',
     'cursor://anysphere.cursor-mcp/oauth/callback',
     'vscode://publisher.ext/callback',
+    'com.example.app://callback',
   ])('allows %s', (value) => {
     expect(isSafeRedirectTarget(new URL(value))).toBe(true)
   })
@@ -62,6 +63,9 @@ describe('isSafeRedirectTarget', () => {
     'vbscript:msgbox(1)',
     'blob:https://example.com/uuid',
     'file:///etc/passwd',
+    'ms-msdt:/id PCWDiagnostic',
+    'search-ms:query=x',
+    'myapp://callback',
     'http://attacker.example/cb',
   ])('rejects %s', (value) => {
     expect(isSafeRedirectTarget(new URL(value))).toBe(false)
