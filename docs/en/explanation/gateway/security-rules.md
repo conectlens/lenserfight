@@ -128,3 +128,11 @@ A single layer failure cannot silently elevate trust. For example, even if a mal
 - `--check transport` — no public bind; if `--tailscale`, tailnet interface detected.
 
 Doctor exit code is non-zero on any failed check; CI runs `lf gateway doctor --check clock,identity,daemon` after every PR that touches `apps/gateway`, `apps/cli`, `libs/infra/gateway`, `supabase/migrations/**`, or `supabase/functions/**`.
+
+## Browser origin allow-list defaults
+
+The gateway accepts browser origins on `lenserfight.com` subdomains and loopback (`localhost`, `127.0.0.1`, `[::1]`, http or https). Private-network origins (RFC 1918, Tailscale CGNAT `100.64.0.0/10`, `*.local`) are accepted over **https only**. A plaintext-http origin on a shared network has no server authentication, so it is refused by default and the gateway logs the rejected origin once with a hint. To accept one deliberately, set `LF_GATEWAY_EXTRA_ORIGINS` to an anchored regex, for example `LF_GATEWAY_EXTRA_ORIGINS='^http://192\.168\.1\.10:5173$'`.
+
+## Keychain fallback
+
+When the OS keychain is unavailable the keychain library stores secrets in files (mode `0600`, directory `0700`) and prints a one-time warning naming the path. Set `LF_GATEWAY_REQUIRE_KEYCHAIN=1` to fail closed instead.

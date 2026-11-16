@@ -449,8 +449,13 @@ VALUES (
     'voting',
     'SQLP2026',
     2,
-    '2026-03-22 12:00:00+00',
-    '2026-03-26 12:00:00+00',
+    -- Relative, not absolute. A demo battle parked mid-vote must keep its close
+    -- date in the future: fn_worker_run_finalize_cycle sweeps any voting or
+    -- scoring battle whose voting_closes_at has passed, so a hardcoded date
+    -- turns this row into a finalize candidate the moment real time overtakes
+    -- it — breaking the finalize e2e test on PRs that never touched seeds.
+    now() - interval '3 days',
+    now() + interval '1 day',
     NULL,
     2
 )

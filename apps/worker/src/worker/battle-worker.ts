@@ -26,6 +26,9 @@ interface ClaimedBattleJob {
   ai_lenser_id: string | null
   personality_note: string | null
   personality_version_id: string | null
+  // Shared [[parameter]] values snapshotted at battle creation. Identical for
+  // every contender; the inputs a lens-bound contender's template renders with.
+  shared_input_snapshot: Record<string, unknown> | null
 }
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `battle-worker-${process.pid}`
@@ -97,6 +100,41 @@ async function resolvePersonalityPrompt(
   return job.personality_note?.trim() || undefined
 }
 
+/**
+ * Resolve the prompt a contender actually executes.
+ *
+ * When a battle binds a contender to a lens version (via
+ * battles.contender_lens_assignments), the prompt is that version's template
+ * hydrated against battles.shared_input_snapshot — the immutable set of
+ * [[Parameter]] values captured at battle creation, identical for every
+ * contender. Rendering goes through the version-based renderer rather than a
+ * raw body substitution so that parameter labels, legacy [[:uuid]] tokens and
+ * required-parameter enforcement stay owned by lenses.fn_render_template.
+ *
+ * A contender with no lens assignment executes the battle's task_prompt as-is.
+ *
+ * Both the native and Chainabit execution paths derive their prompt here. They
+ * previously carried byte-identical copies of this logic, which is how the same
+ * defect existed twice.
+ */
+async function resolveTaskPrompt(
+  serviceClient: ReturnType<typeof createServiceSupabaseClient>,
+  job: ClaimedBattleJob,
+): Promise<string> {
+  if (!job.version_id) return job.task_prompt
+
+  const { data: rendered, error: renderErr } = await serviceClient
+    .rpc('fn_worker_render_template', {
+      p_version_id: job.version_id,
+      p_inputs: job.shared_input_snapshot ?? {},
+    })
+
+  if (renderErr || !rendered) {
+    throw new Error(renderErr?.message ?? 'Failed to render lens template')
+  }
+  return rendered as string
+}
+
 export async function processNextBattleJob(): Promise<boolean> {
   const serviceClient = createServiceSupabaseClient()
 
@@ -117,20 +155,7 @@ export async function processNextBattleJob(): Promise<boolean> {
   const execKind = resolveExecutionKind(job.model_key)
 
   try {
-    let prompt = job.task_prompt
-
-    // If a lens version is assigned, render the template with the task_prompt as input
-    if (job.version_id) {
-      const { data: rendered, error: renderErr } = await serviceClient
-        .rpc('fn_worker_render_template', {
-          p_template_body: job.task_prompt,
-          p_inputs: { prompt: job.task_prompt },
-        })
-      if (renderErr || !rendered) {
-        throw new Error(renderErr?.message ?? 'Failed to render lens template')
-      }
-      prompt = rendered as string
-    }
+    const prompt = await resolveTaskPrompt(serviceClient, job)
 
     if (execKind === 'text') {
       // ── Text execution path ────────────────────────────────────────────────
@@ -289,18 +314,7 @@ async function processNextBattleJobViaChainabit(
   try {
     const apiKey = await resolveApiKey(job)
 
-    let prompt = job.task_prompt
-    if (job.version_id) {
-      const { data: rendered, error: renderErr } = await serviceClient
-        .rpc('fn_worker_render_template', {
-          p_template_body: job.task_prompt,
-          p_inputs: { prompt: job.task_prompt },
-        })
-      if (renderErr || !rendered) {
-        throw new Error(renderErr?.message ?? 'Failed to render lens template')
-      }
-      prompt = rendered as string
-    }
+    const prompt = await resolveTaskPrompt(serviceClient, job)
 
     const systemPrompt = await resolvePersonalityPrompt(serviceClient, job, prompt)
 

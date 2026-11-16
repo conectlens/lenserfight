@@ -464,7 +464,11 @@ export const LenserProfilePage: React.FC = () => {
         await lensesService.deleteLens(deleteTarget.id, activeWorkspace.handle)
         removeCacheItem('lenses', deleteTarget.id)
       } else {
-        await threadsService.deleteThread(deleteTarget.id, activeWorkspace.handle)
+        // The viewer id is required, not optional: deleteThread resolves the
+        // thread first, and that lookup only reaches private/draft threads when
+        // it is supplied. Omitting it reported an owner's own unpublished thread
+        // as "Thread not found".
+        await threadsService.deleteThread(deleteTarget.id, activeWorkspace.handle, activeWorkspace.id)
         removeCacheItem('threads', deleteTarget.id)
       }
       setDeleteTarget(null)

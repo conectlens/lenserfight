@@ -78,6 +78,12 @@ describe('resolveWorkflowNode', () => {
     expect(outcome.ok).toBe(true)
     if (outcome.ok) expect(isLensCatalogEntry(outcome.resolution.entry)).toBe(true)
   })
+
+  it('resolves a custom lens title to the generic lens node', () => {
+    const outcome = resolveWorkflowNode({ kind: 'lens', name: 'Weekly Digest' })
+    expect(outcome.ok).toBe(true)
+    if (outcome.ok) expect(outcome.resolution.entry.type).toBe(LENS_NODE_TYPE)
+  })
 })
 
 describe('catalogOutputKeys', () => {

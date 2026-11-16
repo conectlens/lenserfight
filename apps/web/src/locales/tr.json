@@ -143,7 +143,8 @@
       "back": "Geri",
       "skip": "Turu atla",
       "done": "Bitti",
-      "stepOf": "Adım {{current}} / {{total}}"
+      "stepOf": "Adım {{current}} / {{total}}",
+      "dontShowAgain": "Turları bir daha gösterme"
     },
     "pages": {
       "dashboard": {

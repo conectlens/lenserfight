@@ -126,7 +126,7 @@ All trigger nodes have **no upstream inputs** (use a void sentinel). They must b
 |-|-|
 | **Purpose** | Fire a workflow on a cron schedule. |
 | **Outputs** | `json` — `{ firedAt, timezone }` |
-| **Required Config** | `cron` — cron expression (min interval: `*/5`) |
+| **Required Config** | `cronExpression` — cron expression (min interval: `*/5`) |
 | **Optional Config** | `timezone` (IANA, default `UTC`) |
 | **Environments** | `scheduled`, `worker`, `server` |
 | **n8n Equivalent** | `n8n-nodes-base.scheduleTrigger` |

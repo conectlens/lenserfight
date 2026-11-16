@@ -1,14 +1,9 @@
-/** Safe path segment for Supabase Storage object keys (no spaces/special chars). */
-export function sanitizeStoragePathSegment(segment: string): string {
-  const cleaned = segment
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9._-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  return cleaned.length > 0 ? cleaned : 'file'
-}
+import { buildStorageObjectFileName, sanitizeStoragePathSegment } from '@lenserfight/utils/text'
+
+// Re-exported so existing importers keep working. The implementation moved to
+// @lenserfight/utils/text so thread uploads can share it instead of carrying a
+// second copy of the same rules — see issue #485.
+export { sanitizeStoragePathSegment }
 
 /** Builds a lens-resources object key: {authUserId}/{versionId}/{paramLabel}/{fileName} */
 export function buildLensResourceObjectKey(
@@ -18,11 +13,6 @@ export function buildLensResourceObjectKey(
   fileName: string,
   uniqueId?: string,
 ): string {
-  const baseName = fileName.replace(/^.*[/\\]/, '')
-  const dot = baseName.lastIndexOf('.')
-  const ext = dot >= 0 ? baseName.slice(dot).toLowerCase() : ''
-  const stem = dot >= 0 ? baseName.slice(0, dot) : baseName
-  const prefix = uniqueId ? `${sanitizeStoragePathSegment(uniqueId)}-` : ''
-  const safeFile = `${prefix}${sanitizeStoragePathSegment(stem)}${ext}`
+  const safeFile = buildStorageObjectFileName(fileName, uniqueId)
   return `${authUserId}/${versionId}/${sanitizeStoragePathSegment(bindingKey)}/${safeFile}`
 }

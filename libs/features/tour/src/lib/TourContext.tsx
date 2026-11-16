@@ -13,9 +13,13 @@ import { TOURS } from './definitions'
 import { useDeviceClass } from './hooks/useDeviceClass'
 import {
   fetchRemoteSeenTourIds,
+  fetchRemoteToursOptedOut,
   markTourSeenRemote,
   readSeenTourIds,
+  readToursOptedOut,
+  setToursOptedOutRemote,
   writeSeenTourIds,
+  writeToursOptedOut,
 } from './persistence'
 import { getTourSteps, resolveTourForPath } from './registry'
 import { TourOverlay } from './TourOverlay'
@@ -40,6 +44,12 @@ export interface TourController {
   done(): void
   isSeen(tourId: string): boolean
   tourForCurrentPath: TourDefinition | undefined
+  /** True when the user has opted out of all auto-run tours, on every route. */
+  toursOptedOut: boolean
+  /** Opts out of all future auto-run tours and dismisses the active one, if any. */
+  optOutOfTours(): void
+  /** Reverses optOutOfTours(). Does not retroactively re-show already-seen tours. */
+  optInToTours(): void
 }
 
 const AUTO_RUN_DELAY_MS = 900
@@ -69,10 +79,11 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set(readSeenTourIds()))
   const [activeTour, setActiveTour] = useState<ActiveTour | null>(null)
+  const [toursOptedOut, setToursOptedOut] = useState<boolean>(() => readToursOptedOut())
 
   const tourForCurrentPath = useMemo(() => resolveTourForPath(pathname), [pathname])
 
-  // Merge server-side seen ids once per authenticated session
+  // Merge server-side seen ids + opt-out flag once per authenticated session
   useEffect(() => {
     if (!isAuthenticated) return
     let cancelled = false
@@ -84,6 +95,11 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
         writeSeenTourIds([...next])
         return next
       })
+    })
+    fetchRemoteToursOptedOut().then((optedOut) => {
+      if (cancelled || optedOut === null) return
+      setToursOptedOut(optedOut)
+      writeToursOptedOut(optedOut)
     })
     return () => {
       cancelled = true
@@ -115,9 +131,10 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [device],
   )
 
-  // Auto-run: give the page a moment to render, then start an unseen tour
+  // Auto-run: give the page a moment to render, then start an unseen tour —
+  // unless the user has globally opted out of tours, regardless of route.
   useEffect(() => {
-    if (activeTour) return
+    if (activeTour || toursOptedOut) return
     const def = resolveTourForPath(pathname)
     if (!def || seen.has(def.id)) return
     const steps = filterRunnableSteps(getTourSteps(def, device))
@@ -126,7 +143,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setActiveTour({ definition: def, steps, stepIndex: 0 })
     }, AUTO_RUN_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [pathname, device, seen, activeTour])
+  }, [pathname, device, seen, activeTour, toursOptedOut])
 
   const done = useCallback(() => {
     setActiveTour((current) => {
@@ -161,6 +178,19 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isSeen = useCallback((tourId: string) => seen.has(tourId), [seen])
 
+  const optOutOfTours = useCallback(() => {
+    writeToursOptedOut(true)
+    setToursOptedOut(true)
+    if (isAuthenticated) setToursOptedOutRemote(true)
+    setActiveTour(null)
+  }, [isAuthenticated])
+
+  const optInToTours = useCallback(() => {
+    writeToursOptedOut(false)
+    setToursOptedOut(false)
+    if (isAuthenticated) setToursOptedOutRemote(false)
+  }, [isAuthenticated])
+
   const controller = useMemo<TourController>(
     () => ({
       activeTour,
@@ -171,8 +201,23 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
       done,
       isSeen,
       tourForCurrentPath,
+      toursOptedOut,
+      optOutOfTours,
+      optInToTours,
     }),
-    [activeTour, start, next, back, skip, done, isSeen, tourForCurrentPath],
+    [
+      activeTour,
+      start,
+      next,
+      back,
+      skip,
+      done,
+      isSeen,
+      tourForCurrentPath,
+      toursOptedOut,
+      optOutOfTours,
+      optInToTours,
+    ],
   )
 
   return (

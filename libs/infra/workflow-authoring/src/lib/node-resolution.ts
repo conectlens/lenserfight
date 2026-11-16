@@ -92,7 +92,9 @@ export interface ResolveNodeInput {
 
 /**
  * Resolves one step. `nodeType` wins when present because export always pins
- * it; `name` is the fallback for hand-written and AI-generated documents.
+ * it. Lens names identify user-owned lens records rather than palette nodes,
+ * so an unpinned lens step resolves to the generic lens node. Other kinds use
+ * `name` as the fallback for hand-written and AI-generated documents.
  */
 export function resolveWorkflowNode(input: ResolveNodeInput): NodeResolutionOutcome {
   const allowedCategories = KIND_TO_CATEGORIES[input.kind]
@@ -116,7 +118,8 @@ export function resolveWorkflowNode(input: ResolveNodeInput): NodeResolutionOutc
     return { ok: true, resolution: { entry, resolvedByName: false } }
   }
 
-  const entry = NAME_INDEX.get(normalizeName(input.name))
+  const lookupName = input.kind === 'lens' ? LENS_NODE_TYPE : input.name
+  const entry = NAME_INDEX.get(normalizeName(lookupName))
   if (!entry) {
     return {
       ok: false,

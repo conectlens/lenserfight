@@ -2,6 +2,13 @@ import { supabase } from '@lenserfight/data/supabase'
 
 export type ArtifactLifecycleType = 'lens' | 'workflow' | 'battle' | 'agent'
 
+/**
+ * Ids per fn_artifact_lifecycle_status_batch call. Must not exceed the limit the
+ * RPC enforces (see 20270608000004_artifact_lifecycle_status_batch.sql); longer
+ * id lists are split across calls.
+ */
+const LIFECYCLE_STATUS_BATCH_MAX = 200
+
 export interface ArtifactDependencySummary {
   artifact_type: string
   artifact_id: string
@@ -28,6 +35,15 @@ export interface ArtifactLifecycleStatus {
 
 export interface ArtifactLifecycleRepositoryPort {
   getStatus(type: ArtifactLifecycleType, id: string): Promise<ArtifactLifecycleStatus>
+  /**
+   * Statuses for many artifacts of one type in a single round-trip, keyed by
+   * artifact id. Ids the caller cannot view are absent from the result rather
+   * than throwing, so one hidden artifact does not fail a whole list.
+   */
+  getStatusBatch(
+    type: ArtifactLifecycleType,
+    ids: string[],
+  ): Promise<Record<string, ArtifactLifecycleStatus>>
   getDependencySummary(type: ArtifactLifecycleType, id: string): Promise<ArtifactDependencySummary>
   archive(type: ArtifactLifecycleType, id: string): Promise<ArtifactLifecycleStatus>
   restore(type: ArtifactLifecycleType, id: string): Promise<ArtifactLifecycleStatus>
@@ -79,6 +95,40 @@ export class SupabaseArtifactLifecycleRepository implements ArtifactLifecycleRep
       p_artifact_type: type,
       p_artifact_id: id,
     })
+  }
+
+  async getStatusBatch(
+    type: ArtifactLifecycleType,
+    ids: string[],
+  ): Promise<Record<string, ArtifactLifecycleStatus>> {
+    if (ids.length === 0) return {}
+
+    // The RPC rejects more than LIFECYCLE_STATUS_BATCH_MAX ids so a single call
+    // cannot become unbounded work. Infinite-scroll lists legitimately exceed
+    // that, so split here rather than pushing the limit onto every caller.
+    const chunks: string[][] = []
+    for (let i = 0; i < ids.length; i += LIFECYCLE_STATUS_BATCH_MAX) {
+      chunks.push(ids.slice(i, i + LIFECYCLE_STATUS_BATCH_MAX))
+    }
+
+    const results = await Promise.all(
+      chunks.map(async (chunk) => {
+        const { data, error } = await supabase.rpc('fn_artifact_lifecycle_status_batch', {
+          p_artifact_type: type,
+          p_artifact_ids: chunk,
+        })
+        if (error) throw error
+        return (data ?? {}) as Record<string, unknown>
+      }),
+    )
+
+    return Object.fromEntries(
+      results.flatMap((raw) =>
+        Object.entries(raw).map(
+          ([id, status]) => [id, normalizeLifecycleStatus(status)] as const,
+        ),
+      ),
+    )
   }
 
   async getDependencySummary(type: ArtifactLifecycleType, id: string): Promise<ArtifactDependencySummary> {

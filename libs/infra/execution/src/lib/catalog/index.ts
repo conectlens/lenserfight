@@ -13,6 +13,7 @@ export {
   isWorkflowUtilityNodeType,
   searchWorkflowNodeCatalog,
   validateWorkflowNodeCatalog,
+  validateWorkflowNodeConfig,
 } from './workflow-node-catalog'
 export type {
   WorkflowCatalogNodeType,
@@ -24,6 +25,7 @@ export type {
   WorkflowNodeConfigExample,
   WorkflowNodeConfigField,
   WorkflowNodeConfigKind,
+  WorkflowNodeConfigValidationResult,
   WorkflowNodeErrorBehavior,
   WorkflowNodeIOType,
   WorkflowNodeN8nMapping,

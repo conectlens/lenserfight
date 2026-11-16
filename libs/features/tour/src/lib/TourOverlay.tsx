@@ -70,7 +70,7 @@ function computeBubblePosition(
 }
 
 export const TourOverlay: React.FC = () => {
-  const { activeTour, next, back, skip, done } = useTour()
+  const { activeTour, next, back, skip, done, optOutOfTours } = useTour()
   const device = useDeviceClass()
   const reducedMotion = useReducedMotion()
   const { t } = useTranslation()
@@ -131,7 +131,16 @@ export const TourOverlay: React.FC = () => {
       <p className="mt-1 text-sm text-greyscale-600 dark:text-greyscale-300">
         {t(step.bodyKey)}
       </p>
-      <div className="mt-4 flex items-center justify-between gap-2">
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={optOutOfTours}
+          className="text-xs text-greyscale-400 underline-offset-2 hover:text-greyscale-600 hover:underline dark:hover:text-greyscale-200"
+        >
+          {t('tour.ui.dontShowAgain')}
+        </button>
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-xs text-greyscale-500 dark:text-greyscale-400">
           {t('tour.ui.stepOf', { current: stepIndex + 1, total: steps.length })}
         </span>

@@ -15,7 +15,7 @@ export interface AccountInfo extends SecretRef {
 }
 
 export interface KeychainBackend {
-  readonly id: 'keytar' | 'file' | 'memory'
+  readonly id: 'keytar' | 'file' | 'memory' | 'unavailable'
   getSecret(ref: SecretRef): Promise<string | null>
   setSecret(ref: SecretWrite): Promise<void>
   deleteSecret(ref: SecretRef): Promise<boolean>

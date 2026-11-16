@@ -296,6 +296,8 @@ export const queryKeys = {
     all: ['artifactLifecycle'] as const,
     status: (type: string, id: string) =>
       [...queryKeys.artifactLifecycle.all, 'status', type, id] as const,
+    statusBatch: (type: string, ids: readonly string[]) =>
+      [...queryKeys.artifactLifecycle.all, 'statusBatch', type, [...ids].sort().join(',')] as const,
   },
   savedPresets: {
     all: ['savedPresets'] as const,

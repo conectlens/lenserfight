@@ -13,6 +13,7 @@ import {
   ChevronsUpDown,
   Check,
   Loader2,
+  Hourglass,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
@@ -635,6 +636,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               >
                                 <Bot size={16} className="text-amber-500" />
                                 Control Room
+                              </button>
+                            )}
+
+                            {hasLenser && !isAIWorkspace && (
+                              <button
+                                role="menuitem"
+                                className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                                onClick={() => {
+                                  setIsDropdownOpen(false)
+                                  navigate('/waiting-list')
+                                }}
+                              >
+                                <Hourglass size={16} className="text-gray-400" />
+                                Waiting list
                               </button>
                             )}
 

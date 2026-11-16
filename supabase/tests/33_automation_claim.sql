@@ -41,16 +41,20 @@ BEGIN
   PERFORM set_config('app.pgtap33.sched_id', v_sched_id::text, true);
 END $$;
 
--- ── Test 1: fn_claim_scheduled_workflow_run ignores wrong trigger_mode ────
--- Insert a manual-trigger pending run; claim must skip it.
-INSERT INTO lenses.workflow_runs (workflow_id, status, trigger_mode, context_inputs)
-VALUES (current_setting('app.pgtap33.wf_id')::uuid, 'pending', 'manual', '{}'::jsonb);
+-- ── Test 1: fn_claim_scheduled_workflow_run ignores client-executed runs ──
+-- The claim predicate keys off `executor`, not trigger_mode: a client-executed
+-- run is driven by a browser tab holding credentials the server cannot reach,
+-- so claiming it would either double-execute a live run or fail on a missing
+-- key. (Previously this filtered on trigger_mode, which stranded every
+-- human-started run because 'manual' was in no claimer's list.)
+INSERT INTO lenses.workflow_runs (workflow_id, status, trigger_mode, executor, context_inputs)
+VALUES (current_setting('app.pgtap33.wf_id')::uuid, 'pending', 'manual', 'client', '{}'::jsonb);
 
 SELECT is(
   (SELECT count(*)::int
    FROM lenses.fn_claim_scheduled_workflow_run('w-pgtap33')),
   0,
-  'fn_claim_scheduled_workflow_run skips trigger_mode=manual'
+  'fn_claim_scheduled_workflow_run skips executor=client'
 );
 
 -- ── Test 2: fn_claim_scheduled_workflow_run claims pending+schedule ──────

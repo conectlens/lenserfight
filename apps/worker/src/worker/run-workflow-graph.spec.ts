@@ -40,7 +40,78 @@ jest.mock('@lenserfight/utils/logger', () => ({
 }))
 
 import { getExecutionProvider } from '@lenserfight/infra/execution'
-import { resolveProviderKey } from './run-workflow-graph'
+import { loadResumeResults, resolveProviderKey } from './run-workflow-graph'
+
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// ── loadResumeResults ─────────────────────────────────────────────────────────
+// Builds the crash-recovery checkpoint. Recovery re-enters the graph at its
+// roots, so a wrong or missing checkpoint means completed nodes get re-invoked
+// against their providers and re-billed.
+
+function clientReturning(result: { data?: unknown; error?: { message: string } }): SupabaseClient {
+  const rpc = jest.fn().mockResolvedValue({ data: result.data ?? null, error: result.error ?? null })
+  return { rpc } as unknown as SupabaseClient
+}
+
+describe('loadResumeResults', () => {
+  it('queries the completed-node RPC for the given run', async () => {
+    const client = clientReturning({ data: [] })
+    await loadResumeResults(client, 'run-1')
+    expect(client.rpc).toHaveBeenCalledWith('fn_worker_get_completed_node_results', {
+      p_run_id: 'run-1',
+    })
+  })
+
+  it('maps rows into completed NodeResults keyed by node id', async () => {
+    const client = clientReturning({
+      data: [
+        { node_id: 'node-a', output_data: { text: 'alpha' } },
+        { node_id: 'node-b', output_data: { text: 'beta' } },
+      ],
+    })
+
+    const resumed = await loadResumeResults(client, 'run-1')
+
+    expect(resumed.size).toBe(2)
+    expect(resumed.get('node-a')).toEqual({
+      nodeId: 'node-a',
+      status: 'completed',
+      outputData: { text: 'alpha' },
+    })
+    expect(resumed.get('node-b')?.status).toBe('completed')
+  })
+
+  it('returns an empty checkpoint when the run has no completed nodes', async () => {
+    const resumed = await loadResumeResults(clientReturning({ data: [] }), 'run-1')
+    expect(resumed.size).toBe(0)
+  })
+
+  it('tolerates a null payload', async () => {
+    const resumed = await loadResumeResults(clientReturning({ data: null }), 'run-1')
+    expect(resumed.size).toBe(0)
+  })
+
+  it('normalises a null output_data to an empty object', async () => {
+    const client = clientReturning({ data: [{ node_id: 'node-a', output_data: null }] })
+    const resumed = await loadResumeResults(client, 'run-1')
+    expect(resumed.get('node-a')?.outputData).toEqual({})
+  })
+
+  it('degrades to no checkpoint when the RPC errors, rather than throwing', async () => {
+    // A failed checkpoint lookup must not abort recovery — re-running from
+    // scratch is the pre-existing behaviour and still produces a correct run.
+    const client = clientReturning({ error: { message: 'permission denied' } })
+    const resumed = await loadResumeResults(client, 'run-1')
+    expect(resumed.size).toBe(0)
+  })
+
+  it('degrades to no checkpoint when the client throws', async () => {
+    const client = { rpc: jest.fn().mockRejectedValue(new Error('network')) } as unknown as SupabaseClient
+    const resumed = await loadResumeResults(client, 'run-1')
+    expect(resumed.size).toBe(0)
+  })
+})
 
 describe('resolveProviderKey', () => {
   describe('explicit provider prefix (canonical `provider:model` ids)', () => {

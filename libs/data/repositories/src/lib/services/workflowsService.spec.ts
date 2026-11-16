@@ -89,7 +89,14 @@ describe('workflowsService', () => {
     const run = { id: RUN_ID }
     mockRepo.startRun.mockResolvedValue(run)
     const result = await workflowsService.startRun(WORKFLOW_ID, { x: 1 }, 'model-1', 'idem-key')
-    expect(mockRepo.startRun).toHaveBeenCalledWith(WORKFLOW_ID, { x: 1 }, 'model-1', 'idem-key', undefined)
+    expect(mockRepo.startRun).toHaveBeenCalledWith(
+      WORKFLOW_ID,
+      { x: 1 },
+      'model-1',
+      'idem-key',
+      undefined,
+      undefined,
+    )
     expect(result).toEqual(run)
   })
 
@@ -97,8 +104,29 @@ describe('workflowsService', () => {
     const run = { id: RUN_ID, workflow_version_id: 'v-1' }
     mockRepo.startRun.mockResolvedValue(run)
     const result = await workflowsService.startRun(WORKFLOW_ID, {}, undefined, undefined, 'v-1')
-    expect(mockRepo.startRun).toHaveBeenCalledWith(WORKFLOW_ID, {}, undefined, undefined, 'v-1')
+    expect(mockRepo.startRun).toHaveBeenCalledWith(
+      WORKFLOW_ID,
+      {},
+      undefined,
+      undefined,
+      'v-1',
+      undefined,
+    )
     expect(result).toEqual(run)
+  })
+
+  it('startRun forwards executor when provided', async () => {
+    const run = { id: RUN_ID }
+    mockRepo.startRun.mockResolvedValue(run)
+    await workflowsService.startRun(WORKFLOW_ID, {}, undefined, undefined, null, 'client')
+    expect(mockRepo.startRun).toHaveBeenCalledWith(
+      WORKFLOW_ID,
+      {},
+      undefined,
+      undefined,
+      null,
+      'client',
+    )
   })
 
   it('propagates errors from repo without swallowing', async () => {

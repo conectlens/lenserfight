@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { CheckCircle2, ShieldX } from 'lucide-react'
-import { Button, EmptyState, PageHeader } from '@lenserfight/ui/components'
+import { Button, EmptyState, HelpButton, PageHeader } from '@lenserfight/ui/components'
 import { toast } from 'sonner'
 
 import { useGatewayDaemons, type GatewayDaemonRecord } from '../hooks/useGatewayDaemons'
@@ -19,6 +19,51 @@ function statusDot(lastSeenAt: string | null, revokedAt: string | null): {
   if (elapsed < 5 * 60_000) return { className: 'bg-emerald-500', label: 'online' }
   if (elapsed < 30 * 60_000) return { className: 'bg-amber-500', label: 'stale' }
   return { className: 'bg-red-500', label: 'offline' }
+}
+
+const GATEWAY_INSTALL_STEPS = [
+  { label: 'Install the CLI', command: 'npm install -g @lenserfight/cli' },
+  { label: 'Authenticate', command: 'lf auth login' },
+  { label: 'Start the daemon', command: 'lf gateway serve' },
+]
+const GATEWAY_INSTALL_COMMAND = GATEWAY_INSTALL_STEPS.map((s) => s.command).join(' && ')
+
+function GatewaySetupGuide() {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(GATEWAY_INSTALL_COMMAND)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div className="w-full max-w-sm space-y-3 text-left">
+      <ol className="space-y-1.5 text-sm text-greyscale-400">
+        {GATEWAY_INSTALL_STEPS.map((step, i) => (
+          <li key={step.command} className="flex items-baseline gap-2">
+            <span className="font-semibold text-greyscale-200">{i + 1}.</span>
+            <span>
+              {step.label}: <code className="rounded bg-surface-raised px-1.5 py-0.5 font-mono text-xs">{step.command}</code>
+            </span>
+          </li>
+        ))}
+        <li className="flex items-baseline gap-2">
+          <span className="font-semibold text-greyscale-200">4.</span>
+          <span>The daemon heartbeats into your account and appears here.</span>
+        </li>
+      </ol>
+      <div className="flex items-center gap-2">
+        <code className="flex-1 truncate rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-xs font-mono">
+          {GATEWAY_INSTALL_COMMAND}
+        </code>
+        <Button size="sm" variant="secondary" onClick={handleCopy}>
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
+      <HelpButton path="/reference/cli/gateway" label="Setup guide" />
+    </div>
+  )
 }
 
 function fmtRelative(iso: string | null): string {
@@ -148,7 +193,8 @@ export const GatewayDaemonsPage: React.FC = () => {
         ) : daemons.length === 0 ? (
           <EmptyState
             title="No gateway daemons registered."
-            description="Run `lf gateway serve` on a host you control. It will heartbeat into your account and appear here."
+            description="Run a gateway daemon on a host you control to get started."
+            action={<GatewaySetupGuide />}
           />
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-surface-border bg-surface-base">

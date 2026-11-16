@@ -22,6 +22,7 @@ import {
   LocalKeyStore,
   LocalKeyStoreError,
 } from '@lenserfight/data/local-keys'
+import { keychain } from '@lenserfight/utils/keychain'
 
 import { printJson, printTable } from '../utils/output'
 
@@ -96,8 +97,16 @@ const keysInit = defineCommand({
       }
       const passphrase = randomBytes(32).toString('base64url')
       await provider.set(passphrase)
+      const backendId = (await keychain.getBackend()).id
+      if (backendId === 'keytar') {
+        consola.success('Master passphrase stored in OS keychain (service: lenserfight-keys).')
+      } else {
+        consola.warn(
+          `Master passphrase stored using the "${backendId}" backend (0600 file), not the OS keychain. ` +
+            'Set LF_GATEWAY_REQUIRE_KEYCHAIN=1 to refuse file storage.'
+        )
+      }
       await ensureKeysDir()
-      consola.success('Master passphrase stored in OS keychain (service: lenserfight-keys).')
       consola.info(`Keys directory: ${getKeysDir()}`)
       consola.info('Run `lf keys add` to add your first key.')
     } catch (err) {

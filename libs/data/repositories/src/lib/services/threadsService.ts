@@ -63,7 +63,15 @@ export const threadsService = {
     return threadsRepo.updateThread(id, { ...input, tagIds: realTagIds })
   },
 
-  deleteThread: async (id: string, lenserHandle: string, lenserId?: string): Promise<void> => {
+  /**
+   * `lenserId` is required, not optional. The ownership check below needs the
+   * thread, and getThreadById only reaches private/draft threads when given a
+   * viewer — without it an owner deleting their own unpublished thread got
+   * "Thread not found". Leaving it optional is what let a caller omit it and
+   * still compile, so the type now rules that out rather than relying on every
+   * call site to remember.
+   */
+  deleteThread: async (id: string, lenserHandle: string, lenserId: string): Promise<void> => {
     const existing = await threadsRepo.getThreadById(id, lenserId)
     if (!existing) throw new Error('Thread not found')
 

@@ -10,7 +10,21 @@
 -- =============================================================================
 BEGIN;
 
-SELECT plan(11);
+SELECT plan(13);
+
+-- fn_mcp_workflow_run_start is now ownership-gated, so the behavioural checks
+-- below must run as the workflow's owner rather than as an unauthenticated
+-- superuser. Seed user a1000000-…-01 maps to seed lenser b2000000-…-01.
+SELECT set_config('request.jwt.claim.sub', 'a1000000-0000-0000-0000-000000000001', true);
+SELECT set_config(
+  'request.jwt.claims',
+  json_build_object(
+    'sub', 'a1000000-0000-0000-0000-000000000001',
+    'role', 'authenticated'
+  )::text,
+  true
+);
+SELECT set_config('request.jwt.claim.role', 'authenticated', true);
 
 -- ── Structural ──────────────────────────────────────────────────────────────
 
@@ -106,15 +120,17 @@ SELECT is(
   'claimed api run transitioned to running'
 );
 
--- 9. Critical invariant: the claimer must NOT claim browser-driven 'manual' runs
---    (those execute client-side; claiming them would double-execute).
-INSERT INTO lenses.workflow_runs (workflow_id, status, trigger_mode, context_inputs)
-VALUES (current_setting('app.pgtap101.wf')::uuid, 'pending', 'manual', '{}'::jsonb);
+-- 9. Critical invariant, restated on the executor axis: the claimer must NOT
+--    claim a run a browser tab is driving (double execution), but it MUST claim
+--    a human-started run that nothing else will execute. trigger_mode is no
+--    longer part of the predicate — see 20270608000001.
+INSERT INTO lenses.workflow_runs (workflow_id, status, trigger_mode, executor, context_inputs)
+VALUES (current_setting('app.pgtap101.wf')::uuid, 'pending', 'manual', 'client', '{}'::jsonb);
 
 SELECT is(
   (SELECT count(*)::int FROM lenses.fn_claim_scheduled_workflow_run('w-pgtap101')),
   0,
-  'claimer still skips trigger_mode=manual (no double execution)'
+  'claimer skips client-executed runs (no double execution)'
 );
 
 -- 10-11. The CHECK constraint accepts 'api' and rejects an unknown mode.
@@ -130,6 +146,36 @@ SELECT throws_ok(
   '23514',
   NULL,
   'workflow_runs rejects an unknown trigger_mode (check_violation)'
+);
+
+-- 12-13. Authorization: the headless start RPC is SECURITY DEFINER and granted
+--        to `authenticated`. Without an ownership gate any signed-in caller
+--        could start a run on any workflow UUID — including a private workflow
+--        they do not own — and read the output back via the status RPC.
+DO $$
+DECLARE
+  v_other_wf uuid := gen_random_uuid();
+BEGIN
+  -- A private workflow belonging to a different lenser.
+  INSERT INTO lenses.workflows (id, lenser_id, title, visibility)
+  VALUES (v_other_wf, 'b2000000-0000-0000-0000-000000000002'::uuid,
+          'pgTAP 101 someone else''s wf', 'private');
+  PERFORM set_config('app.pgtap101.other_wf', v_other_wf::text, true);
+END $$;
+
+SELECT throws_ok(
+  $$SELECT public.fn_mcp_workflow_run_start(
+      current_setting('app.pgtap101.other_wf')::uuid, '{}'::jsonb)$$,
+  '42501',
+  NULL,
+  'fn_mcp_workflow_run_start rejects a private workflow the caller does not own'
+);
+
+SELECT is(
+  (SELECT count(*)::int FROM lenses.workflow_runs
+   WHERE workflow_id = current_setting('app.pgtap101.other_wf')::uuid),
+  0,
+  'no run row is created for a rejected headless start'
 );
 
 SELECT * FROM finish();

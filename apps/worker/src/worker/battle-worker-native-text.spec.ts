@@ -60,6 +60,22 @@ const BASE_JOB = {
   ai_lenser_id:           null as null,
   personality_note:       null as null,
   personality_version_id: null as null,
+  shared_input_snapshot:  null as Record<string, unknown> | null,
+}
+
+/**
+ * A lens version body carrying [[Parameter]] tokens, keyed by version id so the
+ * render mock can resolve it the way lenses.fn_render_template would.
+ */
+const LENS_VERSIONS: Record<string, string> = {
+  'ver-xyz': 'Write about [[Topic]] in the voice of [[Style]], under [[WordLimit]] words.',
+}
+
+/** The battle's immutable shared [[parameter]] values. */
+const SHARED_INPUTS = {
+  Topic:     'recursion',
+  Style:     'a sea shanty',
+  WordLimit: '120',
 }
 
 /** Configure mockRpc to claim a specific job and stub completion RPCs. */
@@ -75,8 +91,21 @@ function claimJob(job: typeof BASE_JOB = BASE_JOB): void {
       return Promise.resolve({ data: null, error: null })
     if (name === 'fn_move_battle_job_to_dlq')
       return Promise.resolve({ data: null, error: null })
-    if (name === 'fn_worker_render_template')
+    if (name === 'fn_worker_render_template') {
+      // Version-based overload — substitute [[label]] tokens in the stored
+      // template body, mirroring what lenses.fn_render_template does server-side.
+      if (args?.['p_version_id']) {
+        const body   = LENS_VERSIONS[String(args['p_version_id'])] ?? ''
+        const inputs = (args['p_inputs'] ?? {}) as Record<string, unknown>
+        const out    = Object.entries(inputs).reduce(
+          (acc, [label, value]) => acc.split(`[[${label}]]`).join(String(value)),
+          body,
+        )
+        return Promise.resolve({ data: out, error: null })
+      }
+      // Body-based overload — used for personality notes.
       return Promise.resolve({ data: `rendered:${String(args?.['p_template_body'] ?? '')}`, error: null })
+    }
     if (name === 'fn_worker_decrypt_api_key')
       return Promise.resolve({ data: 'decrypted-byok-key', error: null })
     return Promise.resolve({ data: null, error: null })
@@ -204,28 +233,87 @@ describe('processNextBattleJob — native text path', () => {
   // ─── 4. Lens template rendered via fn_worker_render_template ─────────────
 
   describe('lens template rendering (version_id set)', () => {
-    it('renders lens template before calling provider', async () => {
+    // This previously asserted that the battle's own task_prompt was rendered
+    // against itself with a single {prompt} input. That assertion described the
+    // bug: the assigned lens version was never fetched and shared_input_snapshot
+    // was never passed, so a lens-bound battle ran on the raw task_prompt. The
+    // invariant is restated here on the version axis.
+    it('renders the assigned lens version against the battle shared inputs', async () => {
+      const jobWithTemplate = {
+        ...BASE_JOB,
+        version_id:            'ver-xyz',
+        shared_input_snapshot: SHARED_INPUTS,
+      }
+      claimJob(jobWithTemplate)
+      mockCallProvider.mockResolvedValue({ content: 'Template response.' })
+
+      await processNextBattleJob()
+
+      const renderCall = mockRpc.mock.calls.find(
+        (c: [string, unknown]) => c[0] === 'fn_worker_render_template',
+      )
+      expect(renderCall).toBeDefined()
+      expect(renderCall?.[1]).toMatchObject({
+        p_version_id: 'ver-xyz',
+        p_inputs:     SHARED_INPUTS,
+      })
+      // The battle's raw task_prompt is not what gets rendered.
+      expect(renderCall?.[1]).not.toHaveProperty('p_template_body')
+    })
+
+    it('substitutes every [[Parameter]] token before the provider is called', async () => {
+      const jobWithTemplate = {
+        ...BASE_JOB,
+        version_id:            'ver-xyz',
+        shared_input_snapshot: SHARED_INPUTS,
+      }
+      claimJob(jobWithTemplate)
+      mockCallProvider.mockResolvedValue({ content: 'Template response.' })
+
+      await processNextBattleJob()
+
+      const providerCall = mockCallProvider.mock.calls[0]
+      const messages = providerCall[3] as Array<{ role: string; content: string }>
+      const userMessage = messages.find((m) => m.role === 'user')
+
+      expect(userMessage?.content).toBe(
+        'Write about recursion in the voice of a sea shanty, under 120 words.',
+      )
+      // No unhydrated token may survive to the provider.
+      expect(userMessage?.content).not.toContain('[[')
+      // And the raw battle prompt is not what was sent.
+      expect(userMessage?.content).not.toBe(BASE_JOB.task_prompt)
+    })
+
+    it('sends an empty input set when the battle has no shared snapshot', async () => {
       const jobWithTemplate = { ...BASE_JOB, version_id: 'ver-xyz' }
       claimJob(jobWithTemplate)
       mockCallProvider.mockResolvedValue({ content: 'Template response.' })
 
       await processNextBattleJob()
 
-      // fn_worker_render_template must be called
       const renderCall = mockRpc.mock.calls.find(
         (c: [string, unknown]) => c[0] === 'fn_worker_render_template',
       )
-      expect(renderCall).toBeDefined()
-      expect(renderCall?.[1]).toMatchObject({
-        p_template_body: BASE_JOB.task_prompt,
-        p_inputs:        { prompt: BASE_JOB.task_prompt },
-      })
+      expect(renderCall?.[1]).toMatchObject({ p_version_id: 'ver-xyz', p_inputs: {} })
+    })
 
-      // Provider receives the rendered prompt, not the raw task_prompt
+    it('uses the battle task_prompt untouched when no lens version is assigned', async () => {
+      claimJob({ ...BASE_JOB, shared_input_snapshot: SHARED_INPUTS })
+      mockCallProvider.mockResolvedValue({ content: 'Plain response.' })
+
+      await processNextBattleJob()
+
+      // No lens assignment → nothing to hydrate, so no version render happens.
+      const versionRender = mockRpc.mock.calls.find(
+        (c: [string, Record<string, unknown>]) =>
+          c[0] === 'fn_worker_render_template' && Boolean(c[1]?.['p_version_id']),
+      )
+      expect(versionRender).toBeUndefined()
+
       const providerCall = mockCallProvider.mock.calls[0]
       const messages = providerCall[3] as Array<{ role: string; content: string }>
-      const userMessage = messages.find((m) => m.role === 'user')
-      expect(userMessage?.content).toContain('rendered:')
+      expect(messages.find((m) => m.role === 'user')?.content).toBe(BASE_JOB.task_prompt)
     })
   })
 

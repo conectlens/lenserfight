@@ -1,7 +1,7 @@
 import { Archive, Pin, PinOff, RotateCcw, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
 import type { QueryKey } from '@tanstack/react-query'
-import type { ArtifactLifecycleType } from '@lenserfight/data/repositories'
+import type { ArtifactLifecycleStatus, ArtifactLifecycleType } from '@lenserfight/data/repositories'
 import { ActionMenu } from '@lenserfight/ui/components'
 import { useArtifactLifecycleStatus } from '../hooks/useArtifactLifecycleStatus'
 import { useArchiveArtifact } from '../hooks/useArchiveArtifact'
@@ -13,6 +13,17 @@ import { ArtifactDeleteConfirmDialog } from './ArtifactDeleteConfirmDialog'
 export interface ArtifactLifecycleMenuProps {
   type: ArtifactLifecycleType
   id: string
+  /**
+   * Pre-resolved status, for lists that fetched every row's status in one batch.
+   * When supplied this menu does not issue its own request — which is the point:
+   * rendering N menus each with its own query is N round-trips to paint N badges.
+   *
+   * Passed down rather than seeded into the query cache because the two race.
+   * Menus mount and fire their queries in the same render pass that starts the
+   * batch, so a cache write that lands after the batch resolves is already too
+   * late to prevent the individual fetches.
+   */
+  status?: ArtifactLifecycleStatus
   extraInvalidateKeys?: QueryKey[]
   onDeleted?: () => void
   className?: string
@@ -21,13 +32,17 @@ export interface ArtifactLifecycleMenuProps {
 export const ArtifactLifecycleMenu: React.FC<ArtifactLifecycleMenuProps> = ({
   type,
   id,
+  status: providedStatus,
   extraInvalidateKeys,
   onDeleted,
   className,
 }) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
-  const { data: status } = useArtifactLifecycleStatus(type, id)
+  const { data: fetchedStatus } = useArtifactLifecycleStatus(type, id, {
+    enabled: providedStatus === undefined,
+  })
+  const status = providedStatus ?? fetchedStatus
 
   const archiveMutation = useArchiveArtifact()
   const restoreMutation = useRestoreArtifact()

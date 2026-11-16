@@ -144,4 +144,32 @@ describe('SupabasePreferencesRepository', () => {
       expect(mockRpc).not.toHaveBeenCalled()
     })
   })
+
+  // ---------------------------------------------------------------------------
+  // setToursOptedOut
+  // ---------------------------------------------------------------------------
+  describe('setToursOptedOut', () => {
+    it('calls fn_lensers_set_tours_opted_out with p_opted_out', async () => {
+      await repo.setToursOptedOut(true)
+      expect(mockRpc).toHaveBeenCalledWith('fn_lensers_set_tours_opted_out', {
+        p_opted_out: true,
+      })
+    })
+
+    it('rethrows non-NetworkError exceptions', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: new Error('Profile not found') })
+      await expect(repo.setToursOptedOut(false)).rejects.toThrow('Profile not found')
+    })
+
+    it('suppresses NetworkError exceptions silently', async () => {
+      mockRpc.mockRejectedValue(new Error('NetworkError: connection refused'))
+      await expect(repo.setToursOptedOut(true)).resolves.toBeUndefined()
+    })
+
+    it('skips RPC when no session exists', async () => {
+      mockCachedSession.mockReturnValue(null)
+      await repo.setToursOptedOut(true)
+      expect(mockRpc).not.toHaveBeenCalled()
+    })
+  })
 })

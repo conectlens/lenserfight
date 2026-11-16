@@ -276,6 +276,17 @@ export interface WorkflowExecutionContext {
   resolveVersionContracts?(
     versionId?: string | null
   ): Promise<{ input: LensInputContract | null; output: LensOutputContract | null }>
+  /**
+   * Nodes already completed by an earlier attempt of this same run, keyed by
+   * node id. Supplied by crash recovery so a re-executed run replays their
+   * persisted output instead of re-invoking the provider — otherwise adopting
+   * an abandoned run re-runs (and re-bills) every node that had already
+   * finished. Resumed nodes are never re-seeded and never re-executed, so
+   * their `workflow_node_results` rows are left untouched.
+   *
+   * Absent for a normal first execution, which is unaffected.
+   */
+  resumeResults?: ReadonlyMap<string, NodeResult>
   /** Called when a node changes status — used by the CF Worker to write workflow_node_results */
   onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void>
   /** Optional partial-output sink for streaming providers (throttled by caller). */
@@ -540,6 +551,15 @@ export class WorkflowExecutionService {
     // is accurate from event #0.
     await Promise.all(
       nodes.map(async (n) => {
+        // A node carried over from a previous attempt is already terminal in
+        // the DB. Seed the in-memory map from it so downstream edges resolve,
+        // but do not write a status back — that would flip a completed row to
+        // queued/awaiting_dependency and lose the recorded output.
+        const carried = ctx.resumeResults?.get(n.id)
+        if (carried) {
+          results.set(n.id, carried)
+          return
+        }
         const degree = inDegree.get(n.id) ?? 0
         if (degree === 0) {
           const queued: NodeResult = {
@@ -619,6 +639,19 @@ export class WorkflowExecutionService {
           throttle(async () => {
             const node = nodeMap.get(nodeId)
             if (!node) return
+
+            // Resume: this node completed in an earlier attempt of the run. Its
+            // result is already in `results` (seeded above) and its DB row is
+            // already terminal, so skip straight past the provider call.
+            if (ctx.resumeResults?.has(nodeId)) {
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_completed',
+                metadata: { resumed: true },
+              })
+              return
+            }
 
             if (isAborted()) {
               const cancelled: NodeResult = { nodeId, status: 'cancelled' }

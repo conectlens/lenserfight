@@ -6,6 +6,7 @@ export interface PreferencesRepositoryPort {
   updatePreferences(patch: Partial<LenserPreferences>): Promise<void>
   updateTheme(theme: 'light' | 'dark' | 'system'): Promise<void>
   markTourSeen(tourId: string): Promise<void>
+  setToursOptedOut(optedOut: boolean): Promise<void>
 }
 
 export class SupabasePreferencesRepository implements PreferencesRepositoryPort {
@@ -63,6 +64,26 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
     if (!this.hasSession()) return
     try {
       const { error } = await supabase.rpc('fn_lensers_mark_tour_seen', { p_tour_id: tourId })
+
+      if (error) throw error
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (
+        msg.includes('NetworkError') ||
+        msg.includes('AbortError') ||
+        msg.includes('lock request is aborted')
+      ) {
+        // Transient: network down or Supabase lock stolen during session init — not actionable
+        return
+      }
+      throw err
+    }
+  }
+
+  async setToursOptedOut(optedOut: boolean): Promise<void> {
+    if (!this.hasSession()) return
+    try {
+      const { error } = await supabase.rpc('fn_lensers_set_tours_opted_out', { p_opted_out: optedOut })
 
       if (error) throw error
     } catch (err) {

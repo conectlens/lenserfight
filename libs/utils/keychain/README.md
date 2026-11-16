@@ -10,6 +10,7 @@ Provides a small, pluggable interface used by `apps/gateway` and the CLI to read
 |---------|-----------|-------|
 | `keytar` | macOS, Linux (libsecret), Windows (Credential Manager) | Default. Lazy-imported so web bundles don't pull native deps. |
 | File fallback | Only when `LF_GATEWAY_KEY_FILE_FALLBACK=1` | Stores under `~/.lenserfight/gateway/keys/<service>__<account>` mode `0600`. Intended for CI. Logs a warning. |
+| Unavailable | `keytar` cannot be loaded and the file fallback was not requested | Every operation fails with `keychain_unavailable`; secrets are never written to plaintext files implicitly. |
 
 ## API
 

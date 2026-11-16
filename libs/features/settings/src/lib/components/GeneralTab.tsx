@@ -1,6 +1,7 @@
 import { lenserService } from '@lenserfight/data/repositories'
 import { preferencesService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
+import { useTour } from '@lenserfight/features/tour'
 import { LenserPreferences } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
@@ -19,6 +20,7 @@ export const GeneralTab: React.FC = () => {
   const { lenser } = useLenser()
   const queryClient = useQueryClient()
   const { setTheme: applyTheme } = useTheme()
+  const { toursOptedOut, optOutOfTours, optInToTours } = useTour()
 
   const { data: languages = [] } = useQuery({
     queryKey: ['core', 'languages'],
@@ -300,6 +302,32 @@ export const GeneralTab: React.FC = () => {
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
                   autoplayMusic ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Show guided tours
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Applies immediately. Turn off to stop tours from auto-starting on any page.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!toursOptedOut}
+              onClick={() => (toursOptedOut ? optInToTours() : optOutOfTours())}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                !toursOptedOut ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  !toursOptedOut ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
             </button>

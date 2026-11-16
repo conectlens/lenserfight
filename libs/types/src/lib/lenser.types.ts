@@ -53,6 +53,8 @@ export interface LenserPreferences {
   cron_config: Record<string, unknown>
   /** Product-tour seen markers: tour id -> ISO timestamp of completion/dismissal. */
   tours_seen: Record<string, string>
+  /** When true, no product tour auto-starts for this user on any route. */
+  tours_opted_out?: boolean
   country_id?: string | null
   currency?: string | null
   /** When true, the LenserFight arena soundtrack autoplays on Battle Detail pages. */

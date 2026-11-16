@@ -407,6 +407,51 @@ export function getWorkflowNodeCategoryCounts(): Record<WorkflowNodeCategory, nu
   }, {} as Record<WorkflowNodeCategory, number>)
 }
 
+export interface WorkflowNodeConfigValidationResult {
+  /** The node type has no matching catalog entry — every other field is irrelevant when true. */
+  unknownType: boolean
+  /** requiredConfig keys with no value in `config` or `config.param_overrides`. */
+  missingRequiredFields: string[]
+}
+
+/**
+ * Checks a node's raw config against its catalog entry's requiredConfig,
+ * the same fields workflow-node-config-normalizer reads for type coercion.
+ * Config values may live directly on the object or inside param_overrides
+ * (optionally `__`-prefixed), mirroring how the normalizer resolves them.
+ */
+export function validateWorkflowNodeConfig(
+  nodeType: string | null | undefined,
+  config: Record<string, unknown> | null | undefined
+): WorkflowNodeConfigValidationResult {
+  const entry = getWorkflowNodeCatalogEntry(nodeType)
+  if (!entry) {
+    return { unknownType: true, missingRequiredFields: [] }
+  }
+
+  const cfg = config ?? {}
+  const overridesRaw = cfg['param_overrides']
+  const overrides =
+    overridesRaw && typeof overridesRaw === 'object' && !Array.isArray(overridesRaw)
+      ? (overridesRaw as Record<string, unknown>)
+      : {}
+
+  const hasValue = (key: string): boolean => {
+    if (isPresent(cfg[key])) return true
+    return isPresent(overrides[key]) || isPresent(overrides[`__${key}`])
+  }
+
+  const missingRequiredFields = entry.requiredConfig
+    .map((requiredField) => requiredField.key)
+    .filter((key) => !hasValue(key))
+
+  return { unknownType: false, missingRequiredFields }
+}
+
+function isPresent(value: unknown): boolean {
+  return value !== undefined && value !== null && value !== ''
+}
+
 export function isWorkflowUtilityNodeType(type: string | null | undefined): type is WorkflowNodeType {
   const entry = getWorkflowNodeCatalogEntry(type)
   return !!entry && entry.category !== 'lens'
@@ -524,12 +569,12 @@ function triggerNodes(): WorkflowNodeCatalogEntry[] {
       iconKey: 'CalendarClock',
       inputs: voidIn,
       outputs: [io('schedule', 'json', 'Schedule firing metadata.', { shape: { firedAt: 'text', timezone: 'text' } })],
-      requiredConfig: [field('cron', 'string', 'Cron expression used to fire the workflow.', { required: true })],
+      requiredConfig: [field('cronExpression', 'string', 'Standard 5-field cron expression used to fire the workflow (min interval: */5).', { required: true })],
       optionalConfig: [field('timezone', 'string', 'IANA timezone.', { defaultValue: 'UTC' })],
       defaultConfig: { timezone: 'UTC' },
       exampleConfig: example(
         'Generate a Monday morning arena digest.',
-        { cron: '0 8 * * MON', timezone: 'Europe/Istanbul' },
+        { cronExpression: '0 8 * * MON', timezone: 'Europe/Istanbul' },
         {},
         { firedAt: '2026-05-18T08:00:00+03:00', timezone: 'Europe/Istanbul' },
         'supabase_query',

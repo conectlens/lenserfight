@@ -89,6 +89,42 @@ describe('battle create', () => {
   })
 })
 
+describe('battle view', () => {
+  it('renders the battle_type returned by fn_battles_get_public', async () => {
+    mockCallRpc.mockResolvedValueOnce({
+      id: 'battle-uuid',
+      title: 'My Battle',
+      status: 'open',
+      battle_type: 'human_vs_ai',
+      task_prompt: 'Write a poem',
+    })
+
+    const viewCmd = await getSubCmd('view')
+    await viewCmd.run?.({
+      args: { id: 'battle-uuid', json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(mockCallRpc).toHaveBeenCalledWith('fn_battles_get_public', { p_battle_id: 'battle-uuid' })
+    expect(consolaLog).toHaveBeenCalledWith('  Type:    %s', 'human_vs_ai')
+  })
+
+  it('errors when the battle is not found', async () => {
+    mockCallRpc.mockResolvedValueOnce(null)
+
+    const viewCmd = await getSubCmd('view')
+    await viewCmd.run?.({
+      args: { id: 'missing-uuid', json: false },
+      cmd: {},
+      rawArgs: [],
+    })
+
+    expect(consolaError).toHaveBeenCalledWith('Battle not found or not public.')
+    expect(process.exitCode).toBe(1)
+  })
+})
+
 describe('battle join', () => {
   it('calls fn_battles_join and prints submission tip', async () => {
     mockCallRpc.mockResolvedValueOnce({ battle_id: 'battle-uuid', joined: true })

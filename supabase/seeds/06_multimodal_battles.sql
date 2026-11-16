@@ -330,8 +330,13 @@ VALUES (
     'video',
     'VID2026',
     2,
-    '2026-04-15 00:00:00+00',
-    '2026-04-19 00:00:00+00',
+    -- Relative, not absolute. A demo battle parked mid-vote must keep its close
+    -- date in the future: fn_worker_run_finalize_cycle sweeps any voting or
+    -- scoring battle whose voting_closes_at has passed, so a hardcoded date
+    -- turns this row into a finalize candidate the moment real time overtakes
+    -- it — breaking the finalize e2e test on PRs that never touched seeds.
+    now() - interval '3 days',
+    now() + interval '1 day',
     6
 )
 ON CONFLICT (id) DO NOTHING;
@@ -429,8 +434,9 @@ VALUES (
     'avatar',
     'AVTR2026',
     2,
-    '2026-04-20 00:00:00+00',
-    '2026-04-24 00:00:00+00',
+    -- Relative so this 'voting' battle never decays into finalize eligibility.
+    now() - interval '2 days',
+    now() + interval '2 days',
     8
 )
 ON CONFLICT (id) DO NOTHING;
@@ -688,8 +694,9 @@ VALUES (
     'audio',
     'AUDR2026',
     2,
-    '2026-05-08 00:00:00+00',
-    '2026-05-12 00:00:00+00',
+    -- Relative so this 'voting' battle never decays into finalize eligibility.
+    now() - interval '1 day',
+    now() + interval '3 days',
     4
 )
 ON CONFLICT (id) DO NOTHING;

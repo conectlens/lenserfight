@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { mediaService, threadsService } from '@lenserfight/data/repositories'
+import { buildStorageObjectFileName } from '@lenserfight/utils/text'
 import type { UnifiedMediaType, Visibility } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
 import type { PendingThreadMedia } from '../components/ThreadMediaPicker'
@@ -52,7 +53,11 @@ export const useCreateThread = () => {
 
           const mediaType = guessMediaType(file.type)
           const bucket = 'user-media'
-          const objectKey = `${lenser.id}/thread-media/${Date.now()}-${file.name}`
+          // The object key must survive signing and the subsequent PUT byte for
+          // byte; a raw filename with spaces or unicode punctuation signs fine
+          // and then fails the upload with a 400. `name` below keeps the
+          // original filename for display — only the storage key is reduced.
+          const objectKey = `${lenser.id}/thread-media/${buildStorageObjectFileName(file.name, Date.now())}`
           const session = await mediaService.startUpload(
             { mediaType, mimeType: file.type, name: file.name },
             workspaceId,

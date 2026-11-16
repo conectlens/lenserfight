@@ -4,19 +4,9 @@ import { useAuth } from '@lenserfight/features/auth'
 import { supabase } from '@lenserfight/data/supabase'
 import { Button } from '@lenserfight/ui/components'
 import { MCP_SERVER_URL, WEB_BASE_URL } from '@lenserfight/utils/env'
+import { consumeConsent, rememberConsent } from '../utils/mcpConsent'
+import { isSafeRedirectTarget, isTunnelUrl, resolveMcpServerUrl } from '../utils/mcpServerUrl'
 
-
-const ALLOWED_MCP_HOSTS = [
-  'mcp.lenserfight.com',
-  'localhost',
-  '127.0.0.1',
-]
-const ALLOWED_MCP_PATTERNS = [
-  /\.ngrok-free\.app$/,
-  /\.ngrok-free\.dev$/,
-  /\.ngrok\.io$/,
-  /\.trycloudflare\.com$/,
-]
 
 /**
  * Rewrites WEB_BASE_URL to use the current page's hostname when the two are
@@ -41,33 +31,18 @@ function getWebBaseUrl(): string {
   return WEB_BASE_URL
 }
 
-function resolveMcpServerUrl(serverParam: string | null): string {
-  if (!serverParam) return MCP_SERVER_URL
+function redirectHostOf(value: unknown): string | undefined {
   try {
-    const u = new URL(serverParam)
-    if (u.protocol !== 'https:' && u.protocol !== 'http:') return MCP_SERVER_URL
-    const host = u.hostname
-    if (ALLOWED_MCP_HOSTS.includes(host)) return serverParam
-    if (ALLOWED_MCP_PATTERNS.some((re) => re.test(host))) return serverParam
+    return typeof value === 'string' ? new URL(value).host || new URL(value).protocol : undefined
   } catch {
-    // invalid URL
-  }
-  return MCP_SERVER_URL
-}
-
-function isNgrokUrl(url: string): boolean {
-  try {
-    const host = new URL(url).hostname
-    return ALLOWED_MCP_PATTERNS.some((re) => re.test(host))
-  } catch {
-    return false
+    return undefined
   }
 }
 
 type Phase =
   | { name: 'loading' }
   | { name: 'fetching' }
-  | { name: 'consent'; clientName: string }
+  | { name: 'consent'; clientName: string; redirectHost?: string }
   | { name: 'authorizing'; clientName: string }
   | { name: 'denied' }
   | { name: 'error'; message: string }
@@ -76,9 +51,13 @@ export const McpOAuthConsentPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth()
   const [searchParams] = useSearchParams()
   const id = searchParams.get('id') ?? ''
-  const mcpServerUrl = resolveMcpServerUrl(searchParams.get('server'))
+  const mcpServerUrl = resolveMcpServerUrl(searchParams.get('server'), {
+    configured: MCP_SERVER_URL,
+    isDev: import.meta.env.DEV === true,
+  })
   // auto_allow=1 is set when we redirected the user to onboarding after a 403.
-  // On return, we skip re-showing the consent form and complete auth automatically.
+  // On return, we skip re-showing the consent form and complete auth automatically,
+  // but only if this tab recorded the user's "Allow" click for this request.
   const autoAllow = searchParams.get('auto_allow') === '1'
   const autoAllowFiredRef = useRef(false)
   const [phase, setPhase] = useState<Phase>({ name: 'loading' })
@@ -96,12 +75,12 @@ export const McpOAuthConsentPage: React.FC = () => {
     }
     setPhase({ name: 'fetching' })
     fetch(`${mcpServerUrl}/oauth/client-info?id=${encodeURIComponent(id)}`, {
-      headers: isNgrokUrl(mcpServerUrl) ? { 'ngrok-skip-browser-warning': 'true' } : {},
+      headers: isTunnelUrl(mcpServerUrl) ? { 'ngrok-skip-browser-warning': 'true' } : {},
     })
       .then((r) => r.json())
       .then((data) => {
         if (data.error) setPhase({ name: 'error', message: data.error_description ?? data.error })
-        else setPhase({ name: 'consent', clientName: data.client_name ?? 'Unknown' })
+        else setPhase({ name: 'consent', clientName: data.client_name ?? 'Unknown', redirectHost: redirectHostOf(data.redirect_uri) })
       })
       .catch((e: Error) => setPhase({ name: 'error', message: e.message }))
   }, [id, isAuthenticated, isLoading, mcpServerUrl, searchParams])
@@ -122,7 +101,7 @@ export const McpOAuthConsentPage: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(isNgrokUrl(mcpServerUrl) ? { 'ngrok-skip-browser-warning': 'true' } : {}),
+          ...(isTunnelUrl(mcpServerUrl) ? { 'ngrok-skip-browser-warning': 'true' } : {}),
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ id, refresh_token: session.refresh_token }),
@@ -137,6 +116,9 @@ export const McpOAuthConsentPage: React.FC = () => {
           }
           // No lenser profile — send to onboarding. Include auto_allow=1 in the
           // return URL so we skip the consent form and complete auth on return.
+          // autoAllow is false here, so this call came from the "Allow" button:
+          // record that consent for the return trip to verify.
+          rememberConsent(id, mcpServerUrl)
           const returnUrl = new URL(window.location.href)
           returnUrl.searchParams.set('auto_allow', '1')
           window.location.href = `${getWebBaseUrl()}/onboarding?return_url=${encodeURIComponent(returnUrl.toString())}`
@@ -146,6 +128,12 @@ export const McpOAuthConsentPage: React.FC = () => {
         return
       }
       const redirectUrl = new URL(data.redirect_uri)
+      // redirect_uri comes from the MCP server's response; never navigate to a
+      // scheme that would run script in this origin.
+      if (!isSafeRedirectTarget(redirectUrl)) {
+        setPhase({ name: 'error', message: 'The client supplied an unsupported redirect URI.' })
+        return
+      }
       redirectUrl.searchParams.set('code', data.code)
       if (data.state) redirectUrl.searchParams.set('state', data.state)
       window.location.href = redirectUrl.toString()
@@ -156,10 +144,13 @@ export const McpOAuthConsentPage: React.FC = () => {
 
   // When returning from onboarding (auto_allow=1), skip re-showing the consent
   // form and complete auth automatically — the user already gave consent before
-  // being sent to onboarding.
+  // being sent to onboarding. The query param alone proves nothing (anyone can
+  // put it in a link), so require the consent recorded by that earlier click;
+  // without it the consent form stays on screen.
   useEffect(() => {
     if (phase.name !== 'consent' || !autoAllow || autoAllowFiredRef.current) return
     autoAllowFiredRef.current = true
+    if (!consumeConsent(id, mcpServerUrl)) return
     void handleAllow()
   // handleAllow closes over phase/id/mcpServerUrl/autoAllow — all stable within
   // a given render; the ref prevents re-firing on subsequent renders.
@@ -214,6 +205,14 @@ export const McpOAuthConsentPage: React.FC = () => {
             </h1>
             <p className="mt-3 text-sm leading-6 text-gray-600">
               This will grant <strong>{clientName}</strong> access to read and manage your lenses, battles, and workflows on your behalf.
+            </p>
+            {phase.name === 'consent' && phase.redirectHost ? (
+              <p className="mt-2 text-xs text-gray-500">
+                After you allow, you will be sent to <strong>{phase.redirectHost}</strong>.
+              </p>
+            ) : null}
+            <p className="mt-2 text-xs text-gray-500">
+              Your session will be shared with <strong>{new URL(mcpServerUrl).host}</strong>.
             </p>
           </div>
 
