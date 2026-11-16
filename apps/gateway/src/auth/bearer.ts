@@ -28,12 +28,16 @@ export const BEARER_KEYCHAIN_ACCOUNT = 'web-pair'
  *  - Local dev:  `localhost` and `127.0.0.1` on any port.
  *  - Self-host / Tailscale / LAN: Tailscale CGNAT (100.64.0.0/10), RFC 1918
  *    private network ranges (10/8, 172.16/12, 192.168/16), and `.local`
- *    mDNS hostnames. Origins reach the gateway over an internal interface
- *    by definition; there is no scenario where these resolve over the
- *    public internet without an attacker controlling the user's network.
+ *    mDNS hostnames, over https only. A plaintext http origin on a shared
+ *    network has no server authentication, so whoever answers for that
+ *    address would own the origin; http on these ranges is not trusted by
+ *    default.
  *
- * Self-hosters with a non-standard domain can extend this via
- * `LF_GATEWAY_EXTRA_ORIGINS` (comma-separated regex strings) — see
+ * Loopback origins (`localhost`, `127.0.0.1`, `[::1]`) may use http.
+ *
+ * Self-hosters with a non-standard domain, or who deliberately serve the web
+ * app over plain http on a private network, can opt in via
+ * `LF_GATEWAY_EXTRA_ORIGINS` (comma-separated, anchored regex strings) — see
  * `loadAllowedOriginPatterns()` below.
  */
 export const DEFAULT_ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
@@ -43,15 +47,15 @@ export const DEFAULT_ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
   /^https?:\/\/127\.0\.0\.1(?::\d{1,5})?$/,
   /^https?:\/\/\[::1\](?::\d{1,5})?$/,
   // Tailscale CGNAT: 100.64.0.0 – 100.127.255.255 (RFC 6598).
-  /^https?:\/\/100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
+  /^https:\/\/100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
   // RFC 1918 — 10.0.0.0/8.
-  /^https?:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
+  /^https:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
   // RFC 1918 — 172.16.0.0/12 (i.e. 172.16 – 172.31).
-  /^https?:\/\/172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
+  /^https:\/\/172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
   // RFC 1918 — 192.168.0.0/16.
-  /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
+  /^https:\/\/192\.168\.\d{1,3}\.\d{1,3}(?::\d{1,5})?$/,
   // mDNS hostnames (e.g. `my-laptop.local`).
-  /^https?:\/\/[a-z0-9-]+\.local(?::\d{1,5})?$/,
+  /^https:\/\/[a-z0-9-]+\.local(?::\d{1,5})?$/,
 ]
 
 /** Parse `LF_GATEWAY_EXTRA_ORIGINS` (comma-separated regex bodies). */

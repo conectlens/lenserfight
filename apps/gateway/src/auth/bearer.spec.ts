@@ -119,36 +119,49 @@ describe('BearerAuthGuard', () => {
     expect(patterns.some((p) => p.test('https://evil.com'))).toBe(false)
   })
 
-  it('default origin patterns include Tailscale CGNAT (100.64/10)', () => {
+  it('default origin patterns include (https) Tailscale CGNAT (100.64/10)', () => {
     const patterns = DEFAULT_ALLOWED_ORIGIN_PATTERNS
-    expect(patterns.some((p) => p.test('http://100.88.58.68:3000'))).toBe(true)
-    expect(patterns.some((p) => p.test('http://100.64.0.1'))).toBe(true)
-    expect(patterns.some((p) => p.test('http://100.127.255.255:38080'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://100.88.58.68:3000'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://100.64.0.1'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://100.127.255.255:38080'))).toBe(true)
     // Outside the CGNAT range — must be rejected.
-    expect(patterns.some((p) => p.test('http://100.63.255.255'))).toBe(false)
-    expect(patterns.some((p) => p.test('http://100.128.0.0'))).toBe(false)
-    expect(patterns.some((p) => p.test('http://101.0.0.1'))).toBe(false)
+    expect(patterns.some((p) => p.test('https://100.63.255.255'))).toBe(false)
+    expect(patterns.some((p) => p.test('https://100.128.0.0'))).toBe(false)
+    expect(patterns.some((p) => p.test('https://101.0.0.1'))).toBe(false)
   })
 
-  it('default origin patterns include RFC 1918 private networks', () => {
+  it('default origin patterns include (https) RFC 1918 private networks', () => {
     const patterns = DEFAULT_ALLOWED_ORIGIN_PATTERNS
-    expect(patterns.some((p) => p.test('http://10.0.0.1'))).toBe(true)
-    expect(patterns.some((p) => p.test('http://10.255.255.255:8080'))).toBe(true)
-    expect(patterns.some((p) => p.test('http://172.16.0.1'))).toBe(true)
-    expect(patterns.some((p) => p.test('http://172.31.255.255'))).toBe(true)
-    expect(patterns.some((p) => p.test('http://192.168.1.1:3000'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://10.0.0.1'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://10.255.255.255:8080'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://172.16.0.1'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://172.31.255.255'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://192.168.1.1:3000'))).toBe(true)
     // 172.15 and 172.32 are NOT private — must be rejected.
-    expect(patterns.some((p) => p.test('http://172.15.0.1'))).toBe(false)
-    expect(patterns.some((p) => p.test('http://172.32.0.1'))).toBe(false)
+    expect(patterns.some((p) => p.test('https://172.15.0.1'))).toBe(false)
+    expect(patterns.some((p) => p.test('https://172.32.0.1'))).toBe(false)
     // 11.x is public — must be rejected.
-    expect(patterns.some((p) => p.test('http://11.0.0.1'))).toBe(false)
+    expect(patterns.some((p) => p.test('https://11.0.0.1'))).toBe(false)
   })
 
-  it('default origin patterns include .local mDNS hostnames', () => {
+  it('default origin patterns include (https) .local mDNS hostnames', () => {
     const patterns = DEFAULT_ALLOWED_ORIGIN_PATTERNS
-    expect(patterns.some((p) => p.test('http://my-laptop.local'))).toBe(true)
-    expect(patterns.some((p) => p.test('http://my-laptop.local:3000'))).toBe(true)
-    expect(patterns.some((p) => p.test('http://my.laptop.local'))).toBe(false) // multi-segment not allowed
+    expect(patterns.some((p) => p.test('https://my-laptop.local'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://my-laptop.local:3000'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://my.laptop.local'))).toBe(false) // multi-segment not allowed
+  })
+
+  it('default origin patterns reject plaintext http on private, CGNAT and .local origins', () => {
+    const patterns = DEFAULT_ALLOWED_ORIGIN_PATTERNS
+    for (const origin of [
+      'http://100.88.58.68:3000',
+      'http://10.0.0.1',
+      'http://172.16.0.1',
+      'http://192.168.1.10:5173',
+      'http://my-laptop.local',
+    ]) {
+      expect(patterns.some((p) => p.test(origin))).toBe(false)
+    }
   })
 
   it('authorize() admits a Tailscale CGNAT origin', async () => {
@@ -156,7 +169,7 @@ describe('BearerAuthGuard', () => {
     const token = await guard.ensureToken()
     const r = await guard.authorize({
       authorization: `Bearer ${token}`,
-      origin: 'http://100.88.58.68:3000',
+      origin: 'https://100.88.58.68:3000',
     })
     expect(r).toMatchObject({ ok: true })
   })
