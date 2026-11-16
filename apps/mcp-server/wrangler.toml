@@ -14,5 +14,5 @@ AUTH_APP_BASE_URL  = "https://auth.lenserfight.win"
 # SUPABASE_JWT_SECRET
 
 [[routes]]
-pattern = "mcp.lenserfight.win/*"
-zone_name = "lenserfight.win"
+pattern = "mcp.lenserfight.win"
+custom_domain = true
