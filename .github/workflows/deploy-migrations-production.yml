@@ -17,7 +17,12 @@ on:
     branches: [main]
     paths:
       - 'supabase/migrations/**'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List what would be applied without changing the database'
+        type: boolean
+        default: true
 
 concurrency:
   group: deploy-migrations-production
@@ -39,9 +44,11 @@ jobs:
         with:
           install: 'false'
 
+      # Pinned: Supabase CLI 3.x rejects the [inbucket] section in supabase/config.toml,
+      # which stopped this workflow before it reached the database.
       - uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.78.1
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build database connection string
@@ -62,7 +69,14 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
+      - name: Dry run (manual runs only)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: supabase db push --db-url "${{ steps.db.outputs.url }}" --dry-run
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
       - name: Apply migrations
+        if: github.event_name != 'workflow_dispatch' || !inputs.dry_run
         run: supabase db push --db-url "${{ steps.db.outputs.url }}" --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

@@ -36,7 +36,7 @@ jobs:
 
       - uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.78.1
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Start Supabase
