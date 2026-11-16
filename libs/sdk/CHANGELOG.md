@@ -1,3 +1,7 @@
+## 2.3.0 (2026-11-16)
+
+This was a version bump only for sdk to align it with other projects, there were no code changes.
+
 ## 2.2.0 (2026-06-12)
 
 ### 🚀 Features
