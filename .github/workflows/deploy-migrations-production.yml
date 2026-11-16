@@ -51,13 +51,22 @@ jobs:
           version: 2.78.1
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # The direct db.<ref>.supabase.co host is IPv6-only and GitHub-hosted runners have no IPv6,
+      # so connect through the project's Supavisor pooler in session mode (IPv4, port 5432).
       - name: Build database connection string
         id: db
         run: |
+          set -euo pipefail
+          POOLER=$(curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROD_SUPABASE_PROJECT_REF/config/database/pooler")
+          HOST=$(echo "$POOLER" | jq -r '[.[] | select(.database_type == "PRIMARY")][0].db_host // .[0].db_host')
+          USER=$(echo "$POOLER" | jq -r '[.[] | select(.database_type == "PRIMARY")][0].db_user // .[0].db_user')
+          if [ -z "$HOST" ] || [ "$HOST" = "null" ]; then echo "Could not read the pooler host" >&2; exit 1; fi
           ENCODED_PASSWORD=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$PROD_SUPABASE_DB_PASSWORD")
           echo "::add-mask::$ENCODED_PASSWORD"
-          echo "url=postgresql://postgres:${ENCODED_PASSWORD}@db.${PROD_SUPABASE_PROJECT_REF}.supabase.co:5432/postgres" >> "$GITHUB_OUTPUT"
+          echo "url=postgresql://${USER}:${ENCODED_PASSWORD}@${HOST}:5432/postgres" >> "$GITHUB_OUTPUT"
         env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROD_SUPABASE_DB_PASSWORD: ${{ secrets.PROD_SUPABASE_DB_PASSWORD }}
           PROD_SUPABASE_PROJECT_REF: ${{ secrets.PROD_SUPABASE_PROJECT_REF }}
 
