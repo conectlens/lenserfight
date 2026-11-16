@@ -8,6 +8,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { buildServer } from './main.js';
 import { buildDiscoveryDocument, buildProtectedResourceDocument } from './oauth/discovery.js';
+import { isAllowedRedirectUri } from './oauth/redirectUri.js';
 import { McpServerConfig } from './config.js';
 import { negotiateProtocolVersion } from './protocol.js';
 
@@ -107,6 +108,13 @@ function generateToken(): string {
   return 'lf_mcp_' + Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** Single-use authorization code; distinct from, and never usable as, a bearer token. */
+function generateAuthCode(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return 'lf_code_' + Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function verifyPkce(codeVerifier: string, codeChallenge: string): Promise<boolean> {
   const enc = new TextEncoder().encode(codeVerifier);
   const hash = await crypto.subtle.digest('SHA-256', enc);
@@ -134,9 +142,11 @@ async function handleRegister(req: Request, env: Env): Promise<Response> {
     return json({ error: 'invalid_request', error_description: 'Invalid JSON body' }, 400);
   }
 
-  const redirectUris = Array.isArray(body['redirect_uris'])
-    ? (body['redirect_uris'] as string[]).filter((u) => typeof u === 'string')
-    : [];
+  const requestedUris = Array.isArray(body['redirect_uris']) ? (body['redirect_uris'] as unknown[]) : [];
+  const redirectUris = requestedUris.filter(isAllowedRedirectUri);
+  if (redirectUris.length !== requestedUris.length) {
+    return json({ error: 'invalid_redirect_uri', error_description: 'redirect_uris must be https, loopback http, or an app-specific scheme' }, 400);
+  }
   const clientName = typeof body['client_name'] === 'string'
     ? body['client_name'].slice(0, 120)
     : 'Dynamic MCP Client';
@@ -189,7 +199,7 @@ async function handleAuthorize(req: Request, env: Env, cfg: McpServerConfig): Pr
   if (clientErr || !row) {
     return json({ error: 'invalid_client', error_description: 'Unknown or inactive client' }, 400);
   }
-  if (!row.redirect_uris.includes(redirectUri)) {
+  if (!isAllowedRedirectUri(redirectUri) || !row.redirect_uris.includes(redirectUri)) {
     return json({ error: 'invalid_request', error_description: 'redirect_uri not registered' }, 400);
   }
 
@@ -277,25 +287,23 @@ async function handleComplete(req: Request, env: Env): Promise<Response> {
     return json({ error: 'invalid_request', error_description: 'Authorization session expired. Restart the connector flow.' }, 400);
   }
 
-  const token = generateToken();
+  // The redirect carries only a single-use authorization code. The bearer token
+  // is minted in /oauth/token after the client and PKCE checks pass.
+  const authCode = generateAuthCode();
 
-  await svc.rpc('fn_mcp_oauth_issue_token' as never, {
-    p_client_id:              pending.client_id,
-    p_lenser_id:              lenserId,
-    p_token:                  token,
-    p_supabase_refresh_token: refresh_token,
-  } as never);
-
-  await svc.rpc('fn_mcp_oauth_complete_auth_code' as never, {
+  const { error: completeErr } = (await svc.rpc('fn_mcp_oauth_complete_auth_code' as never, {
     p_id:                     pending.id,
-    p_code:                   token,
+    p_code:                   authCode,
     p_lenser_id:              lenserId,
     p_supabase_refresh_token: refresh_token,
-  } as never);
+  } as never)) as RpcResult<void>;
+  if (completeErr) {
+    return json({ error: 'server_error', error_description: 'Failed to complete authorization' }, 500);
+  }
 
-  console.log(`[lenserfight-mcp] complete: issued ${token.slice(0, 16)}... for lenser ${lenserId}`);
+  console.log(`[lenserfight-mcp] complete: authorization code issued for lenser ${lenserId}`);
 
-  return json({ code: token, redirect_uri: pending.redirect_uri, state: pending.original_state });
+  return json({ code: authCode, redirect_uri: pending.redirect_uri, state: pending.original_state });
 }
 
 async function handleToken(req: Request, env: Env): Promise<Response> {
@@ -365,15 +373,16 @@ async function handleToken(req: Request, env: Env): Promise<Response> {
     }
   }
 
-  const accessToken = code.startsWith('lf_mcp_') ? code : generateToken();
+  const accessToken = generateToken();
 
-  if (accessToken !== code) {
-    await svc.rpc('fn_mcp_oauth_issue_token' as never, {
-      p_client_id:              client_id,
-      p_lenser_id:              authCode.lenser_id,
-      p_token:                  accessToken,
-      p_supabase_refresh_token: authCode.supabase_refresh_token,
-    } as never);
+  const { error: issueErr } = (await svc.rpc('fn_mcp_oauth_issue_token' as never, {
+    p_client_id:              client_id,
+    p_lenser_id:              authCode.lenser_id,
+    p_token:                  accessToken,
+    p_supabase_refresh_token: authCode.supabase_refresh_token,
+  } as never)) as RpcResult<void>;
+  if (issueErr) {
+    return json({ error: 'server_error', error_description: 'Failed to issue token' }, 500);
   }
 
   return json({ access_token: accessToken, token_type: 'bearer', expires_in: null }, 200,
