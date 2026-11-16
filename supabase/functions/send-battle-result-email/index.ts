@@ -6,7 +6,7 @@
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_ADDRESS = Deno.env.get('BATTLE_EMAIL_FROM') ?? 'LenserFight Battles <battles@lenserfight.com>'
-const APP_URL = Deno.env.get('APP_URL') ?? 'https://lenserfight.com'
+const APP_URL = Deno.env.get('APP_URL') ?? 'https://lenserfight.win'
 
 interface RequestPayload {
   battle_id: string

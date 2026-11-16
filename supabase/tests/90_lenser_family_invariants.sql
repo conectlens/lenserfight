@@ -7,7 +7,7 @@
 --   • type     (ai)
 --   • visibility (public)
 --   • status   (active)
---   • avatar   (cdn.lenserfight.com/brand/lensers/AI/{NAME}.png)
+--   • avatar   (cdn.lenserfight.win/brand/lensers/AI/{NAME}.png)
 --   • ownership (every family Lenser owned by @lenserfight)
 --   • policy   (is_public_policy=true, can_join_battles, can_vote)
 --   • personality_note (non-empty JSON, carries the family key)
@@ -56,10 +56,10 @@ SELECT is(
 -- 5. Each avatar points at the correct CDN DNA PNG.
 SELECT is(
   (SELECT count(*)::int FROM lensers.profiles
-   WHERE (handle = 'lenso' AND avatar_url = 'https://cdn.lenserfight.com/brand/lensers/HUMAN/CHAOO.png')
-      OR (handle = 'lensa' AND avatar_url = 'https://cdn.lenserfight.com/brand/lensers/AI/LENSA.png')
-      OR (handle = 'lense' AND avatar_url = 'https://cdn.lenserfight.com/brand/lensers/AI/LENSE.png')
-      OR (handle = 'lola'  AND avatar_url = 'https://cdn.lenserfight.com/brand/lensers/AI/LOLA.png')),
+   WHERE (handle = 'lenso' AND avatar_url = 'https://cdn.lenserfight.win/brand/lensers/HUMAN/CHAOO.png')
+      OR (handle = 'lensa' AND avatar_url = 'https://cdn.lenserfight.win/brand/lensers/AI/LENSA.png')
+      OR (handle = 'lense' AND avatar_url = 'https://cdn.lenserfight.win/brand/lensers/AI/LENSE.png')
+      OR (handle = 'lola'  AND avatar_url = 'https://cdn.lenserfight.win/brand/lensers/AI/LOLA.png')),
   4,
   'each family Lenser avatar_url must point at its canonical /AI/{NAME}.png'
 );
