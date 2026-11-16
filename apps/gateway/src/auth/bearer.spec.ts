@@ -258,6 +258,18 @@ describe('BearerAuthGuard', () => {
     }
   })
 
+  it('logs a one-time hint naming LF_GATEWAY_EXTRA_ORIGINS for a rejected private http origin', async () => {
+    const writes: string[] = []
+    const spy = vi.spyOn(process.stderr, 'write').mockImplementation((c) => (writes.push(String(c)), true))
+    const guard = new BearerAuthGuard({ keychainAdapter: memKeychain() })
+    guard.isOriginAllowed('http://192.168.1.10:5173')
+    guard.isOriginAllowed('http://192.168.1.10:5173')
+    spy.mockRestore()
+    expect(writes).toHaveLength(1)
+    expect(writes[0]).toContain('LF_GATEWAY_EXTRA_ORIGINS')
+    expect(writes[0]).toContain('192.168.1.10')
+  })
+
   it('authorize() admits a Tailscale CGNAT origin', async () => {
     const guard = new BearerAuthGuard({ keychainAdapter: memKeychain() })
     const token = await guard.ensureToken()

@@ -58,6 +58,9 @@ export const DEFAULT_ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
   /^https:\/\/[a-z0-9-]+\.local(?::\d{1,5})?$/,
 ]
 
+const PRIVATE_HTTP_ORIGIN =
+  /^http:\/\/(?:100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|[a-z0-9-]+\.local)(?::\d{1,5})?$/
+
 /** Parse `LF_GATEWAY_EXTRA_ORIGINS` (comma-separated regex bodies). */
 export function loadAllowedOriginPatterns(env: NodeJS.ProcessEnv = process.env): RegExp[] {
   const extra = env['LF_GATEWAY_EXTRA_ORIGINS']
@@ -179,7 +182,21 @@ export class BearerAuthGuard {
   isOriginAllowed(origin: string | null): OriginCheckResult {
     if (origin == null || origin === '') return { ok: true, origin: null } // same-origin or non-browser caller
     if (this.origins.some((re) => re.test(origin))) return { ok: true, origin }
+    this.hintRejectedPrivateHttpOrigin(origin)
     return { ok: false, origin }
+  }
+
+  private readonly hintedOrigins = new Set<string>()
+
+  /** Logs once per origin when a plaintext-http private-network origin is refused. */
+  private hintRejectedPrivateHttpOrigin(origin: string): void {
+    if (this.hintedOrigins.size >= 64 || this.hintedOrigins.has(origin)) return
+    if (!PRIVATE_HTTP_ORIGIN.test(origin)) return
+    this.hintedOrigins.add(origin)
+    process.stderr.write(
+      `[bearer] rejected plaintext-http origin ${origin}; serve the web app over https, or opt in with ` +
+        `LF_GATEWAY_EXTRA_ORIGINS='^${origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$'\n`
+    )
   }
 
   async authorize(req: {
