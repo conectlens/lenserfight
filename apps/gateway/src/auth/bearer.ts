@@ -41,8 +41,8 @@ export const BEARER_KEYCHAIN_ACCOUNT = 'web-pair'
  * `loadAllowedOriginPatterns()` below.
  */
 export const DEFAULT_ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
-  /^https:\/\/lenserfight\.com$/,
-  /^https:\/\/[a-z0-9-]+\.lenserfight\.com$/,
+  /^https:\/\/lenserfight\.win$/,
+  /^https:\/\/[a-z0-9-]+\.lenserfight\.win$/,
   /^https?:\/\/localhost(?::\d{1,5})?$/,
   /^https?:\/\/127\.0\.0\.1(?::\d{1,5})?$/,
   /^https?:\/\/\[::1\](?::\d{1,5})?$/,

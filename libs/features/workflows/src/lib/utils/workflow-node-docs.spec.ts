@@ -49,7 +49,7 @@ describe('getWorkflowNodeDocsHref', () => {
 
   it('uses DOCS_BASE_URL from env', () => {
     const href = getWorkflowNodeDocsHref('/reference/workflows/nodes/data#json-transform', 'en')
-    expect(href).toMatch(/^https:\/\/docs\.lenserfight\.com/)
+    expect(href).toMatch(/^https:\/\/docs\.lenserfight\.win/)
   })
 
   it('handles zh-CN style locale prefix', () => {

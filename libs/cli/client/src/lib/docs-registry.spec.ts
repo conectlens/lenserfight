@@ -6,7 +6,7 @@ import { resolveDocsUrl, docsKeyForKind, formatDocLink, renderDocsLine } from '.
 describe('resolveDocsUrl', () => {
   it('resolves registered keys to absolute URLs', () => {
     const url = resolveDocsUrl('auth-login')
-    expect(url).toMatch(/^https:\/\/docs\.lenserfight\.com/)
+    expect(url).toMatch(/^https:\/\/docs\.lenserfight\.win/)
   })
 
   it('returns undefined for unknown keys', () => {

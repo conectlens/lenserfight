@@ -15,7 +15,7 @@ test.describe('Arena/battles routing smoke', () => {
     await page.goto('/welcome', { waitUntil: 'networkidle' })
 
     // Local dev uses LANDING_URL (e.g. localhost:3001); never silently bounce to production.
-    await expect(page).not.toHaveURL(/lenserfight\.com\/get-started/)
+    await expect(page).not.toHaveURL(/lenserfight\.win\/get-started/)
   })
 
   test('/benchmark is not a product route', async ({ page }) => {
