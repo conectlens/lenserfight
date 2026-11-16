@@ -72,7 +72,7 @@ The SVG renders a single composite layout. The fields below are pulled from `bat
 | Winner highlight | The winning contender's name renders in the highlight color when `winner_contender_id` is set |
 | ELO delta lines | `reputation.elo_battle_log` deltas. Rendered only when the battle is finalized. Sign and rounded integer (e.g. `+18 ELO`, `-12 ELO`). |
 | Vote line | `total_vote_count` votes — only when the battle is finalized |
-| Footer | `lenserfight.com/battles/<slug>` |
+| Footer | `lenserfight.win/battles/<slug>` |
 
 All user-controlled strings are escaped for safe inclusion as SVG text content (`&`, `<`, `>`, `"`, `'`).
 
@@ -83,11 +83,11 @@ All user-controlled strings are escaped for safe inclusion as SVG text content (
 `BattleSEOHead` already wires the URL into Open Graph and Twitter card meta tags:
 
 ```html
-<meta property="og:image" content="https://api.lenserfight.com/v1/battles/csv-parser-2026/share-card.svg" />
+<meta property="og:image" content="https://api.lenserfight.win/v1/battles/csv-parser-2026/share-card.svg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="https://api.lenserfight.com/v1/battles/csv-parser-2026/share-card.svg" />
+<meta name="twitter:image" content="https://api.lenserfight.win/v1/battles/csv-parser-2026/share-card.svg" />
 ```
 
 Consumers should not need to call this endpoint directly; visiting any battle detail URL surfaces the card automatically.

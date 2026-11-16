@@ -108,7 +108,7 @@ An API trigger fires a Workflow run via a REST or CLI call from an external syst
 
 ```bash
 # Trigger a run via the REST API
-curl -X POST https://api.lenserfight.com/v1/runs \
+curl -X POST https://api.lenserfight.win/v1/runs \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{

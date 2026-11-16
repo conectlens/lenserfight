@@ -49,7 +49,7 @@ Execute the lens from the web app with a short input and confirm:
 If you also use the hosted API, create or reuse an API token and run:
 
 ```bash
-curl -X POST "https://api.lenserfight.com/v1/lenses/<lens-id>/execute" \
+curl -X POST "https://api.lenserfight.win/v1/lenses/<lens-id>/execute" \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -62,7 +62,7 @@ curl -X POST "https://api.lenserfight.com/v1/lenses/<lens-id>/execute" \
 Poll the returned `runId`:
 
 ```bash
-curl "https://api.lenserfight.com/v1/runs/<run-id>" \
+curl "https://api.lenserfight.win/v1/runs/<run-id>" \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 ```
 

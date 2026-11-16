@@ -132,7 +132,7 @@ const adapter = new HttpConnectorAdapter({
     scopes: ['lenses:read', 'agents:read'],
     isActive: true,
   },
-  endpoint: 'https://api.lenserfight.com',
+  endpoint: 'https://api.lenserfight.win',
   serviceToken: process.env.LENSERFIGHT_SERVICE_TOKEN!,
 })
 
@@ -152,7 +152,7 @@ class MyConnector implements ConnectorAdapterV1 {
 
   async verify(token: string) {
     // Validate the token against LenserFight's API
-    const res = await fetch('https://api.lenserfight.com/v1/auth/verify', {
+    const res = await fetch('https://api.lenserfight.win/v1/auth/verify', {
       headers: { Authorization: `Bearer ${token}` }
     })
     const data = await res.json()
@@ -216,15 +216,15 @@ With the service token, your backend can call LenserFight's API:
 
 ```bash
 # Fetch public lenses from your community
-curl https://api.lenserfight.com/v1/lenses \
+curl https://api.lenserfight.win/v1/lenses \
   -H "Authorization: Bearer $LENSERFIGHT_SERVICE_TOKEN"
 
 # Fetch a specific lens by slug
-curl https://api.lenserfight.com/v1/lenses/my-lens-slug \
+curl https://api.lenserfight.win/v1/lenses/my-lens-slug \
   -H "Authorization: Bearer $LENSERFIGHT_SERVICE_TOKEN"
 
 # Trigger a workflow run
-curl -X POST https://api.lenserfight.com/v1/runs \
+curl -X POST https://api.lenserfight.win/v1/runs \
   -H "Authorization: Bearer $LENSERFIGHT_SERVICE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"workflow_slug": "my-workflow", "inputs": {"topic": "AI news"}}'

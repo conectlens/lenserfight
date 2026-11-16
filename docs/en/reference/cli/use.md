@@ -19,7 +19,7 @@ Show the current active mode or switch it persistently. **Mode is always stored 
 |----------|-------------|
 | _(none)_ | Print the current mode and its source |
 | `local` | Switch to local mode (Supabase on `localhost`) |
-| `cloud` | Switch to cloud mode (lenserfight.com API) |
+| `cloud` | Switch to cloud mode (lenserfight.win API) |
 
 ---
 
@@ -125,7 +125,7 @@ export LF_LOCAL=1   # all lf commands in this shell use local mode
 | | `local` | `cloud` |
 |---|---|---|
 | Supabase URL | `http://127.0.0.1:54321` | `https://<your-project>.supabase.co` |
-| API base URL | `http://localhost:8786` | `https://api.lenserfight.com` |
+| API base URL | `http://localhost:8786` | `https://api.lenserfight.win` |
 | Auth required | No (local dev keys used) | Yes — run `lf auth login` |
 | Prerequisites | Docker + Supabase CLI + `lf setup --mode local` | Node ≥ 22, network access |
 

@@ -38,7 +38,7 @@ Bu entegrasyon bölümü, [Diátaxis çerçevesi](https://diataxis.fr) takip edi
 ## Uç nokta (Endpoint)
 
 ```
-https://mcp.lenserfight.com/mcp
+https://mcp.lenserfight.win/mcp
 ```
 
 Bu, kararlı LF Cloud uç noktasıdır. Yerel sunucu gerekmez. Kimlik doğrulaması OAuth akışı üzerinden gerçekleştirilir — kullanıcılarınız LenserFight kimlik bilgileriyle oturum açar ve ürününüzü bir kez yetkilendirir.
@@ -51,7 +51,7 @@ Bu, kararlı LF Cloud uç noktasıdır. Yerel sunucu gerekmez. Kimlik doğrulama
 - [ ] OAuth 2.1 PKCE yetkilendirme kodu (authorization code) akışını uygulayın
 - [ ] Kullanıcı başına `lf_mcp_*` erişim jetonunu (access token) saklayın
 - [ ] Her MCP isteğine `Authorization: Bearer lf_mcp_...` üst bilgisini (header) ekleyin
-- [ ] Kullanıcıların lenserfight.com adresinde katılım adımlarını tamamlamasını sağlamak için `No Lenser profile found` hatasını ele alın
+- [ ] Kullanıcıların lenserfight.win adresinde katılım adımlarını tamamlamasını sağlamak için `No Lenser profile found` hatasını ele alın
 - [ ] Bağlantının sağlıklı olduğunu doğrulamak için `list_lenses` aracıyla test edin
 
 ---
@@ -59,7 +59,7 @@ Bu, kararlı LF Cloud uç noktasıdır. Yerel sunucu gerekmez. Kimlik doğrulama
 ## Sağlık kontrolü (Health Check)
 
 ```bash
-curl https://mcp.lenserfight.com/health
+curl https://mcp.lenserfight.win/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 
@@ -69,10 +69,10 @@ curl https://mcp.lenserfight.com/health
 
 Bir kullanıcının entegrasyonunuzu yetkilendirebilmesi için şunlar gerekir:
 
-1. Bir LenserFight hesabı ([lenserfight.com](https://lenserfight.com) adresinden kaydolun)
+1. Bir LenserFight hesabı ([lenserfight.win](https://lenserfight.win) adresinden kaydolun)
 2. Tamamlanmış bir Lenser profili (katılım sırasında seçilen bir kullanıcı adı/kulp - handle)
 
-Kullanıcı adı seçmemiş kullanıcılar, yetkilendirme sırasında `No Lenser profile found` hatası alacaktır. Bu adımı tamamlamaları için onları lenserfight.com adresine yönlendirin.
+Kullanıcı adı seçmemiş kullanıcılar, yetkilendirme sırasında `No Lenser profile found` hatası alacaktır. Bu adımı tamamlamaları için onları lenserfight.win adresine yönlendirin.
 
 ---
 

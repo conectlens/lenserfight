@@ -69,7 +69,7 @@ Dağılım: **16 Read · 9 Write · 4 Execute · 2 Destructive** = 31.
 Tüm araçlar standart MCP `tools/call` yöntemini kullanır:
 
 ```http
-POST https://mcp.lenserfight.com/mcp
+POST https://mcp.lenserfight.win/mcp
 Authorization: Bearer lf_mcp_<token>
 Content-Type: application/json
 

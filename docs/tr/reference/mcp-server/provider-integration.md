@@ -46,7 +46,7 @@ Sunucu iki taşıma modunu destekler:
 LF Cloud üzerinde barındırılan uç nokta, üçüncü taraf ürünler için standart yoldur. MCP istemciniz uç nokta URL'sine HTTP POST istekleri gönderir; kimlik doğrulaması OAuth 2.1 PKCE akışı tarafından yönetilir.
 
 ```
-https://mcp.lenserfight.com/mcp
+https://mcp.lenserfight.win/mcp
 ```
 
 Bu uç nokta Cloudflare üzerinden proxy'lenir; küresel olarak dağıtılmıştır, durumsuzdur (stateless) ve jeton başına hız sınırına (rate-limited) tabidir.
@@ -87,10 +87,10 @@ Tam akış diyagramı ve entegrasyon kontrol listesi için [OAuth ve Kimlik Doğ
 
 Bir kullanıcının entegrasyonunuzu yetkilendirebilmesi için şunlar gerekir:
 
-1. Bir LenserFight hesabı ([lenserfight.com](https://lenserfight.com) adresinde e-posta + şifre)
+1. Bir LenserFight hesabı ([lenserfight.win](https://lenserfight.win) adresinde e-posta + şifre)
 2. Tamamlanmış bir Lenser profili (katılım sırasında seçilen bir kullanıcı adı/kulp)
 
-Kaydolan ancak hiçbir zaman kullanıcı adı seçmeyen kullanıcılar, yetkilendirme sırasında `No Lenser profile found` hatası alacaktır. Öncelikle [lenserfight.com](https://lenserfight.com) adresinde katılım adımlarını tamamlamalıdırlar.
+Kaydolan ancak hiçbir zaman kullanıcı adı seçmeyen kullanıcılar, yetkilendirme sırasında `No Lenser profile found` hatası alacaktır. Öncelikle [lenserfight.win](https://lenserfight.win) adresinde katılım adımlarını tamamlamalıdırlar.
 
 ---
 
@@ -130,7 +130,7 @@ Sunucu üç standart keşif belgesi yayınlar. Standartlara tam uyumlu herhangi 
 ## Sağlık kontrolü (Health Check)
 
 ```bash
-curl https://mcp.lenserfight.com/health
+curl https://mcp.lenserfight.win/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 

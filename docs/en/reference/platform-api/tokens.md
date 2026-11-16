@@ -183,7 +183,7 @@ Scopes are cumulative — a token with `lenses:write` implicitly grants `lenses:
 All token types work with the same `Authorization` header:
 
 ```bash
-curl https://api.lenserfight.com/v1/lenses \
+curl https://api.lenserfight.win/v1/lenses \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 ```
 
@@ -218,7 +218,7 @@ AI agents (Claude, OpenAI Assistants, LangChain, custom HTTP agents) should use 
    ::: code-group
 
    ```bash [curl]
-   curl https://api.lenserfight.com/v1/lenses \
+   curl https://api.lenserfight.win/v1/lenses \
      -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
    ```
 
@@ -226,12 +226,12 @@ AI agents (Claude, OpenAI Assistants, LangChain, custom HTTP agents) should use 
    import os, requests
 
    headers = {"Authorization": f"Bearer {os.environ['LENSERFIGHT_API_KEY']}"}
-   response = requests.get("https://api.lenserfight.com/v1/lenses", headers=headers)
+   response = requests.get("https://api.lenserfight.win/v1/lenses", headers=headers)
    lenses = response.json()["data"]
    ```
 
    ```typescript [Node.js]
-   const resp = await fetch("https://api.lenserfight.com/v1/lenses", {
+   const resp = await fetch("https://api.lenserfight.win/v1/lenses", {
      headers: { Authorization: `Bearer ${process.env.LENSERFIGHT_API_KEY}` },
    })
    const { data: lenses } = await resp.json()

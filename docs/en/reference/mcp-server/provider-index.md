@@ -38,7 +38,7 @@ This integration section is organized following the [Diátaxis framework](https:
 ## The endpoint
 
 ```
-https://mcp.lenserfight.com/mcp
+https://mcp.lenserfight.win/mcp
 ```
 
 This is the stable LF Cloud endpoint. No local server required. Authentication is handled through the OAuth flow — your users sign in with their LenserFight credentials and authorize your product once.
@@ -51,7 +51,7 @@ This is the stable LF Cloud endpoint. No local server required. Authentication i
 - [ ] Implement OAuth 2.1 PKCE authorization code flow
 - [ ] Store the `lf_mcp_*` access token per user
 - [ ] Include `Authorization: Bearer lf_mcp_...` on every MCP request
-- [ ] Handle `No Lenser profile found` by directing users to complete onboarding at [lenserfight.com](https://lenserfight.com)
+- [ ] Handle `No Lenser profile found` by directing users to complete onboarding at [lenserfight.win](https://lenserfight.win)
 - [ ] Test with `list_lenses` to verify the connection is healthy
 
 ---
@@ -59,7 +59,7 @@ This is the stable LF Cloud endpoint. No local server required. Authentication i
 ## Health check
 
 ```bash
-curl https://mcp.lenserfight.com/health
+curl https://mcp.lenserfight.win/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 
@@ -69,10 +69,10 @@ curl https://mcp.lenserfight.com/health
 
 Before a user can authorize your integration:
 
-1. A LenserFight account (sign up at [lenserfight.com](https://lenserfight.com))
+1. A LenserFight account (sign up at [lenserfight.win](https://lenserfight.win))
 2. A completed Lenser profile (a handle chosen during onboarding)
 
-Users without a handle will see `No Lenser profile found` during authorization. Direct them to lenserfight.com to complete the step.
+Users without a handle will see `No Lenser profile found` during authorization. Direct them to lenserfight.win to complete the step.
 
 ---
 

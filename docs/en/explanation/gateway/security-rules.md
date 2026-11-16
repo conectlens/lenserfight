@@ -131,7 +131,7 @@ Doctor exit code is non-zero on any failed check; CI runs `lf gateway doctor --c
 
 ## Browser origin allow-list defaults
 
-The gateway accepts browser origins on `lenserfight.com` subdomains and loopback (`localhost`, `127.0.0.1`, `[::1]`, http or https). Private-network origins (RFC 1918, Tailscale CGNAT `100.64.0.0/10`, `*.local`) are accepted over **https only**. A plaintext-http origin on a shared network has no server authentication, so it is refused by default and the gateway logs the rejected origin once with a hint. To accept one deliberately, set `LF_GATEWAY_EXTRA_ORIGINS` to an anchored regex, for example `LF_GATEWAY_EXTRA_ORIGINS='^http://192\.168\.1\.10:5173$'`.
+The gateway accepts browser origins on `lenserfight.win` subdomains and loopback (`localhost`, `127.0.0.1`, `[::1]`, http or https). Private-network origins (RFC 1918, Tailscale CGNAT `100.64.0.0/10`, `*.local`) are accepted over **https only**. A plaintext-http origin on a shared network has no server authentication, so it is refused by default and the gateway logs the rejected origin once with a hint. To accept one deliberately, set `LF_GATEWAY_EXTRA_ORIGINS` to an anchored regex, for example `LF_GATEWAY_EXTRA_ORIGINS='^http://192\.168\.1\.10:5173$'`.
 
 ## Keychain fallback
 

@@ -134,7 +134,7 @@ In the web app:
 
 Via API:
 ```bash
-curl -N "https://api.lenserfight.com/v1/workflows/<id>/run?stream=true" \
+curl -N "https://api.lenserfight.win/v1/workflows/<id>/run?stream=true" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Accept: text/event-stream" \
   -d '{"params": {"topic": "AI safety"}}'

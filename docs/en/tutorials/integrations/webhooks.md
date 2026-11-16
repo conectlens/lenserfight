@@ -22,14 +22,14 @@ Webhooks allow external services to trigger LenserFight workflows and receive no
 2. Select **Webhook**
 3. Copy the generated URL:
    ```
-   https://api.lenserfight.com/v1/webhooks/<webhook-id>
+   https://api.lenserfight.win/v1/webhooks/<webhook-id>
    ```
 4. Configure root input mapping
 
 ### Triggering a workflow
 
 ```bash
-curl -X POST "https://api.lenserfight.com/v1/webhooks/<webhook-id>" \
+curl -X POST "https://api.lenserfight.win/v1/webhooks/<webhook-id>" \
   -H "Content-Type: application/json" \
   -H "X-Webhook-Secret: <your-secret>" \
   -d '{

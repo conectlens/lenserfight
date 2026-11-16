@@ -90,7 +90,7 @@ Response:
 }
 ```
 
-> **LF Cloud note:** Dynamic registration works correctly via `https://mcp.lenserfight.com` — the Cloudflare proxy serves the MCP server at the domain root, so OAuth discovery resolves as expected.
+> **LF Cloud note:** Dynamic registration works correctly via `https://mcp.lenserfight.win` — the Cloudflare proxy serves the MCP server at the domain root, so OAuth discovery resolves as expected.
 
 ### Flow summary
 

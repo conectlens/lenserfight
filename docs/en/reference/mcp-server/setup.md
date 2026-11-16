@@ -28,7 +28,7 @@ Three connection modes are supported. Pick the one that matches your client and 
 The LenserFight MCP server runs as a **Cloudflare Worker** at a stable public endpoint:
 
 ```
-https://mcp.lenserfight.com/mcp
+https://mcp.lenserfight.win/mcp
 ```
 
 > This URL is stable and does not require a tunnel, a running local server, or any environment variables on your machine.
@@ -38,14 +38,14 @@ https://mcp.lenserfight.com/mcp
 1. Open **claude.ai → Settings → Connectors → Add custom connector**.
 2. Fill in:
    - **Name:** `LenserFight`
-   - **Remote MCP server URL:** `https://mcp.lenserfight.com/mcp`
+   - **Remote MCP server URL:** `https://mcp.lenserfight.win/mcp`
    - **OAuth Client ID (optional):** leave blank — the server registers a client automatically.
    - **OAuth Client Secret (optional):** leave blank — PKCE only, no secret required.
 3. Click **Add**.
 
 ### Step 2 — Authorize
 
-Claude.ai opens an authorization popup. You are redirected to **auth.lenserfight.com** — the LenserFight sign-in page — where you can sign in with any method (email/password, Google, GitHub, magic link, etc.).
+Claude.ai opens an authorization popup. You are redirected to **auth.lenserfight.win** — the LenserFight sign-in page — where you can sign in with any method (email/password, Google, GitHub, magic link, etc.).
 
 After signing in you land on the consent screen. Click **Allow** to grant the connector access to your lenses, battles, workflows, and AI Lensers.
 
@@ -72,7 +72,7 @@ Claude calls `list_lenses` and responds. If it works, the integration is healthy
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://mcp.lenserfight.com/mcp"
+      "url": "https://mcp.lenserfight.win/mcp"
     }
   }
 }
@@ -254,7 +254,7 @@ This builds the Worker bundle (`src/worker.ts` → `dist/apps/mcp-server/worker.
 ### Step 4 — Verify
 
 ```bash
-curl https://mcp.lenserfight.com/health
+curl https://mcp.lenserfight.win/health
 # {"status":"ok","server":"lenserfight-mcp","version":"1.0.0"}
 ```
 
@@ -327,7 +327,7 @@ After connecting in any mode:
 
 ```bash
 # LF Cloud
-curl https://mcp.lenserfight.com/health
+curl https://mcp.lenserfight.win/health
 
 # Local HTTP mode
 curl https://<your-tunnel>/health

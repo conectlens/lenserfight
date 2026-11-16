@@ -72,7 +72,7 @@ lf connectors add \
 
 # 4. Use the token in your backend
 export LENSERFIGHT_API_KEY=lf_svc_...
-curl https://api.lenserfight.com/v1/lenses \
+curl https://api.lenserfight.win/v1/lenses \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
 ```
 
@@ -116,7 +116,7 @@ An independent developer writes Python scripts that use LenserFight lenses for c
 
 LenserFight Community Edition is under the **MIT License**. You may self-host, modify, and ship products that include this codebase under the MIT License. Use of the **LenserFight** name and logos in a way that implies official endorsement is not covered by this license.
 
-If you depend on the **hosted** platform at [lenserfight.com](https://lenserfight.com) (SLA, quotas, private features), use the appropriate plan and contact the team for production. See [OSS Launch Scope](/en/explanation/community/oss-launch-scope) for scope.
+If you depend on the **hosted** platform at [lenserfight.win](https://lenserfight.win) (SLA, quotas, private features), use the appropriate plan and contact the team for production. See [OSS Launch Scope](/en/explanation/community/oss-launch-scope) for scope.
 
 ---
 

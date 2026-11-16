@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://lenserfight.com" target="_blank">
-    <img src="https://cdn.lenserfight.com/brand/favicons/bg/ms-icon-310x310.png" width="72" alt="LenserFight" />
+  <a href="https://lenserfight.win" target="_blank">
+    <img src="https://cdn.lenserfight.win/brand/favicons/bg/ms-icon-310x310.png" width="72" alt="LenserFight" />
   </a>
 </p>
 
@@ -9,13 +9,13 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
-  <a target="_blank" href="https://docs.lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/docs-lenserfight.com-green" alt="Docs" /></a>
+  <a target="_blank" href="https://docs.lenserfight.win?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/docs-lenserfight.win-green" alt="Docs" /></a>
   <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/built_with-Chainabit-blue" alt="Chainabit" /></a>
   <a target="_blank" href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node" /></a>
   <a target="_blank" href="https://supabase.com"><img src="https://img.shields.io/badge/supabase-postgres-3ecf8e" alt="Supabase" /></a>
   <a target="_blank" href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-5.x-3178c6" alt="TypeScript" /></a>
   <a target="_blank" href="https://nx.dev"><img src="https://img.shields.io/badge/nx-monorepo-143055" alt="Nx" /></a>
-  <a target="_blank" href="https://docs.lenserfight.com/en/changelog"><img src="https://img.shields.io/badge/changelog-docs.lenserfight.com-blue" alt="Changelog" /></a>
+  <a target="_blank" href="https://docs.lenserfight.win/en/changelog"><img src="https://img.shields.io/badge/changelog-docs.lenserfight.win-blue" alt="Changelog" /></a>
   <br />
   <a target="_blank" href="https://github.com/sponsors/conectlens"><img src="https://img.shields.io/badge/sponsor-GitHub_Sponsors-ea4aaa?logo=githubsponsors&logoColor=white" alt="GitHub Sponsors" /></a>
   <a target="_blank" href="https://patreon.com/ofcskn"><img src="https://img.shields.io/badge/sponsor-Patreon-f96854?logo=patreon&logoColor=white" alt="Patreon" /></a>
@@ -227,13 +227,13 @@ Workflows, and Agents directly, without you copy-pasting IDs between tabs. It ex
 typed tools (Lens, Thread, Workflow, Agent, and Battle groups) at one stable endpoint:
 
 ```
-https://mcp.lenserfight.com/mcp
+https://mcp.lenserfight.win/mcp
 ```
 
 ### Step-by-step: Claude.ai (or any web client with custom connectors)
 
 1. Open **claude.ai → Settings → Connectors → Add custom connector**.
-2. Set **Remote MCP server URL** to `https://mcp.lenserfight.com/mcp`.
+2. Set **Remote MCP server URL** to `https://mcp.lenserfight.win/mcp`.
 3. Leave **OAuth Client ID** and **Client Secret** blank — the server registers your client and
    handles PKCE automatically.
 4. Click **Add**, then sign in with your LenserFight account in the popup.
@@ -247,7 +247,7 @@ Add an entry to your MCP config (`~/.cursor/mcp.json`, or `.mcp.json` in your wo
 {
   "mcpServers": {
     "lenserfight": {
-      "url": "https://mcp.lenserfight.com/mcp"
+      "url": "https://mcp.lenserfight.win/mcp"
     }
   }
 }
@@ -318,7 +318,7 @@ Import direction: `apps` → `features` → `data` → `domain`; `features` → 
 - [Root directory audit](docs/en/how-to/contributors/root-directory-audit.md)
 - [Workflow execution engine](docs/en/reference/workflows/execution-engine.md)
 - [Community Edition vs. Cloud](docs/en/explanation/community/oss-launch-scope.md)
-- Full docs: [docs.lenserfight.com](https://docs.lenserfight.com)
+- Full docs: [docs.lenserfight.win](https://docs.lenserfight.win)
 
 ## Contributing
 

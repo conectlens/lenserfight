@@ -146,7 +146,7 @@ When `DATA_SOURCE=file`, the local adapter reads and writes from the user's home
   "defaultAdapterId": "local",
   "authToken": "<stored-session-or-developer-token>",
   "supabaseAnonKey": "<optional-if-switching-to-supabase-later>",
-  "cloudApiUrl": "https://api.lenserfight.com"
+  "cloudApiUrl": "https://api.lenserfight.win"
 }
 ```
 

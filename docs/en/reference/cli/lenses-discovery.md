@@ -154,13 +154,13 @@ lenserfight lenses star code-reviewer --remove
 Public lenses are accessible on the web at:
 
 ```
-https://lenserfight.com/:lens-slug
+https://lenserfight.win/:lens-slug
 ```
 
 For example, a lens with slug `code-reviewer` is available at:
 
 ```
-https://lenserfight.com/code-reviewer
+https://lenserfight.win/code-reviewer
 ```
 
 When referencing a lens in any LenserFight surface (CLI, API, or web), you can use either the slug or the UUID. The slug is stable across versions; the UUID is canonical.

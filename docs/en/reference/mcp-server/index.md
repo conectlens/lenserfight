@@ -14,7 +14,7 @@ The LenserFight MCP server exposes **58 tools** across users, threads, Lenses, B
 1. Open **claude.ai → Settings → Connectors → Add custom connector**.
 2. Set the URL to:
    ```
-   https://mcp.lenserfight.com/mcp
+   https://mcp.lenserfight.win/mcp
    ```
 3. Leave Client ID and Secret blank. Click **Add**.
 4. Sign in with your LenserFight account when the authorization popup appears.

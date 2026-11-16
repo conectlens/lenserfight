@@ -21,7 +21,7 @@ lf auth login
 **What happens:**
 
 1. The CLI creates a short-lived approval request and prints a code + URL.
-2. Your browser opens `https://auth.lenserfight.com/device-approval?mode=login`.
+2. Your browser opens `https://auth.lenserfight.win/device-approval?mode=login`.
 3. Sign in (or you are already signed in) — the code is pre-filled.
 4. Click **Approve login**.
 5. The CLI detects approval and saves your session to `~/.lenserfight/lenserfight.json`.
