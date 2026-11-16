@@ -82,6 +82,12 @@ export interface BearerAuthOptions {
   }
   /** Rate-limit budget per token (default 60/min). */
   rateLimitPerMinute?: number
+  /**
+   * How long a token read from the keychain is reused before the keychain is
+   * consulted again (default 1000ms). Bounds how long a token rotated by
+   * another process (`lf gateway pair --rotate`) keeps authorizing.
+   */
+  tokenCacheTtlMs?: number
 }
 
 export interface AuthorizeResult {
@@ -102,6 +108,8 @@ export function generateBearerToken(): string {
 
 export class BearerAuthGuard {
   private cachedToken: string | null = null
+  private cachedAt = 0
+  private readonly tokenCacheTtlMs: number
   private readonly origins: RegExp[]
   private readonly keychainAdapter: NonNullable<BearerAuthOptions['keychainAdapter']>
   private readonly rateLimitPerMinute: number
@@ -115,27 +123,44 @@ export class BearerAuthGuard {
       deleteSecret: (ref) => keychain.deleteSecret(ref),
     }
     this.rateLimitPerMinute = opts.rateLimitPerMinute ?? 60
+    this.tokenCacheTtlMs = Math.max(0, opts.tokenCacheTtlMs ?? 1000)
   }
 
   /** Returns the active bearer token, generating one if none exists. */
   async ensureToken(): Promise<string> {
-    if (this.cachedToken) return this.cachedToken
-    const existing = await this.keychainAdapter.getSecret({
-      service: BEARER_KEYCHAIN_SERVICE,
-      account: BEARER_KEYCHAIN_ACCOUNT,
-    })
-    if (existing) {
-      this.cachedToken = existing
-      return existing
-    }
+    const existing = await this.readToken()
+    if (existing) return existing
     const fresh = generateBearerToken()
     await this.keychainAdapter.setSecret({
       service: BEARER_KEYCHAIN_SERVICE,
       account: BEARER_KEYCHAIN_ACCOUNT,
       secret: fresh,
     })
-    this.cachedToken = fresh
+    this.remember(fresh)
     return fresh
+  }
+
+  /**
+   * Reads the stored token, reusing it for at most `tokenCacheTtlMs`. The CLI
+   * rotates the token from a separate process by writing the keychain, so the
+   * daemon must re-read it rather than trust a copy cached for its lifetime.
+   * Never writes.
+   */
+  private async readToken(): Promise<string | null> {
+    if (this.cachedToken && Date.now() - this.cachedAt < this.tokenCacheTtlMs) {
+      return this.cachedToken
+    }
+    const stored = await this.keychainAdapter.getSecret({
+      service: BEARER_KEYCHAIN_SERVICE,
+      account: BEARER_KEYCHAIN_ACCOUNT,
+    })
+    this.remember(stored || null)
+    return this.cachedToken
+  }
+
+  private remember(token: string | null): void {
+    this.cachedToken = token
+    this.cachedAt = Date.now()
   }
 
   /** Rotate the bearer token; old token immediately stops authorizing. */
@@ -146,7 +171,7 @@ export class BearerAuthGuard {
       account: BEARER_KEYCHAIN_ACCOUNT,
       secret: fresh,
     })
-    this.cachedToken = fresh
+    this.remember(fresh)
     this.hits.clear()
     return fresh
   }
@@ -171,8 +196,15 @@ export class BearerAuthGuard {
       return { ok: false, status: 401, reason: 'missing_token' }
     }
     const presented = req.authorization.replace(/^Bearer\s+/i, '').trim()
-    const stored = await this.ensureToken()
-    if (!safeEqual(presented, stored)) {
+    let stored: string | null
+    try {
+      stored = await this.readToken()
+    } catch (err) {
+      // Fail closed: if the credential store cannot be read, nothing authorizes.
+      process.stderr.write(`[bearer] token read failed: ${(err as Error).message}\n`)
+      return { ok: false, status: 401, reason: 'bad_token' }
+    }
+    if (!stored || !safeEqual(presented, stored)) {
       return { ok: false, status: 401, reason: 'bad_token' }
     }
     if (req.rateLimited && !this.checkRate(presented)) {
@@ -195,6 +227,7 @@ export class BearerAuthGuard {
   /** Test-only seam. */
   __reset(): void {
     this.cachedToken = null
+    this.cachedAt = 0
     this.hits.clear()
   }
 }

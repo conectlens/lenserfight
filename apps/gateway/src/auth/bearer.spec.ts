@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { BearerAuthGuard, DEFAULT_ALLOWED_ORIGIN_PATTERNS } from './bearer'
+import {
+  BEARER_KEYCHAIN_ACCOUNT,
+  BEARER_KEYCHAIN_SERVICE,
+  BearerAuthGuard,
+  DEFAULT_ALLOWED_ORIGIN_PATTERNS,
+} from './bearer'
+
+const BEARER_REF = { service: BEARER_KEYCHAIN_SERVICE, account: BEARER_KEYCHAIN_ACCOUNT }
 
 function memKeychain(initial?: Record<string, string>) {
   const store = new Map<string, string>(Object.entries(initial ?? {}))
@@ -39,6 +46,93 @@ describe('BearerAuthGuard', () => {
       origin: 'https://lenserfight.com',
     })
     expect(allowed).toMatchObject({ ok: true })
+  })
+
+  it('stops authorizing the old token once another process rotates the keychain entry', async () => {
+    const adapter = memKeychain()
+    const guard = new BearerAuthGuard({ keychainAdapter: adapter, tokenCacheTtlMs: 0 })
+    const oldToken = await guard.ensureToken()
+    expect(await guard.authorize({ authorization: `Bearer ${oldToken}`, origin: null })).toMatchObject({ ok: true })
+
+    // `lf gateway pair --rotate` is a separate process: it only writes the keychain.
+    const newToken = 'rotated-by-another-process-0123456789abcdef'
+    await adapter.setSecret({ ...BEARER_REF, secret: newToken })
+
+    expect(await guard.authorize({ authorization: `Bearer ${oldToken}`, origin: null })).toMatchObject({
+      status: 401,
+      reason: 'bad_token',
+    })
+    expect(await guard.authorize({ authorization: `Bearer ${newToken}`, origin: null })).toMatchObject({ ok: true })
+  })
+
+  describe('token cache window', () => {
+    afterEach(() => vi.useRealTimers())
+
+    it('picks up an external rotation after the cache TTL elapses', async () => {
+      vi.useFakeTimers()
+      const adapter = memKeychain()
+      const guard = new BearerAuthGuard({ keychainAdapter: adapter, tokenCacheTtlMs: 1000 })
+      const oldToken = await guard.ensureToken()
+      await adapter.setSecret({ ...BEARER_REF, secret: 'new-token-0123456789abcdef-0123456789' })
+
+      // Within the TTL the cached value is reused (no keychain read per request).
+      expect(await guard.authorize({ authorization: `Bearer ${oldToken}`, origin: null })).toMatchObject({ ok: true })
+
+      vi.advanceTimersByTime(1001)
+      expect(await guard.authorize({ authorization: `Bearer ${oldToken}`, origin: null })).toMatchObject({
+        status: 401,
+        reason: 'bad_token',
+      })
+    })
+  })
+
+  it('authorize() never writes: an absent or empty entry is bad_token', async () => {
+    const adapter = memKeychain()
+    let writes = 0
+    const guard = new BearerAuthGuard({
+      tokenCacheTtlMs: 0,
+      keychainAdapter: {
+        ...adapter,
+        setSecret: async (ref) => {
+          writes += 1
+          await adapter.setSecret(ref)
+        },
+      },
+    })
+    expect(await guard.authorize({ authorization: 'Bearer anything', origin: null })).toMatchObject({
+      status: 401,
+      reason: 'bad_token',
+    })
+    expect(await adapter.getSecret(BEARER_REF)).toBeNull()
+
+    // An empty entry must not match an empty presented token.
+    await adapter.setSecret({ ...BEARER_REF, secret: '' })
+    expect(await guard.authorize({ authorization: 'Bearer ', origin: null })).toMatchObject({
+      status: 401,
+      reason: 'bad_token',
+    })
+    expect(writes).toBe(0)
+  })
+
+  it('fails closed when the keychain read throws', async () => {
+    const adapter = memKeychain()
+    let failReads = false
+    const guard = new BearerAuthGuard({
+      tokenCacheTtlMs: 0,
+      keychainAdapter: {
+        ...adapter,
+        getSecret: async (ref) => {
+          if (failReads) throw new Error('keychain locked')
+          return adapter.getSecret(ref)
+        },
+      },
+    })
+    const token = await guard.ensureToken()
+    failReads = true
+    expect(await guard.authorize({ authorization: `Bearer ${token}`, origin: null })).toMatchObject({
+      status: 401,
+      reason: 'bad_token',
+    })
   })
 
   it('returns missing_token for empty authorization', async () => {
