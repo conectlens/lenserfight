@@ -53,7 +53,6 @@ export async function printPairingBlock(gatewayUrl: string, deps: PairingBlockDe
 
   const w = 64
   const line  = '─'.repeat(w)
-  const blank = ' '.repeat(w)
   const out = stdout.write.bind(stdout)
 
   // Write a single box row. `visible` is the text as it will appear on screen

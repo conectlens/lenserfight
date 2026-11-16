@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { keychain } from '@lenserfight/utils/keychain'
+import { FileKeychainBackend, keychain } from '@lenserfight/utils/keychain'
 import { generateEd25519Keypair } from '@lenserfight/utils/signing'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -16,6 +16,9 @@ let keypair: { publicKey: string; privateKey: string }
 beforeEach(async () => {
   tempDir = mkdtempSync(path.join(tmpdir(), 'lf-gateway-hb-'))
   keypair = generateEd25519Keypair()
+  // Keep the device key in a throwaway store; the default keychain refuses to
+  // fall back to plaintext files in the test environment.
+  keychain.__setBackendForTesting(new FileKeychainBackend(path.join(tempDir, 'keychain')))
   config = {
     bind: '127.0.0.1',
     port: 0,

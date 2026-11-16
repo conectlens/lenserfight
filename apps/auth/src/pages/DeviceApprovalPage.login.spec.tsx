@@ -1,6 +1,6 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { mockUseAuth, approveDeviceRequest, rpc, getSession, replaceLocationSafely } = vi.hoisted(() => ({
@@ -15,8 +15,8 @@ vi.mock('@lenserfight/features/auth', () => ({ useAuth: () => mockUseAuth() }))
 vi.mock('@lenserfight/data/repositories', () => ({ authService: { approveDeviceRequest } }))
 vi.mock('@lenserfight/data/supabase', () => ({ supabase: { rpc, auth: { getSession } } }))
 vi.mock('@lenserfight/ui/components', () => ({
-  Button: ({ children, isLoading: _isLoading, fullWidth: _fullWidth, size: _size, ...rest }: Record<string, unknown>) => (
-    <button {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}>{children as React.ReactNode}</button>
+  Button: ({ children, type }: { children: React.ReactNode; type?: 'submit' | 'button' }) => (
+    <button type={type}>{children}</button>
   ),
 }))
 vi.mock('../utils/validateReturnUrl', () => ({

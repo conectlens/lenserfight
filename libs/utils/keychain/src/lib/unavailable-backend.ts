@@ -1,4 +1,4 @@
-import type { AccountInfo, KeychainBackend, SecretRef, SecretWrite } from './types'
+import type { AccountInfo, KeychainBackend } from './types'
 
 export const KEYCHAIN_UNAVAILABLE_MESSAGE =
   'OS keychain is unavailable (the optional "keytar" package could not be loaded). ' +
@@ -17,19 +17,19 @@ export class UnavailableKeychainBackend implements KeychainBackend {
     throw new Error(`keychain_unavailable: ${KEYCHAIN_UNAVAILABLE_MESSAGE}`)
   }
 
-  async getSecret(_ref: SecretRef): Promise<string | null> {
+  async getSecret(): Promise<string | null> {
     return this.fail()
   }
 
-  async setSecret(_ref: SecretWrite): Promise<void> {
+  async setSecret(): Promise<void> {
     return this.fail()
   }
 
-  async deleteSecret(_ref: SecretRef): Promise<boolean> {
+  async deleteSecret(): Promise<boolean> {
     return this.fail()
   }
 
-  async findAccounts(_ref: { service: string }): Promise<AccountInfo[]> {
+  async findAccounts(): Promise<AccountInfo[]> {
     return this.fail()
   }
 }
