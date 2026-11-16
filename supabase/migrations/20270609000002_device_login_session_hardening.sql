@@ -72,8 +72,22 @@ ALTER FUNCTION "authz"."fn_purge_expired_device_login_tokens"() OWNER TO "postgr
 REVOKE ALL ON FUNCTION "authz"."fn_purge_expired_device_login_tokens"() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION "authz"."fn_purge_expired_device_login_tokens"() TO service_role;
 
-SELECT cron.schedule(
-  'device-login-purge-expired-tokens',
-  '*/5 * * * *',
-  $$ SELECT authz.fn_purge_expired_device_login_tokens(); $$
-);
+DO $$
+BEGIN
+  IF to_regnamespace('cron') IS NULL THEN
+    RAISE NOTICE 'pg_cron not installed — skipping device-login-purge-expired-tokens schedule';
+    RETURN;
+  END IF;
+
+  PERFORM cron.unschedule('device-login-purge-expired-tokens')
+  WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'device-login-purge-expired-tokens');
+
+  PERFORM cron.schedule(
+    'device-login-purge-expired-tokens',
+    '*/5 * * * *',
+    'SELECT authz.fn_purge_expired_device_login_tokens()'
+  );
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'could not schedule device-login-purge-expired-tokens: %', SQLERRM;
+END
+$$;

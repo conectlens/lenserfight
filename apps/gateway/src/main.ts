@@ -88,7 +88,11 @@ async function main(): Promise<void> {
     )
   }
 
-  await printPairingBlock(server.url)
+  try {
+    await printPairingBlock(server.url)
+  } catch (err) {
+    process.stderr.write(`[lf-gatewayd] pairing info unavailable: ${(err as Error).message}\n`)
+  }
 
   let heartbeat: { stop: () => void } = { stop: () => undefined }
   let outbox: { stop: () => void } = { stop: () => undefined }

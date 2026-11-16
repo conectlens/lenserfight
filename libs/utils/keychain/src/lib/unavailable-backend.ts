@@ -1,13 +1,11 @@
 import type { AccountInfo, KeychainBackend } from './types'
 
 export const KEYCHAIN_UNAVAILABLE_MESSAGE =
-  'OS keychain is unavailable (the optional "keytar" package could not be loaded). ' +
-  'Secrets are not written to plaintext files unless you opt in with LF_GATEWAY_KEY_FILE_FALLBACK=1 ' +
-  '(insecure; intended for CI and headless containers).'
+  'OS keychain is unavailable and LF_GATEWAY_REQUIRE_KEYCHAIN=1 forbids file storage. ' +
+  'Unset LF_GATEWAY_REQUIRE_KEYCHAIN to allow the 0600 file fallback.'
 
 /**
- * Backend returned when no secure store is available and the plaintext file
- * fallback was not requested. Every operation fails with an actionable error so
+ * Backend returned in strict mode (LF_GATEWAY_REQUIRE_KEYCHAIN=1) when no OS keychain is available. Every operation fails with an actionable error so
  * secrets are never silently written unencrypted.
  */
 export class UnavailableKeychainBackend implements KeychainBackend {
