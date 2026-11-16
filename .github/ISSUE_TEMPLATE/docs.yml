@@ -9,7 +9,7 @@ body:
     attributes:
       label: Page or file
       description: Link to the docs page or the repo file path.
-      placeholder: "https://docs.lenserfight.com/... or docs/en/tutorials/..."
+      placeholder: "https://docs.lenserfight.win/... or docs/en/tutorials/..."
     validations:
       required: true
 

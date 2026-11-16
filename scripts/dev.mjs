@@ -132,7 +132,7 @@ async function setupLocal() {
 async function setupCloud() {
   saveConfig({
     mode: 'cloud',
-    cloudApiUrl: 'https://api.lenserfight.com',
+    cloudApiUrl: 'https://api.lenserfight.win',
   })
 
   const envPath = resolve(process.cwd(), '.env.local')
@@ -145,7 +145,7 @@ async function setupCloud() {
       '# SUPABASE_URL=https://<project>.supabase.co',
       '# SUPABASE_ANON_KEY=<your-anon-key>',
       '',
-      'API_URL=https://api.lenserfight.com',
+      'API_URL=https://api.lenserfight.win',
       'WEB_BASE_URL=http://localhost:3000',
       '# AUTH_BASE_URL=…',
       '# LANDING_URL=http://localhost:3001',

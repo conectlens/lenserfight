@@ -1,4 +1,4 @@
-# Cloudflare Pages config for moon.lenserfight.com (apps/web).
+# Cloudflare Pages config for moon.lenserfight.win (apps/web).
 # The SPA is served from the build output; dist/apps/web/_worker.js (advanced
 # mode, bundled by tools/seo/build-worker.mjs) fronts it for bots + sitemaps.
 name = "lenserfight-web"

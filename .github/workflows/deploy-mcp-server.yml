@@ -18,7 +18,7 @@ name: Deploy MCP server
 # appears on main.
 #
 # Required repo secrets:
-#   CLOUDFLARE_API_TOKEN   — Workers Scripts:Edit + Zone:DNS/SSL read on lenserfight.com
+#   CLOUDFLARE_API_TOKEN   — Workers Scripts:Edit + Zone:DNS/SSL read on lenserfight.win
 #   CLOUDFLARE_ACCOUNT_ID  — the Cloudflare account that owns the lenserfight-mcp Worker
 
 on:
@@ -83,9 +83,9 @@ jobs:
         run: |
           set -euo pipefail
           sleep 5
-          status=$(curl -s -o /dev/null -w '%{http_code}' https://mcp.lenserfight.com/health)
+          status=$(curl -s -o /dev/null -w '%{http_code}' https://mcp.lenserfight.win/health)
           if [[ "$status" != "200" ]]; then
             echo "::error::Health check returned HTTP $status after deploy"
             exit 1
           fi
-          echo "OK: mcp.lenserfight.com/health returned 200"
+          echo "OK: mcp.lenserfight.win/health returned 200"
