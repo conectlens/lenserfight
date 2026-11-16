@@ -39,8 +39,18 @@ describe('AccountUnavailablePage', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false, logout })
     mockUseAuthProfileGate.mockReturnValue(gate(undefined))
     render(<AccountUnavailablePage />)
-    await waitFor(() => expect(replaceLocationSafely).toHaveBeenCalledWith('/return'))
+    expect(await screen.findByText(/account unavailable/i)).not.toBeNull()
     expect(logout).not.toHaveBeenCalled()
+    expect(replaceLocationSafely).not.toHaveBeenCalled()
+  })
+
+  it('does not redirect or sign out a recoverable account (no redirect loop)', async () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: true, isLoading: false, logout })
+    mockUseAuthProfileGate.mockReturnValue(gate({ kind: 'recoverable' }))
+    render(<AccountUnavailablePage />)
+    expect(await screen.findByText(/account unavailable/i)).not.toBeNull()
+    expect(logout).not.toHaveBeenCalled()
+    expect(replaceLocationSafely).not.toHaveBeenCalled()
   })
 
   it('does not sign out a user whose account is active', async () => {

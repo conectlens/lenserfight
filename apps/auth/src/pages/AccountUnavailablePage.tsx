@@ -33,12 +33,14 @@ export const AccountUnavailablePage: React.FC = () => {
       return
     }
 
-    // Not a confirmed deleted account (anonymous, active, or the gate failed):
-    // leave the session untouched and continue to the normal destination.
-    if (!isAuthenticated || gate || gateError) {
-      // A return_url pointing back at this route would loop; use the default instead.
-      replaceLocationSafely(returnUrl.startsWith('/account-unavailable') ? DEFAULT_RETURN_URL : returnUrl)
+    // Active accounts have nothing to see here. Everyone else (anonymous,
+    // recoverable, onboarding, or a failed gate) stays on this page without any
+    // sign-out, so a failed recovery can never bounce back into a redirect loop.
+    if (isAuthenticated && gate?.kind === 'active') {
+      replaceLocationSafely(returnUrl.startsWith('/account-') ? DEFAULT_RETURN_URL : returnUrl)
+      return
     }
+    setPhase('done')
     // returnUrl is derived from the URL once per mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isLoading, gateLoading, isAuthenticated, gate, gateError, logout])
