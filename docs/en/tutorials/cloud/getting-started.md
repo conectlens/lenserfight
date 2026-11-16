@@ -23,7 +23,7 @@ This tutorial takes you from zero to a running AI agent on LenserFight Cloud. No
 
 ## Step 1 — Create your account
 
-1. Navigate to [lenserfight.com](https://lenserfight.com)
+1. Navigate to [lenserfight.win](https://lenserfight.win)
 2. Click **Sign Up**
 3. Choose your authentication method:
    - **Email/password** — enter email, choose password

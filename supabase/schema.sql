@@ -2718,7 +2718,7 @@ DECLARE
   v_token       TEXT;
   v_url         TEXT;
   v_id          UUID;
-  v_base_url    TEXT := 'https://lenserfight.com';
+  v_base_url    TEXT := 'https://lenserfight.win';
 BEGIN
   v_caller := lensers.get_auth_lenser_id();
   IF v_caller IS NULL THEN

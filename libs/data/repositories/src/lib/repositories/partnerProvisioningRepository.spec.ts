@@ -116,8 +116,8 @@ describe('partnerProvisioningRepository', () => {
 
     it('forwards returnUrl to partnerApiClient', async () => {
       mockPartnerApiClient.startOAuthConnect.mockResolvedValue(undefined)
-      await partnerProvisioningRepository.startOAuthConnect('https://lenserfight.com/settings')
-      expect(mockPartnerApiClient.startOAuthConnect).toHaveBeenCalledWith('https://lenserfight.com/settings')
+      await partnerProvisioningRepository.startOAuthConnect('https://lenserfight.win/settings')
+      expect(mockPartnerApiClient.startOAuthConnect).toHaveBeenCalledWith('https://lenserfight.win/settings')
     })
 
     it('propagates errors', async () => {

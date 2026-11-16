@@ -10,8 +10,8 @@
 - Include `x-default` pointing to the canonical English URL
 - `hreflang` applies to pages, not just the domain root
 - Use absolute URLs (not relative) in `href`
-- For query-param-based language switching: `https://lenserfight.com/?lang=tr`
-- For path-based (VitePress docs): `https://docs.lenserfight.com/tr/`
+- For query-param-based language switching: `https://lenserfight.win/?lang=tr`
+- For path-based (VitePress docs): `https://docs.lenserfight.win/tr/`
 
 ## When NOT to translate
 - Technical terms (LLM, prompt, API, CLI, XP) — keep in English in all locales

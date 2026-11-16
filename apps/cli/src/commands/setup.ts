@@ -32,7 +32,7 @@ const M = {
   notAuthenticated: 'Not authenticated. Run `lf auth login` first.',
   journeyUnavailable:
     'Journey state unavailable (API unreachable or RPC not yet deployed). ' +
-    'Complete steps at https://lenserfight.com/getting-started',
+    'Complete steps at https://lenserfight.win/getting-started',
   journeyHeader: 'LenserFight Developer Onboarding',
   interactivePrompt: 'What do you want to do next?',
   openingBrowser: (url: string) => `Opening ${url} in your browser...`,
@@ -225,7 +225,7 @@ async function runJourneyInteractive(state: JourneyState): Promise<void> {
         .replace(/\/functions\/v1\/?$/, '')
         .replace('/rest/v1', '')
         .replace('/api', '')
-    : config.supabaseUrl?.replace(/\/$/, '') || 'https://lenserfight.com'
+    : config.supabaseUrl?.replace(/\/$/, '') || 'https://lenserfight.win'
   const webUrl = `${webBase}${step.webPath}`
 
   console.log('')

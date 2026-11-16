@@ -67,7 +67,7 @@ describe('project-config defaults and overrides', () => {
 
   it('detects Tailscale CGNAT auth URLs as dev-only', () => {
     expect(isDevOnlyAuthBaseUrl('http://100.88.58.68:3004')).toBe(true)
-    expect(isDevOnlyAuthBaseUrl('https://auth.lenserfight.com')).toBe(false)
+    expect(isDevOnlyAuthBaseUrl('https://auth.lenserfight.win')).toBe(false)
   })
 
   it('resolveAuthBaseUrl uses production for cloud when env has Tailscale', () => {

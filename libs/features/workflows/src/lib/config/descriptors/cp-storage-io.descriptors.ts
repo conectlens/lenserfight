@@ -141,7 +141,7 @@ export const fileReaderDescriptor: RunnerConfigDescriptor = {
       hint: 'Defaults to upstream URL. Max 10MB. Only allowed domains.',
       tooltip: {
         summary: 'The URL of the file to read. Uses the upstream output URL if left empty.',
-        format: 'Full HTTPS URL. Only allowed domains are permitted (default: supabase.co, lenserfight.com).',
+        format: 'Full HTTPS URL. Only allowed domains are permitted (default: supabase.co, lenserfight.win).',
         commonMistakes: 'Using HTTP instead of HTTPS, which is blocked. Pointing to a domain not in the allowed list.',
         executionImpact: 'File is downloaded at runtime. Max 10MB size limit.',
       },
@@ -151,7 +151,7 @@ export const fileReaderDescriptor: RunnerConfigDescriptor = {
       label: 'Additional Allowed Domains (comma-separated)',
       type: 'text',
       placeholder: 'api.example.com, cdn.example.com',
-      hint: 'Default: supabase.co, lenserfight.com, cdn.',
+      hint: 'Default: supabase.co, lenserfight.win, cdn.',
       tooltip: {
         summary: 'Additional domains the file reader is allowed to fetch from, beyond the built-in defaults.',
         format: 'Comma-separated domain names (e.g. api.example.com, cdn.mysite.com).',

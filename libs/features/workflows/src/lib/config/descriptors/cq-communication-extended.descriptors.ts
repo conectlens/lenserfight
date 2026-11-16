@@ -118,7 +118,7 @@ export const pushNotificationDescriptor: RunnerConfigDescriptor = {
       type: 'text',
       tooltip: {
         summary: 'A URL the user is taken to when they tap the notification.',
-        format: 'Relative or absolute URL (e.g. /battle/abc123, https://lenserfight.com/...).',
+        format: 'Relative or absolute URL (e.g. /battle/abc123, https://lenserfight.win/...).',
       },
     },
     {

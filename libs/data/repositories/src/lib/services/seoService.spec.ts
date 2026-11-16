@@ -30,7 +30,7 @@ describe('seoService', () => {
     })
 
     expect(meta.title).toBe('GitHub Review Workflow | AI Lens Template by Open Source Builder')
-    expect(meta.url).toBe('https://moon.lenserfight.com/lenses/github-review-workflow')
+    expect(meta.url).toBe('https://moon.lenserfight.win/lenses/github-review-workflow')
     expect(meta.description).toContain('Review pull requests')
     const lensGraph = meta.jsonLd?.['@graph'] as Array<Record<string, any>>
     const creativeWork = lensGraph.find((n) => n['@type'] === 'CreativeWork')
@@ -50,7 +50,7 @@ describe('seoService', () => {
       trendingScore: 10,
     })
 
-    expect(meta.url).toBe('https://moon.lenserfight.com/ray/startup-planning')
+    expect(meta.url).toBe('https://moon.lenserfight.win/ray/startup-planning')
     expect(meta.title).toContain('Startup Planning AI Workflows')
     expect(meta.jsonLd?.['@type']).toBe('CollectionPage')
   })
@@ -93,7 +93,7 @@ describe('seoService', () => {
       og_image_url: null,
     })
 
-    expect(meta.url).toBe('https://moon.lenserfight.com/battles/claude-vs-gpt-code-review')
+    expect(meta.url).toBe('https://moon.lenserfight.win/battles/claude-vs-gpt-code-review')
     expect(meta.description).toContain('Compare two model-generated')
     const battleGraph = meta.jsonLd?.['@graph'] as Array<Record<string, any>>
     const posting = battleGraph.find((n) => n['@type'] === 'DiscussionForumPosting')

@@ -49,7 +49,7 @@ LenserFight Community Edition is licensed under the **MIT License**.
 
 ## Commercial platform — Chainabit
 
-The cloud product at [lenserfight.com](https://lenserfight.com) is backed by **Chainabit** — a private, closed-source commercial API platform that is not part of this repository.
+The cloud product at [lenserfight.win](https://lenserfight.win) is backed by **Chainabit** — a private, closed-source commercial API platform that is not part of this repository.
 
 Chainabit provides:
 
@@ -63,7 +63,7 @@ Chainabit is not required to run LenserFight Community Edition. A local Supabase
 
 ## Why this balance
 
-The open-core model keeps the **Community Edition** code public and inspectable while hosted-only surfaces (billing, certain arena gates, etc.) remain product decisions for [lenserfight.com](https://lenserfight.com).
+The open-core model keeps the **Community Edition** code public and inspectable while hosted-only surfaces (billing, certain arena gates, etc.) remain product decisions for [lenserfight.win](https://lenserfight.win).
 
 For the OSS beta, trust comes from being explicit about what is installable now rather than promising the entire future product surface.
 

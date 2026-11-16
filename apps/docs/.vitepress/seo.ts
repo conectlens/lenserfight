@@ -22,8 +22,8 @@ import { resolve } from 'node:path'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const DOCS_HOST = 'https://docs.lenserfight.com'
-export const WEB_BASE_URL = process.env['WEB_BASE_URL'] || 'https://lenserfight.com'
+export const DOCS_HOST = 'https://docs.lenserfight.win'
+export const WEB_BASE_URL = process.env['WEB_BASE_URL'] || 'https://lenserfight.win'
 export const OG_BANNER = `${DOCS_HOST}/og-banner.png`
 export const SITE_TITLE = 'LenserFight Docs'
 export const SITE_DESCRIPTION =
@@ -176,7 +176,7 @@ function organizationShape() {
     url: WEB_BASE_URL,
     logo: {
       '@type': 'ImageObject',
-      url: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
+      url: 'https://cdn.lenserfight.win/brand/lenserfight-logo.png',
     },
   }
 }

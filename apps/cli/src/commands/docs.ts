@@ -3,7 +3,7 @@ import consola from 'consola'
 import { spawnSync } from 'node:child_process'
 import { c, sym } from '@lenserfight/cli-client'
 
-const DOCS_BASE_URL = 'https://docs.lenserfight.com/en'
+const DOCS_BASE_URL = 'https://docs.lenserfight.win/en'
 
 // Topic shortcuts → doc paths
 const TOPIC_MAP: Record<string, string> = {

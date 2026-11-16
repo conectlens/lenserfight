@@ -12,7 +12,7 @@ export const shareService = {
   /**
    * Generates a full URL for the short link.
    * In Mock mode, it uses window.location.origin + //s/ + shortId.
-   * In Prod, it would be https://lenserfight.com/s/ + shortId.
+   * In Prod, it would be https://lenserfight.win/s/ + shortId.
    */
   getShareUrl: (shortId: string): string => {
     const origin = window.location.origin

@@ -17,4 +17,4 @@ Yeni bir dil eklemek için: [Dil Ekleme](./dil-ekleme.md).
 - **apps/landing** — URL'de `/en/`, `/tr/` ön ekleri var. Geçiş yapıldığında paylaşılan çerezi de yazar.
 - **apps/docs** — VitePress; `/en/`, `/tr/` URL ön ekleri. İlk açılışta çerezi okur ve uygun dile yönlendirir.
 
-Tam mimari, çerez nitelikleri (`Domain=.lenserfight.com`, `Path=/`, `SameSite=Lax`, `Secure`, `Max-Age=1y`) ve örnek kodlar için [İngilizce rehberi okuyun](/en/how-to/contributors/i18n-guide).
+Tam mimari, çerez nitelikleri (`Domain=.lenserfight.win`, `Path=/`, `SameSite=Lax`, `Secure`, `Max-Age=1y`) ve örnek kodlar için [İngilizce rehberi okuyun](/en/how-to/contributors/i18n-guide).

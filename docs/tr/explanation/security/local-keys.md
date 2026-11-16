@@ -29,7 +29,7 @@ Her anahtar `~/.lenserfight/keys/<id>.json` adresinde kendi zarfında yaşar:
 
 | Kontrol | Davranış | Neden |
 | --- | --- | --- |
-| Origin allow-list | `lenserfight.com`, alt domain, `localhost`, `127.0.0.1`. Diğerleri → 403. | Aynı makinedeki diğer sekmeler gateway'i çağıramaz. |
+| Origin allow-list | `lenserfight.win`, alt domain, `localhost`, `127.0.0.1`. Diğerleri → 403. | Aynı makinedeki diğer sekmeler gateway'i çağıramaz. |
 | Bearer token | 32 byte rastgele, OS keychain (sunucu) + `sessionStorage` (tarayıcı). | Token olmadan `/keys/*` erişilemez. |
 | Token saklama | Yalnızca `sessionStorage` — cookie değil, localStorage değil. | Sekme kapanır, token gider, eşleşme yenilenir. |
 | Hız sınırı | `/keys/:id/resolve` token başına 60/dk + burst 5. 429 + denetim. | Tehlikeye düşmüş origin saniyeler içinde tüm anahtarları çekemez. |
@@ -42,7 +42,7 @@ Her anahtar `~/.lenserfight/keys/<id>.json` adresinde kendi zarfında yaşar:
 | --- | --- | --- |
 | Disk hırsızlığı | Beklemede AES-256-GCM + OS keychain'deki parola. | Zayıf OS girişi → fiziksel erişimli saldırgan çözebilir. |
 | Aynı kullanıcı kötü amaçlı yazılım | 0600 unprivileged eşleri engeller; aynı UID şifreli metni görür ama keychain açmadan çözemez. | OS sandbox (TCC, AppArmor) ek savunmadır. |
-| Cross-origin tarayıcı JS | Origin allow-list + bearer + `sessionStorage` token. | Tehlikeye düşmüş lenserfight.com origin XSS ile çekebilir — CSP/SRI. |
+| Cross-origin tarayıcı JS | Origin allow-list + bearer + `sessionStorage` token. | Tehlikeye düşmüş lenserfight.win origin XSS ile çekebilir — CSP/SRI. |
 | Loopback dinleme | Çekirdekten çıkmıyor. | Yok. |
 | Path traversal / symlink | Sıkı ID regex + `O_NOFOLLOW` + symlink reddi. | Yok. |
 | Zarf kurcalama | AES-GCM auth-tag → `decryption_failed`. | Yok. |

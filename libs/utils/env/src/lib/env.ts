@@ -47,7 +47,7 @@ export const CHAINABIT_PARTNER_API_KEY = (): string => required('CHAINABIT_PARTN
 // keeping it server-side prevents fingerprinting and rate-limit abuse on the Chainabit side
 export const CHAINABIT_CLIENT_ID = (): string => required('CHAINABIT_CLIENT_ID')
 // Full redirect URI registered on the Chainabit OAuth client, e.g.
-// https://api.lenserfight.com/v1/partners/chainabit/oauth/callback
+// https://api.lenserfight.win/v1/partners/chainabit/oauth/callback
 export const CHAINABIT_OAUTH_REDIRECT_URI = (): string => required('CHAINABIT_OAUTH_REDIRECT_URI')
 
 // ── LenserFight Cloud / CLI ───────────────────────────────────────────────────

@@ -7,7 +7,7 @@ import { LocaleLink as Link } from '@lenserfight/shared/i18n-routing'
 
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
 
-const WEB_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
+const WEB_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.win'
 
 const HANDICAP_ICONS = [Clock, Clock, Shield, Zap] as const
 

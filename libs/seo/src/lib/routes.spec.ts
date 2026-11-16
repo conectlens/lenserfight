@@ -18,20 +18,20 @@ describe('entityPath', () => {
 
 describe('absoluteUrl', () => {
   it('joins base and path without double slashes', () => {
-    expect(absoluteUrl('https://moon.lenserfight.com', '/lenses/x')).toBe(
-      'https://moon.lenserfight.com/lenses/x',
+    expect(absoluteUrl('https://moon.lenserfight.win', '/lenses/x')).toBe(
+      'https://moon.lenserfight.win/lenses/x',
     )
   })
 
   it('trims trailing base slash and leading path slashes', () => {
-    expect(absoluteUrl('https://moon.lenserfight.com/', '//lenses/x')).toBe(
-      'https://moon.lenserfight.com/lenses/x',
+    expect(absoluteUrl('https://moon.lenserfight.win/', '//lenses/x')).toBe(
+      'https://moon.lenserfight.win/lenses/x',
     )
   })
 
   it('handles root path', () => {
-    expect(absoluteUrl('https://moon.lenserfight.com', '/')).toBe(
-      'https://moon.lenserfight.com/',
+    expect(absoluteUrl('https://moon.lenserfight.win', '/')).toBe(
+      'https://moon.lenserfight.win/',
     )
   })
 })

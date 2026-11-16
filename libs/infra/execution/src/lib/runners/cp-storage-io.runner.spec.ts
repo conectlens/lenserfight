@@ -128,14 +128,14 @@ describe('FileReaderRunner', () => {
   })
 
   it('emits read request for allowed domain', async () => {
-    const ctx: NodeRunnerContext = { nodeId: 'fr1', upstreamOutputs: new Map(), resolvedParams: {}, nodeConfig: { url: 'https://cdn.lenserfight.com/files/doc.pdf' } }
+    const ctx: NodeRunnerContext = { nodeId: 'fr1', upstreamOutputs: new Map(), resolvedParams: {}, nodeConfig: { url: 'https://cdn.lenserfight.win/files/doc.pdf' } }
     const result = await runner.execute(ctx)
     expect(result.output.data?.['__file_read_request']).toBe(true)
-    expect(result.output.data?.['url']).toContain('cdn.lenserfight.com')
+    expect(result.output.data?.['url']).toContain('cdn.lenserfight.win')
   })
 
   it('uses upstream URL when no config url', async () => {
-    const upstream: ExecutionResult = { mediaType: 'image', url: 'https://cdn.lenserfight.com/img.png', durationMs: 0 }
+    const upstream: ExecutionResult = { mediaType: 'image', url: 'https://cdn.lenserfight.win/img.png', durationMs: 0 }
     const ctx: NodeRunnerContext = { nodeId: 'fr1', upstreamOutputs: new Map([['n1', upstream]]), resolvedParams: {}, nodeConfig: {} }
     const result = await runner.execute(ctx)
     expect(result.output.data?.['__file_read_request']).toBe(true)

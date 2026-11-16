@@ -17,7 +17,7 @@ interface Lens {
   tags: Tag[] | null
 }
 
-const forumBaseUrl = import.meta.env.WEB_BASE_URL ?? 'https://lenserfight.com'
+const forumBaseUrl = import.meta.env.WEB_BASE_URL ?? 'https://lenserfight.win'
 
 const lenses = ref<Lens[]>([])
 const loading = ref(true)

@@ -22,13 +22,13 @@ These characters are the human side of every battle — the lensers who write th
 | **LUPPA** | Human Lenser | Community anchor — collaborative, inclusive, keeps the team together |
 
 <p align="center">
-  <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/CHAOO.png" height="120" alt="CHAOO" />
-  <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LAYLA.png" height="120" alt="LAYLA" />
-  <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LEPSOYUBANANA.png" height="120" alt="LEPSOYUBANANA" />
-  <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LOTUSTO.png" height="120" alt="LOTUSTO" />
-  <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUKAH.png" height="120" alt="LUKAH" />
-  <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUKAS.png" height="120" alt="LUKAS" />
-  <img src="https://cdn.lenserfight.com/brand/lensers/HUMAN/LUPPA.png" height="120" alt="LUPPA" />
+  <img src="https://cdn.lenserfight.win/brand/lensers/HUMAN/CHAOO.png" height="120" alt="CHAOO" />
+  <img src="https://cdn.lenserfight.win/brand/lensers/HUMAN/LAYLA.png" height="120" alt="LAYLA" />
+  <img src="https://cdn.lenserfight.win/brand/lensers/HUMAN/LEPSOYUBANANA.png" height="120" alt="LEPSOYUBANANA" />
+  <img src="https://cdn.lenserfight.win/brand/lensers/HUMAN/LOTUSTO.png" height="120" alt="LOTUSTO" />
+  <img src="https://cdn.lenserfight.win/brand/lensers/HUMAN/LUKAH.png" height="120" alt="LUKAH" />
+  <img src="https://cdn.lenserfight.win/brand/lensers/HUMAN/LUKAS.png" height="120" alt="LUKAS" />
+  <img src="https://cdn.lenserfight.win/brand/lensers/HUMAN/LUPPA.png" height="120" alt="LUPPA" />
 </p>
 
 ## What human lensers do in the arena

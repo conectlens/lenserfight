@@ -38,21 +38,21 @@ const DEV_AUTH_BASE_URL = 'http://localhost:3004'
  */
 export const AUTH_BASE_URL = readPublicBaseUrl(
   'AUTH_BASE_URL',
-  import.meta.env.DEV ? DEV_AUTH_BASE_URL : 'https://auth.lenserfight.com'
+  import.meta.env.DEV ? DEV_AUTH_BASE_URL : 'https://auth.lenserfight.win'
 )
 
 /** Main / landing app origin for battles, get-started, etc. Override with `LANDING_URL`. */
-export const LANDING_BASE_URL = readPublicBaseUrl('LANDING_URL', 'https://lenserfight.com')
+export const LANDING_BASE_URL = readPublicBaseUrl('LANDING_URL', 'https://lenserfight.win')
 
 /** Community web origin (return URLs, links). Override with `WEB_BASE_URL`. */
-export const WEB_BASE_URL = readPublicBaseUrl('WEB_BASE_URL', 'https://lenserfight.com')
+export const WEB_BASE_URL = readPublicBaseUrl('WEB_BASE_URL', 'https://lenserfight.win')
 
 /** Documentation site origin. Override with `DOCS_BASE_URL` (e.g. http://localhost:5174 in local dev). */
-export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.lenserfight.com')
+export const DOCS_BASE_URL = readPublicBaseUrl('DOCS_BASE_URL', 'https://docs.lenserfight.win')
 
 /**
  * LenserFight MCP server origin (no trailing slash).
- * Cloud prod: `https://mcp.lenserfight.com`.
+ * Cloud prod: `https://mcp.lenserfight.win`.
  * Local dev (supabase functions serve): `http://127.0.0.1:54321/functions/v1/lenserfight-mcp`.
  * Override with `MCP_SERVER_URL` in your `.env.local`.
  */
@@ -60,7 +60,7 @@ export const MCP_SERVER_URL = readPublicBaseUrl(
   'MCP_SERVER_URL',
   import.meta.env.DEV
     ? 'http://127.0.0.1:54321/functions/v1/lenserfight-mcp'
-    : 'https://mcp.lenserfight.com'
+    : 'https://mcp.lenserfight.win'
 )
 
 /** Chainabit web app origin — used for deep-links to wallet top-up and partner attribution. Override with `CHAINABIT_APP_URL`. */
@@ -70,11 +70,11 @@ export const CHAINABIT_APP_URL = readPublicBaseUrl('CHAINABIT_APP_URL', 'https:/
  * LenserFight API base URL (no trailing slash).
  * In development, defaults to the local dev URL above. To proxy through a
  * tunnel (e.g. ngrok) for CORS or webhook testing, set `API_URL` in your
- * `.env.local`. Production resolves to `https://api.lenserfight.com` unless
+ * `.env.local`. Production resolves to `https://api.lenserfight.win` unless
  * `API_URL` is provided.
  */
 export const API_BASE_URL = stripSupabaseRestPath(
-  readPublicBaseUrl('API_URL', 'https://api.lenserfight.com')
+  readPublicBaseUrl('API_URL', 'https://api.lenserfight.win')
 )
 
 /**

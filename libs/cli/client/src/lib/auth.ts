@@ -382,7 +382,7 @@ export async function registerUser(
   } else {
     throw new Error(
       'Account registration via CLI is not supported in cloud/production mode.\n' +
-        'Please register at https://auth.lenserfight.com/register'
+        'Please register at https://auth.lenserfight.win/register'
     )
   }
 

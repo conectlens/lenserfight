@@ -73,7 +73,7 @@ Schedules activate when the workflow is saved and published. Pause or delete the
 Set the trigger type to **Webhook**. Copy the URL shown in the trigger panel. External systems POST a JSON body to that URL to start a run. The JSON body is available as `trigger.body` inside the graph.
 
 ```bash
-curl -X POST https://api.lenserfight.com/webhooks/<token> \
+curl -X POST https://api.lenserfight.win/webhooks/<token> \
   -H "Content-Type: application/json" \
   -d '{"repo": "acme/backend", "event": "push"}'
 ```

@@ -3,7 +3,7 @@ import { LANDING_BASE_URL, AUTH_BASE_URL, WEB_BASE_URL } from '@lenserfight/util
 const PROD_ORIGINS = [
   WEB_BASE_URL,
   LANDING_BASE_URL,
-  'https://admin.lenserfight.com',
+  'https://admin.lenserfight.win',
 ]
 
 const AUTH_ORIGINS = [new URL(`${AUTH_BASE_URL}/`).origin]

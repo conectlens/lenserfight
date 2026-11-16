@@ -56,11 +56,11 @@ See [Storage Adapters](/en/reference/platform-api/storage-adapters) for the full
 |----------|---------|-------------|
 | `WEB_BASE_URL` | `http://localhost:3000` | Root URL of the web app |
 | `AUTH_BASE_URL` | `http://localhost:3004` | Auth app base URL |
-| `API_URL` | `http://localhost:8786` | Execution platform API. Production: `https://api.lenserfight.com` |
+| `API_URL` | `http://localhost:8786` | Execution platform API. Production: `https://api.lenserfight.win` |
 | `DOCS_BASE_URL` | `http://localhost:3002` | Docs site base URL |
 | `STATUS_BASE_URL` | `http://localhost:3003` | Status page base URL |
 | `LANDING_URL` | `http://localhost:3000` | Landing site URL (same as web in community edition) |
-| `LENSERFIGHT_CLOUD_API_URL` | `https://api.lenserfight.com` | CLI override for the cloud API base URL |
+| `LENSERFIGHT_CLOUD_API_URL` | `https://api.lenserfight.win` | CLI override for the cloud API base URL |
 | `LENSERFIGHT_OLLAMA_BASE_URL` | `http://localhost:11434` | Node/CLI/server override for the Ollama base URL |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Browser-build override for the Ollama base URL |
 

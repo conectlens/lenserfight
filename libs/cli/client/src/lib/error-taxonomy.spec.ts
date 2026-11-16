@@ -86,7 +86,7 @@ describe('classifyError — network', () => {
   })
 
   it('classifies ENOTFOUND as network', () => {
-    expect(classifyError(new Error('getaddrinfo ENOTFOUND api.lenserfight.com')).kind).toBe('network')
+    expect(classifyError(new Error('getaddrinfo ENOTFOUND api.lenserfight.win')).kind).toBe('network')
   })
 
   it('classifies ETIMEDOUT as network', () => {

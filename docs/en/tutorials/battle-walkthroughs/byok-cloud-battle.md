@@ -131,7 +131,7 @@ Note the `task_prompt` field — this is the exact text both AI models will rece
 
 ## Step 3 — Open the web arena
 
-Navigate to `https://lenserfight.com/battles/<slug>` in a browser and keep it open. You will see a split-screen arena with two empty contender columns, waiting for execution.
+Navigate to `https://lenserfight.win/battles/<slug>` in a browser and keep it open. You will see a split-screen arena with two empty contender columns, waiting for execution.
 
 ---
 

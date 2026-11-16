@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Sitemap for the LenserFight Arena apex (https://lenserfight.com).
+  Sitemap for the LenserFight Arena apex (https://lenserfight.win).
   Routes mirror apps/landing/src/seo/RouteSEO.tsx routeMeta.
   Localized alternates use landing's /{locale}/ path-prefix scheme.
   Enabled locales (ENABLED_LOCALES, status != stub): en, tr.
@@ -11,136 +11,136 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml"
 >
   <url>
-    <loc>https://lenserfight.com/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/" />
+    <loc>https://lenserfight.win/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/about</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/about" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/about" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/about" />
+    <loc>https://lenserfight.win/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/about" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/about" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/about" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.74</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/note</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/note" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/note" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/note" />
+    <loc>https://lenserfight.win/note</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/note" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/note" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/note" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/product</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/product" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/product" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/product" />
+    <loc>https://lenserfight.win/product</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/product" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/product" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/product" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.92</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/product/cli</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/product/cli" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/product/cli" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/product/cli" />
+    <loc>https://lenserfight.win/product/cli</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/product/cli" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/product/cli" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/product/cli" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.82</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/product/cli/quickstart</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/product/cli/quickstart" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/product/cli/quickstart" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/product/cli/quickstart" />
+    <loc>https://lenserfight.win/product/cli/quickstart</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/product/cli/quickstart" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/product/cli/quickstart" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/product/cli/quickstart" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.76</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/product/mobile</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/product/mobile" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/product/mobile" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/product/mobile" />
+    <loc>https://lenserfight.win/product/mobile</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/product/mobile" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/product/mobile" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/product/mobile" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/faq</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/faq" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/faq" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/faq" />
+    <loc>https://lenserfight.win/faq</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/faq" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/faq" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/faq" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.78</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/get-started</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/get-started" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/get-started" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/get-started" />
+    <loc>https://lenserfight.win/get-started</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/get-started" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/get-started" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/get-started" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/demo</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/demo" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/demo" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/demo" />
+    <loc>https://lenserfight.win/demo</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/demo" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/demo" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/demo" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/battle-showcase</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/battle-showcase" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/battle-showcase" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/battle-showcase" />
+    <loc>https://lenserfight.win/battle-showcase</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/battle-showcase" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/battle-showcase" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/battle-showcase" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/policies/terms</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/policies/terms" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/policies/terms" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/policies/terms" />
+    <loc>https://lenserfight.win/policies/terms</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/policies/terms" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/policies/terms" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/policies/terms" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.42</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/policies/privacy</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/policies/privacy" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/policies/privacy" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/policies/privacy" />
+    <loc>https://lenserfight.win/policies/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/policies/privacy" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/policies/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/policies/privacy" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.42</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/policies/cookies</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/policies/cookies" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/policies/cookies" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/policies/cookies" />
+    <loc>https://lenserfight.win/policies/cookies</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/policies/cookies" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/policies/cookies" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/policies/cookies" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.36</priority>
   </url>
   <url>
-    <loc>https://lenserfight.com/policies/acceptable-use</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.com/policies/acceptable-use" />
-    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.com/tr/policies/acceptable-use" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.com/policies/acceptable-use" />
+    <loc>https://lenserfight.win/policies/acceptable-use</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lenserfight.win/policies/acceptable-use" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lenserfight.win/tr/policies/acceptable-use" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lenserfight.win/policies/acceptable-use" />
     <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.38</priority>

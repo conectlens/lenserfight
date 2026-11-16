@@ -6,21 +6,21 @@ This root file exists for GitHub community health features. The canonical contri
 
 ## Canonical docs
 
-Canonical site (browse online): [https://docs.lenserfight.com](https://docs.lenserfight.com)
+Canonical site (browse online): [https://docs.lenserfight.win](https://docs.lenserfight.win)
 
-- Contributor guide: [docs.lenserfight.com/how-to/contributors/contributing](https://docs.lenserfight.com/how-to/contributors/contributing) — `docs/en/how-to/contributors/contributing.md`
-- Development setup: [docs.lenserfight.com/how-to/contributors/development-setup](https://docs.lenserfight.com/how-to/contributors/development-setup) — `docs/en/how-to/contributors/development-setup.md`
-- Your first PR: [docs.lenserfight.com/how-to/contributors/first-pr](https://docs.lenserfight.com/how-to/contributors/first-pr) — `docs/en/how-to/contributors/first-pr.md`
-- Architecture map: [docs.lenserfight.com/how-to/contributors/architecture-map](https://docs.lenserfight.com/how-to/contributors/architecture-map) — `docs/en/how-to/contributors/architecture-map.md`
-- Coding standards: [docs.lenserfight.com/how-to/contributors/coding-standards](https://docs.lenserfight.com/how-to/contributors/coding-standards) — `docs/en/how-to/contributors/coding-standards.md`
-- Branching and versioning: [docs.lenserfight.com/how-to/contributors/branching](https://docs.lenserfight.com/how-to/contributors/branching) — `docs/en/how-to/contributors/branching.md`
-- Release process: [docs.lenserfight.com/how-to/contributors/release-process](https://docs.lenserfight.com/how-to/contributors/release-process) — `docs/en/how-to/contributors/release-process.md`
-- CLI release guide: [docs.lenserfight.com/how-to/contributors/cli-release](https://docs.lenserfight.com/how-to/contributors/cli-release) — `docs/en/how-to/contributors/cli-release.md`
-- Code of conduct: [docs.lenserfight.com/how-to/contributors/code-of-conduct](https://docs.lenserfight.com/how-to/contributors/code-of-conduct) — `docs/en/how-to/contributors/code-of-conduct.md`
-- Support routing: [docs.lenserfight.com/how-to/contributors/support](https://docs.lenserfight.com/how-to/contributors/support) — `docs/en/how-to/contributors/support.md`
-- Security reporting: [docs.lenserfight.com/how-to/contributors/security](https://docs.lenserfight.com/how-to/contributors/security) — `docs/en/how-to/contributors/security.md`
-- Translations & i18n: [docs.lenserfight.com/how-to/contributors/i18n-guide](https://docs.lenserfight.com/how-to/contributors/i18n-guide) — `docs/en/how-to/contributors/i18n-guide.md`
-- Adding a new language: [docs.lenserfight.com/how-to/contributors/adding-a-language](https://docs.lenserfight.com/how-to/contributors/adding-a-language) — `docs/en/how-to/contributors/adding-a-language.md`
+- Contributor guide: [docs.lenserfight.win/how-to/contributors/contributing](https://docs.lenserfight.win/how-to/contributors/contributing) — `docs/en/how-to/contributors/contributing.md`
+- Development setup: [docs.lenserfight.win/how-to/contributors/development-setup](https://docs.lenserfight.win/how-to/contributors/development-setup) — `docs/en/how-to/contributors/development-setup.md`
+- Your first PR: [docs.lenserfight.win/how-to/contributors/first-pr](https://docs.lenserfight.win/how-to/contributors/first-pr) — `docs/en/how-to/contributors/first-pr.md`
+- Architecture map: [docs.lenserfight.win/how-to/contributors/architecture-map](https://docs.lenserfight.win/how-to/contributors/architecture-map) — `docs/en/how-to/contributors/architecture-map.md`
+- Coding standards: [docs.lenserfight.win/how-to/contributors/coding-standards](https://docs.lenserfight.win/how-to/contributors/coding-standards) — `docs/en/how-to/contributors/coding-standards.md`
+- Branching and versioning: [docs.lenserfight.win/how-to/contributors/branching](https://docs.lenserfight.win/how-to/contributors/branching) — `docs/en/how-to/contributors/branching.md`
+- Release process: [docs.lenserfight.win/how-to/contributors/release-process](https://docs.lenserfight.win/how-to/contributors/release-process) — `docs/en/how-to/contributors/release-process.md`
+- CLI release guide: [docs.lenserfight.win/how-to/contributors/cli-release](https://docs.lenserfight.win/how-to/contributors/cli-release) — `docs/en/how-to/contributors/cli-release.md`
+- Code of conduct: [docs.lenserfight.win/how-to/contributors/code-of-conduct](https://docs.lenserfight.win/how-to/contributors/code-of-conduct) — `docs/en/how-to/contributors/code-of-conduct.md`
+- Support routing: [docs.lenserfight.win/how-to/contributors/support](https://docs.lenserfight.win/how-to/contributors/support) — `docs/en/how-to/contributors/support.md`
+- Security reporting: [docs.lenserfight.win/how-to/contributors/security](https://docs.lenserfight.win/how-to/contributors/security) — `docs/en/how-to/contributors/security.md`
+- Translations & i18n: [docs.lenserfight.win/how-to/contributors/i18n-guide](https://docs.lenserfight.win/how-to/contributors/i18n-guide) — `docs/en/how-to/contributors/i18n-guide.md`
+- Adding a new language: [docs.lenserfight.win/how-to/contributors/adding-a-language](https://docs.lenserfight.win/how-to/contributors/adding-a-language) — `docs/en/how-to/contributors/adding-a-language.md`
 
 ## Maintainer triage labels
 
@@ -98,9 +98,9 @@ Maintainers should consider adding a DCO sign-off or CLA only if contribution pr
 
 Every user-facing pull request needs a `.changes/<pr-number>.md` fragment — see
 [`.changes/README.md`](.changes/README.md) for the format. It's the only source of
-prose for the [Product Changelog](https://docs.lenserfight.com/en/changelog) and for
+prose for the [Product Changelog](https://docs.lenserfight.win/en/changelog) and for
 the category/impact/verification fields on
-[Main Branch Activity](https://docs.lenserfight.com/en/changelog/main); we don't
+[Main Branch Activity](https://docs.lenserfight.win/en/changelog/main); we don't
 generate either from commit messages. `.github/workflows/changelog-gate.yml` blocks a
 PR that has neither a fragment nor a `changelog:none` label with a reason comment.
 Internal-only changes (refactors, CI, tests) use `category: internal` in the fragment

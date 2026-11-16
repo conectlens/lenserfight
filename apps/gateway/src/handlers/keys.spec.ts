@@ -87,10 +87,10 @@ describe('gateway /keys handlers', () => {
   it('OPTIONS preflight returns 204 for allowed origin and 403 for disallowed', async () => {
     const good = await fetch(`${bag.server.url}/keys`, {
       method: 'OPTIONS',
-      headers: { origin: 'https://lenserfight.com' },
+      headers: { origin: 'https://lenserfight.win' },
     })
     expect(good.status).toBe(204)
-    expect(good.headers.get('access-control-allow-origin')).toBe('https://lenserfight.com')
+    expect(good.headers.get('access-control-allow-origin')).toBe('https://lenserfight.win')
 
     const bad = await fetch(`${bag.server.url}/keys`, {
       method: 'OPTIONS',

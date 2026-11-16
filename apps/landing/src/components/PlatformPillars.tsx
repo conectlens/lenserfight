@@ -17,7 +17,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocaleLink } from '@lenserfight/shared/i18n-routing'
 
-const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
+const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.win'
 
 export type PillarColor = 'yellow' | 'green' | 'purple' | 'blue' | 'red' | 'gray'
 

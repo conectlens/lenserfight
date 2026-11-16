@@ -75,7 +75,7 @@ describe('developer token CLI helpers', () => {
 
   it('builds auth app URLs using the default base when authBaseUrl is not set', () => {
     expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
-      'https://auth.lenserfight.com/device-approval?code=ABCD-EFGH'
+      'https://auth.lenserfight.win/device-approval?code=ABCD-EFGH'
     );
   });
 
@@ -102,10 +102,10 @@ describe('developer token CLI helpers', () => {
       supabaseAnonKey: 'anon',
       dbPort: 54322,
       apiPort: 54321,
-      authBaseUrl: 'https://auth.lenserfight.com',
+      authBaseUrl: 'https://auth.lenserfight.win',
     });
     expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
-      'https://auth.lenserfight.com/device-approval?code=ABCD-EFGH'
+      'https://auth.lenserfight.win/device-approval?code=ABCD-EFGH'
     );
   });
 });

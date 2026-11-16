@@ -35,10 +35,10 @@ describe('LocaleLink', () => {
   it('renders external URLs as <a> with href untouched', () => {
     renderInLocale(
       'en',
-      <LocaleLink to="https://docs.lenserfight.com">Docs</LocaleLink>,
+      <LocaleLink to="https://docs.lenserfight.win">Docs</LocaleLink>,
     )
     const link = screen.getByRole('link', { name: 'Docs' })
-    expect(link.getAttribute('href')).toBe('https://docs.lenserfight.com')
+    expect(link.getAttribute('href')).toBe('https://docs.lenserfight.win')
   })
 
   it('renders mailto links as <a> with href untouched', () => {

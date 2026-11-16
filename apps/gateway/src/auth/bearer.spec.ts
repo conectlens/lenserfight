@@ -38,12 +38,12 @@ describe('BearerAuthGuard', () => {
     expect(b).not.toBe(a)
     const denied = await guard.authorize({
       authorization: `Bearer ${a}`,
-      origin: 'https://lenserfight.com',
+      origin: 'https://lenserfight.win',
     })
     expect(denied).toMatchObject({ status: 401, reason: 'bad_token' })
     const allowed = await guard.authorize({
       authorization: `Bearer ${b}`,
-      origin: 'https://lenserfight.com',
+      origin: 'https://lenserfight.win',
     })
     expect(allowed).toMatchObject({ ok: true })
   })
@@ -137,7 +137,7 @@ describe('BearerAuthGuard', () => {
 
   it('returns missing_token for empty authorization', async () => {
     const guard = new BearerAuthGuard({ keychainAdapter: memKeychain() })
-    const r = await guard.authorize({ authorization: null, origin: 'https://lenserfight.com' })
+    const r = await guard.authorize({ authorization: null, origin: 'https://lenserfight.win' })
     expect(r).toMatchObject({ status: 401, reason: 'missing_token' })
   })
 
@@ -181,14 +181,14 @@ describe('BearerAuthGuard', () => {
     for (let i = 0; i < 3; i++) {
       const r = await guard.authorize({
         authorization: `Bearer ${token}`,
-        origin: 'https://lenserfight.com',
+        origin: 'https://lenserfight.win',
         rateLimited: true,
       })
       expect(r.ok).toBe(true)
     }
     const r = await guard.authorize({
       authorization: `Bearer ${token}`,
-      origin: 'https://lenserfight.com',
+      origin: 'https://lenserfight.win',
       rateLimited: true,
     })
     expect(r).toMatchObject({ status: 429, reason: 'rate_limited' })
@@ -200,16 +200,16 @@ describe('BearerAuthGuard', () => {
     for (let i = 0; i < 10; i++) {
       const r = await guard.authorize({
         authorization: `Bearer ${token}`,
-        origin: 'https://lenserfight.com',
+        origin: 'https://lenserfight.win',
       })
       expect(r.ok).toBe(true)
     }
   })
 
-  it('default origin patterns include lenserfight.com and subdomains', () => {
+  it('default origin patterns include lenserfight.win and subdomains', () => {
     const patterns = DEFAULT_ALLOWED_ORIGIN_PATTERNS
-    expect(patterns.some((p) => p.test('https://lenserfight.com'))).toBe(true)
-    expect(patterns.some((p) => p.test('https://app.lenserfight.com'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://lenserfight.win'))).toBe(true)
+    expect(patterns.some((p) => p.test('https://app.lenserfight.win'))).toBe(true)
     expect(patterns.some((p) => p.test('https://evil.com'))).toBe(false)
   })
 

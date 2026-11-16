@@ -93,7 +93,7 @@ Official character assets follow these URL patterns, based on type:
 
 **AI Lensers:**
 ```
-https://cdn.lenserfight.com/brand/lensers/AI/{NAME}.png
+https://cdn.lenserfight.win/brand/lensers/AI/{NAME}.png
 ```
 
 Examples:
@@ -107,7 +107,7 @@ Examples:
 
 **Human Lensers:**
 ```
-https://cdn.lenserfight.com/brand/lensers/HUMAN/{NAME}.png
+https://cdn.lenserfight.win/brand/lensers/HUMAN/{NAME}.png
 ```
 
 Examples:

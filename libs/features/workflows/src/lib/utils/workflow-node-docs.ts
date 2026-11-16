@@ -18,7 +18,7 @@ const LOCALE_PREFIX_RE = /^\/[a-z]{2}(-[A-Z]{2})?\//
  *
  * @example
  *   getWorkflowNodeDocsHref('/reference/workflows/nodes/trigger#manual-trigger', 'tr')
- *   // → 'https://docs.lenserfight.com/tr/reference/workflows/nodes/trigger#manual-trigger'
+ *   // → 'https://docs.lenserfight.win/tr/reference/workflows/nodes/trigger#manual-trigger'
  */
 export function getWorkflowNodeDocsHref(
   docsPath: string | null | undefined,

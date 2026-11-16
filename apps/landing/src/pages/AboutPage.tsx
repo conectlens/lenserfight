@@ -301,7 +301,7 @@ export const AboutPage: React.FC = () => {
           >
             <Card className="flex items-center gap-5 p-5 transition-shadow group-hover:shadow-md">
               <img
-                src="https://cdn.lenserfight.com/brand/chainabit/apple-icon.png"
+                src="https://cdn.lenserfight.win/brand/chainabit/apple-icon.png"
                 width={56}
                 height={56}
                 alt={t('common:labels.chainabit')}

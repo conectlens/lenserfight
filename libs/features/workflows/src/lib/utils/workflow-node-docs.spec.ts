@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@lenserfight/utils/env', () => ({
-  DOCS_BASE_URL: 'https://docs.lenserfight.com',
+  DOCS_BASE_URL: 'https://docs.lenserfight.win',
 }))
 
 import { getWorkflowNodeDocsHref } from './workflow-node-docs'
@@ -27,19 +27,19 @@ describe('getWorkflowNodeDocsHref', () => {
   it('builds a full URL for a locale-agnostic path', () => {
     expect(
       getWorkflowNodeDocsHref('/reference/workflows/nodes/trigger#manual-trigger', 'en'),
-    ).toBe('https://docs.lenserfight.com/en/reference/workflows/nodes/trigger#manual-trigger')
+    ).toBe('https://docs.lenserfight.win/en/reference/workflows/nodes/trigger#manual-trigger')
   })
 
   it('strips embedded /en/ prefix and replaces with caller locale', () => {
     expect(
       getWorkflowNodeDocsHref('/en/reference/workflows/nodes/trigger#manual-trigger', 'tr'),
-    ).toBe('https://docs.lenserfight.com/tr/reference/workflows/nodes/trigger#manual-trigger')
+    ).toBe('https://docs.lenserfight.win/tr/reference/workflows/nodes/trigger#manual-trigger')
   })
 
   it('strips embedded /tr/ prefix and replaces with caller locale', () => {
     expect(
       getWorkflowNodeDocsHref('/tr/reference/workflows/nodes/logic#code', 'en'),
-    ).toBe('https://docs.lenserfight.com/en/reference/workflows/nodes/logic#code')
+    ).toBe('https://docs.lenserfight.win/en/reference/workflows/nodes/logic#code')
   })
 
   it('preserves anchor fragment in the result', () => {
@@ -49,12 +49,12 @@ describe('getWorkflowNodeDocsHref', () => {
 
   it('uses DOCS_BASE_URL from env', () => {
     const href = getWorkflowNodeDocsHref('/reference/workflows/nodes/data#json-transform', 'en')
-    expect(href).toMatch(/^https:\/\/docs\.lenserfight\.com/)
+    expect(href).toMatch(/^https:\/\/docs\.lenserfight\.win/)
   })
 
   it('handles zh-CN style locale prefix', () => {
     expect(
       getWorkflowNodeDocsHref('/zh-CN/reference/workflows/nodes/media#text-to-image', 'en'),
-    ).toBe('https://docs.lenserfight.com/en/reference/workflows/nodes/media#text-to-image')
+    ).toBe('https://docs.lenserfight.win/en/reference/workflows/nodes/media#text-to-image')
   })
 })

@@ -14,8 +14,8 @@ function makeEnv(): SeoWorkerEnv {
 
 const baseConfig = {
   sitemap: {
-    canonicalBase: 'https://moon.lenserfight.com',
-    staticRoutes: [{ loc: 'https://moon.lenserfight.com/' }],
+    canonicalBase: 'https://moon.lenserfight.win',
+    staticRoutes: [{ loc: 'https://moon.lenserfight.win/' }],
   },
 }
 
@@ -24,7 +24,7 @@ const CHROME =
 const GOOGLEBOT = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
 
 function req(path: string, ua: string, method = 'GET'): Request {
-  return new Request(`https://moon.lenserfight.com${path}`, {
+  return new Request(`https://moon.lenserfight.win${path}`, {
     method,
     headers: { 'user-agent': ua },
   })

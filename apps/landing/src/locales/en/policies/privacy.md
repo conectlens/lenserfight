@@ -158,7 +158,7 @@ LenserFight uses OAuth (GitHub, Google, Chainabit) to let you sign in seamlessly
 
 ### 7.5 Ecosystem Partners — Chainabit and ConectLens
 
-**Chainabit** (chainabit.com) and **LenserFight** (lenserfight.com) are ecosystem partners operating within the ConectLens ecosystem (conectlens.com). Chainabit and LenserFight provide infrastructure, analytics, AI benchmarking, research, and platform-services collaboration for LenserFight Cloud.
+**Chainabit** (chainabit.com) and **LenserFight** (lenserfight.win) are ecosystem partners operating within the ConectLens ecosystem (conectlens.com). Chainabit and LenserFight provide infrastructure, analytics, AI benchmarking, research, and platform-services collaboration for LenserFight Cloud.
 
 Chainabit, LenserFight, and future ecosystem partners may process:
 

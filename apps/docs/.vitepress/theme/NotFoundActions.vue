@@ -4,7 +4,7 @@ import { useData } from 'vitepress'
 
 const { site, theme } = useData()
 const repoUrl = 'https://github.com/conectlens/lenserfight'
-const arenaUrl = 'https://lenserfight.com'
+const arenaUrl = 'https://lenserfight.win'
 
 // All locales defined in the docs app
 const KNOWN_LOCALES = ['en', 'tr', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ru', 'pt', 'it']

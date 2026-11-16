@@ -19,10 +19,10 @@ const DEFAULT_ALLOWED_ORIGINS: readonly string[] = [
   'http://localhost:4200',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'https://lenserfight.com',
-  'https://www.lenserfight.com',
-  'https://moon.lenserfight.com',
-  'https://auth.lenserfight.com',
+  'https://lenserfight.win',
+  'https://www.lenserfight.win',
+  'https://moon.lenserfight.win',
+  'https://auth.lenserfight.win',
 ]
 
 function getAllowedOrigins(): readonly string[] {

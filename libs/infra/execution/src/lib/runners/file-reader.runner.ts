@@ -18,9 +18,9 @@ import type { INodeRunner, NodeRunnerContext, NodeRunnerResult } from './node-ru
 const DEFAULT_ALLOWED_DOMAINS = [
   'supabase.co',
   'supabase.in',
-  'lenserfight.com',
+  'lenserfight.win',
   'conectlens.com',
-  'cdn.lenserfight.com',
+  'cdn.lenserfight.win',
 ]
 
 const MAX_FILE_SIZE = 10_485_760 // 10MB

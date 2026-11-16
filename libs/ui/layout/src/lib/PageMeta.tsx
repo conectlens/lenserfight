@@ -1,8 +1,8 @@
 import React from 'react'
 import { Helmet } from 'react-helmet-async'
 
-const DEFAULT_OG_IMAGE = 'https://cdn.lenserfight.com/brand/og-default.png'
-const BASE_URL = 'https://moon.lenserfight.com'
+const DEFAULT_OG_IMAGE = 'https://cdn.lenserfight.win/brand/og-default.png'
+const BASE_URL = 'https://moon.lenserfight.win'
 
 export interface BreadcrumbItem {
   name: string

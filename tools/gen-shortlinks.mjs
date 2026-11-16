@@ -17,7 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = resolve(__dirname, '../docs/public/r')
 mkdirSync(outDir, { recursive: true })
 
-const DOCS = 'https://docs.lenserfight.com'
+const DOCS = 'https://docs.lenserfight.win'
 const GITHUB = 'https://github.com/conectlens/lenserfight'
 
 /** Short-link slug → destination URL */

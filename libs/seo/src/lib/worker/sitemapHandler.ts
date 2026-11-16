@@ -46,7 +46,7 @@ const KIND_BY_PLURAL: Record<string, EntityKind> = Object.fromEntries(
 )
 
 export interface SitemapConfig {
-  /** Canonical origin, e.g. https://moon.lenserfight.com */
+  /** Canonical origin, e.g. https://moon.lenserfight.win */
   canonicalBase: string
   /** Static hub/marketing routes emitted as /sitemaps/pages.xml. */
   staticRoutes: SitemapEntry[]

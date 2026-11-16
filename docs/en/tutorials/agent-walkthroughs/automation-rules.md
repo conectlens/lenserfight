@@ -209,7 +209,7 @@ lf webhook delete <webhook-id>
 Any external system with a service token can trigger a workflow run:
 
 ```bash
-curl -X POST https://api.lenserfight.com/v1/runs \
+curl -X POST https://api.lenserfight.win/v1/runs \
   -H "Authorization: Bearer $LENSERFIGHT_SERVICE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

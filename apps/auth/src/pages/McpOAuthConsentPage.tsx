@@ -111,7 +111,7 @@ export const McpOAuthConsentPage: React.FC = () => {
         if (data.error === 'forbidden') {
           if (autoAllow) {
             // Came back from onboarding but profile still not found — break the loop.
-            setPhase({ name: 'error', message: data.error_description ?? 'No LenserFight profile found. Please complete your profile setup at lenserfight.com first.' })
+            setPhase({ name: 'error', message: data.error_description ?? 'No LenserFight profile found. Please complete your profile setup at lenserfight.win first.' })
             return
           }
           // No lenser profile — send to onboarding. Include auto_allow=1 in the

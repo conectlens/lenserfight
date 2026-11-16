@@ -14,7 +14,7 @@ body:
         For bugs in an existing connector, use the [🐛 Bug Report](bug) template and select "connector / adapter" as the affected area.
 
         A mentor will reply within 5 business days confirming slug availability and scope.
-        See [Adapter Mentorship Paths](https://docs.lenserfight.com/how-to/contributors/adapter-mentorship).
+        See [Adapter Mentorship Paths](https://docs.lenserfight.win/how-to/contributors/adapter-mentorship).
 
   - type: input
     id: slug

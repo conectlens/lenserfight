@@ -9,7 +9,7 @@ import {
 } from '@lenserfight/utils/locale'
 import { useLocale } from '@lenserfight/shared/i18n-routing'
 
-const LANDING_HOST = 'https://lenserfight.com'
+const LANDING_HOST = 'https://lenserfight.win'
 const OG_IMAGE = `${LANDING_HOST}/og-banner.png`
 
 type SchemaType =
@@ -109,8 +109,8 @@ export function RouteSEO() {
     publisher: {
       '@type': 'Organization',
       name: 'LenserFight',
-      url: 'https://lenserfight.com',
-      logo: 'https://cdn.lenserfight.com/brand/lenserfight-logo.png',
+      url: 'https://lenserfight.win',
+      logo: 'https://cdn.lenserfight.win/brand/lenserfight-logo.png',
     },
     isPartOf: {
       '@type': 'WebSite',

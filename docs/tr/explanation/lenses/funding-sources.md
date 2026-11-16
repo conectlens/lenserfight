@@ -116,7 +116,7 @@ Ana parola OS keychain'de (`lenserfight-keys` servisi) tutulur. `~/.lenserfight/
 
 ### Tarayıcı ↔ gateway kimlik doğrulaması
 
-- **Origin allow-list**: `lenserfight.com`, alt alan adları, `localhost`, `127.0.0.1`. Diğerleri → 403.
+- **Origin allow-list**: `lenserfight.win`, alt alan adları, `localhost`, `127.0.0.1`. Diğerleri → 403.
 - **Bearer token**: 32 rastgele byte. Tarayıcıda yalnızca `sessionStorage` (sekme kapanınca silinir, cookie değil, localStorage değil).
 - **Hız sınırı**: `/keys/:id/resolve` token başına 60/dk, burst 5.
 - **Boyut sınırı**: 64 KiB; aşan istekler 413.

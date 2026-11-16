@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 
-const webBaseUrl = import.meta.env.WEB_BASE_URL ?? 'https://lenserfight.com'
-const landingBaseUrl = import.meta.env.LANDING_URL ?? 'https://lenserfight.com'
+const webBaseUrl = import.meta.env.WEB_BASE_URL ?? 'https://lenserfight.win'
+const landingBaseUrl = import.meta.env.LANDING_URL ?? 'https://lenserfight.win'
 
 const utmSource = 'lenserfight'
 const utmMedium = 'docs_footer'
@@ -131,7 +131,7 @@ const lenserfightUrl = computed(() => appendUtm(webBaseUrl, 'footer_copyright_li
             target="_blank"
             rel="noopener noreferrer"
           >
-            <img src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png" width="14" height="14" alt="" />
+            <img src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png" width="14" height="14" alt="" />
             <span>Chainabit</span>
           </a>
           <span class="df-sep" aria-hidden="true">·</span>

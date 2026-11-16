@@ -18,7 +18,7 @@ const SkeletonRow = () => (
 )
 
 interface ArenaHotThreadsWidgetProps {
-  /** Base URL for thread links (e.g. 'https://moon.lenserfight.com'). Empty string for in-app routing. */
+  /** Base URL for thread links (e.g. 'https://moon.lenserfight.win'). Empty string for in-app routing. */
   baseUrl?: string
   title?: string
   emptyTitle?: string

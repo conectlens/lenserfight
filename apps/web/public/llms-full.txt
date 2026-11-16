@@ -1,9 +1,9 @@
 # LenserFight Community — Full AI Discovery Document
 
-> This document describes the LenserFight community app at https://moon.lenserfight.com — the open,
+> This document describes the LenserFight community app at https://moon.lenserfight.win — the open,
 > social surface where Lensers discover, publish, and remix AI lenses, rays, battles, workflows, and
 > profiles. LenserFight is an open-source AI model battle platform, part of the ConectLens ecosystem
-> alongside Chainabit. The separate marketing site lives at https://lenserfight.com.
+> alongside Chainabit. The separate marketing site lives at https://lenserfight.win.
 > This document is optimized for LLM crawlers, AI agents, and retrieval systems.
 
 ---
@@ -14,8 +14,8 @@
 - **Tagline**: The open community for AI lenses, battles, and workflows
 - **Type**: Open-source platform / developer tool / AI infrastructure
 - **License**: MIT
-- **Canonical URL**: https://moon.lenserfight.com
-- **Marketing site**: https://lenserfight.com
+- **Canonical URL**: https://moon.lenserfight.win
+- **Marketing site**: https://lenserfight.win
 - **GitHub**: https://github.com/conectlens/lenserfight
 - **Parent ecosystem**: ConectLens (https://conectlens.com)
 - **Related product**: Chainabit — AI model wallet and BUILD platform (https://chainabit.com)
@@ -77,7 +77,7 @@ with a leaderboard. Badges are awarded for milestones (e.g., win streaks, tourna
 
 ## Public Routes
 
-### apps/web (https://moon.lenserfight.com) — Community Hub
+### apps/web (https://moon.lenserfight.win) — Community Hub
 
 | Route | Description |
 |---|---|
@@ -104,7 +104,7 @@ with a leaderboard. Badges are awarded for milestones (e.g., win streaks, tourna
 | `/ai/catalog/:provider/:model` | Model detail — capabilities, constraints, auth modes |
 | `/threads/:threadId` | Public community discussion thread |
 
-### apps/arena (https://lenserfight.com) — Marketing Site
+### apps/arena (https://lenserfight.win) — Marketing Site
 
 | Route | Description |
 |---|---|
@@ -123,7 +123,7 @@ with a leaderboard. Badges are awarded for milestones (e.g., win streaks, tourna
 | `/policies/cookies` | Cookie policy |
 | `/policies/acceptable-use` | Acceptable use rules |
 
-### apps/docs (https://docs.lenserfight.com) — Developer Documentation
+### apps/docs (https://docs.lenserfight.win) — Developer Documentation
 
 | Path | Content |
 |---|---|
@@ -139,8 +139,8 @@ with a leaderboard. Badges are awarded for milestones (e.g., win streaks, tourna
 ## APIs
 
 ### REST API
-- Base URL: https://api.lenserfight.com
-- OpenAPI spec: https://api.lenserfight.com/openapi.json
+- Base URL: https://api.lenserfight.win
+- OpenAPI spec: https://api.lenserfight.win/openapi.json
 - Authentication: Bearer token (Supabase JWT)
 - Versioning: `/v1/` prefix on all routes
 
@@ -207,12 +207,12 @@ enabling private execution, cost control, and access to non-hosted models.
 
 ## Documentation
 
-- Explanation (concepts): https://docs.lenserfight.com/en/explanation/
-- Tutorials: https://docs.lenserfight.com/en/tutorials/
-- API Reference: https://docs.lenserfight.com/en/reference/
-- How-to guides: https://docs.lenserfight.com/en/how-to/
-- Contributor guide: https://docs.lenserfight.com/en/how-to/contributors/
-- Turkish documentation: https://docs.lenserfight.com/tr/
+- Explanation (concepts): https://docs.lenserfight.win/en/explanation/
+- Tutorials: https://docs.lenserfight.win/en/tutorials/
+- API Reference: https://docs.lenserfight.win/en/reference/
+- How-to guides: https://docs.lenserfight.win/en/how-to/
+- Contributor guide: https://docs.lenserfight.win/en/how-to/contributors/
+- Turkish documentation: https://docs.lenserfight.win/tr/
 
 ---
 

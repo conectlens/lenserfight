@@ -1,4 +1,4 @@
-// Cloudflare Pages edge Worker for moon.lenserfight.com (apps/web).
+// Cloudflare Pages edge Worker for moon.lenserfight.win (apps/web).
 // Bundled to dist/apps/web/_worker.js by tools/seo/build-worker.mjs.
 //
 // - Humans: pass-through to the static SPA (env.ASSETS).
@@ -11,7 +11,7 @@
 
 import { createSeoWorker, renderEntity, type SitemapEntry } from '@lenserfight/seo'
 
-const CANONICAL_BASE = 'https://moon.lenserfight.com'
+const CANONICAL_BASE = 'https://moon.lenserfight.win'
 
 // Static hub/marketing routes → /sitemaps/pages.xml. Mirrors the routes the
 // legacy static sitemap listed; per-entity URLs now come from the DB.

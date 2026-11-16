@@ -287,7 +287,7 @@ export const LandLayout: React.FC = () => {
               className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
             >
               <img
-                src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+                src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png"
                 width={20}
                 height={20}
                 alt={t('common:labels.chainabit')}
@@ -464,7 +464,7 @@ export const LandLayout: React.FC = () => {
                 className="flex h-8 items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-2.5 text-xs font-semibold text-greyscale-700 dark:text-greyscale-300"
               >
                 <img
-                  src="https://cdn.lenserfight.com/brand/chainabit/favicon-32x32.png"
+                  src="https://cdn.lenserfight.win/brand/chainabit/favicon-32x32.png"
                   width={18}
                   height={18}
                   alt=""

@@ -37,4 +37,4 @@ Allow: /
 User-agent: cohere-ai
 Allow: /
 
-Sitemap: https://docs.lenserfight.com/sitemap.xml
+Sitemap: https://docs.lenserfight.win/sitemap.xml

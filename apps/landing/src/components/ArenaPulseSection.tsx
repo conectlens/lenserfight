@@ -4,8 +4,8 @@ import { Radio } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-// moon.lenserfight.com — the functional arena app
-const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
+// moon.lenserfight.win — the functional arena app
+const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.win'
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 24 },

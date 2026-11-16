@@ -1,6 +1,6 @@
-# robots.txt for the LenserFight Arena apex (https://lenserfight.com)
+# robots.txt for the LenserFight Arena apex (https://lenserfight.win)
 # Public marketing + arena surface. /auth and /battles redirect to the
-# community app (moon.lenserfight.com); they are not crawlable pages here.
+# community app (moon.lenserfight.win); they are not crawlable pages here.
 
 User-agent: *
 Allow: /
@@ -62,4 +62,4 @@ Allow: /
 User-agent: Perplexity-User
 Allow: /
 
-Sitemap: https://lenserfight.com/sitemap.xml
+Sitemap: https://lenserfight.win/sitemap.xml

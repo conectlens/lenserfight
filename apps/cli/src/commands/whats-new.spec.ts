@@ -44,7 +44,7 @@ describe('lf whats-new', () => {
     // Should direct user to the docs changelog
     const allInfoCalls = consolaInfo.mock.calls.map((c) => String(c[0])).join(' ')
     const allWarnCalls = consolaWarn.mock.calls.map((c) => String(c[0])).join(' ')
-    expect(allInfoCalls + allWarnCalls).toMatch(/changelog|docs\.lenserfight\.com/i)
+    expect(allInfoCalls + allWarnCalls).toMatch(/changelog|docs\.lenserfight\.win/i)
   })
 
   it('parses and displays releases when the Product Changelog file exists', async () => {
